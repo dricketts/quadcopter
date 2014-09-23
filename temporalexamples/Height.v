@@ -21,7 +21,7 @@ Section HeightCtrl.
   Definition ctrl :=
     IFF `"h" < #c @ d1
     THEN "v" ::= #1 @ d2
-    ELSE "v" ::= --#1 @ d3.
+    ELSE "v" ::= --#1 @ d2.
 
   (* The continuous dynamics. *)
   Definition world :=
@@ -32,6 +32,10 @@ Section HeightCtrl.
      This just repeats some number of times. *)
   Definition sys :=
     (ctrl || world)**.
+
+  Lemma safety_helper :
+    |- |sys| --> []`"v"*(#d1+#d2)+`"h" > #0.
+  Admitted.
 
   (* The safety property. Any behavior produced by
      the system has the invariant h > 0. *)

@@ -1,6 +1,7 @@
 Require Import String.
 Require Import List.
 Require Import Coq.Reals.Rdefinitions.
+Require Import RIneq.
 
 (************************************************)
 (* The syntax of differential dynamic logic.    *)
@@ -23,23 +24,35 @@ Inductive CompOp :=
 | Ge : CompOp
 | Lt : CompOp
 | Le : CompOp
-| Eq : CompOp.
+| Eq : CompOp
+| Neq : CompOp.
 
 (* Conditionals *)
 Inductive Cond :=
+| T : Cond
+| F : Cond
 | CompC : Term -> Term -> CompOp -> Cond
 | AndC : Cond -> Cond -> Cond
-| OrC : Cond -> Cond -> Cond
-| NegC : Cond -> Cond.
+| OrC : Cond -> Cond -> Cond.
 
 (* Programs containing discrete and continuous parts. *)
-Inductive DiscreteProg :=
+(*Inductive DiscreteCmd :=
 (* No-op *)
-| Skip : DiscreteProg
+(*| Skip : DiscreteProg*)
 (* A discrete progam constructor for assignment *)
-| Assign : Var -> Term -> R -> DiscreteProg
+| Assign : Var -> Term (*-> R*) -> DiscreteCmd
 (* A discrete test. *)
-| CondTest : Cond -> R -> DiscreteProg.
+| CondTest : Cond -> (*R ->*) DiscreteCmd.*)
+
+Definition Assign := (Var * Term)%type.
+
+Definition time := nonnegreal.
+
+(*Definition DiscreteProg := (Cond * list Assign * R)%type.*)
+Inductive DiscreteProg :=
+| C_Assign : list Assign -> time -> DiscreteProg
+| C_Ite : Cond -> time -> DiscreteProg ->
+          DiscreteProg -> DiscreteProg.
 
 Definition DiffEq := (Var * Term)%type.
 
@@ -61,37 +74,70 @@ Inductive HybridProg :=
    the system evolves according to the differential
    equations.
  *)
-| DiffEqHP1 : list DiffEq -> R -> HybridProg
+(*| DiffEqHP1 : list DiffEq -> R -> HybridProg*)
 (* A discrete program running in parallel with a
    continuous one. *)
-| DiffEqHP2 : list DiffEq -> DiscreteProg -> HybridProg
+| DiffEqHP : list DiffEq -> DiscreteProg -> HybridProg
 (* Sequencing programs *)
-| Seq : HybridProg -> HybridProg -> HybridProg
+(*| Seq : HybridProg -> HybridProg -> HybridProg*)
 (* Non-deterministic branching *)
-| Branch : HybridProg -> HybridProg -> HybridProg
+(*| Branch : HybridProg -> HybridProg -> HybridProg*)
 (* Non-deterministic repetition *)
 | Rep : HybridProg -> HybridProg.
 
 (* A language for more easily expressing discrete
    programs with a single continuous dynamics. *)
-Inductive FullDiscrete :=
+(*Inductive FullDiscrete :=
 | Atomic : DiscreteProg -> FullDiscrete
-| SeqI : FullDiscrete -> FullDiscrete -> FullDiscrete
+(*| SeqI : FullDiscrete -> FullDiscrete -> FullDiscrete*)
 | Ite : Cond -> R -> FullDiscrete -> FullDiscrete -> FullDiscrete.
+
+Fixpoint conditionalize (hp:HybridProg) (c:Cond) (b:R) :=
+  match hp with
+    | DiffEqHP eqs p =>
+       DiffEqHP eqs (AndC c (fst (fst p)),
+                     snd (fst p), (b + (snd p))%R)
+    | Branch hp1 hp2 => Branch (conditionalize hp1 c b)
+                               (conditionalize hp2 c b)
+    | Rep hp' => Rep (conditionalize hp' c b)
+  end.
+
+Definition neg_op (op:CompOp) : CompOp :=
+  match op with
+    | Gt => Le
+    | Ge => Lt
+    | Lt => Ge
+    | Le => Gt
+    | Eq => Neq
+    | Neq => Eq
+  end.
+
+Fixpoint neg_cond (c:Cond) : Cond :=
+  match c with
+    | T => F
+    | F => T
+    | CompC t1 t2 op => CompC t1 t2 (neg_op op)
+    | AndC c1 c2 => OrC (neg_cond c1) (neg_cond c2)
+    | OrC c1 c2 => AndC (neg_cond c1) (neg_cond c2)
+  end.
 
 Fixpoint desugar (p:FullDiscrete) (cd:list DiffEq) :=
   match p with
-    | Atomic p => DiffEqHP2 cd p
-    | SeqI p1 p2 => Seq (desugar p1 cd) (desugar p2 cd)
+    | Atomic p => DiffEqHP cd p
+(*    | SeqI p1 p2 => Seq (desugar p1 cd) (desugar p2 cd)*)
     | Ite c b p1 p2 =>
-      Branch (Seq (DiffEqHP2 cd (CondTest c b)) (desugar p1 cd))
+        Branch (conditionalize (desugar p1 cd) c b)
+               (conditionalize (desugar p2 cd) (neg_cond c) b)
+(*      Branch (Seq (DiffEqHP2 cd (CondTest c b)) (desugar p1 cd))
              (Seq (DiffEqHP2 cd (CondTest (NegC c) b))
-                  (desugar p1 cd))
-  end.
+                  (desugar p1 cd))*)
+  end.*)
 
 (* Formulas expressing correctness properties of hybrid
    programs. *)
 Inductive Formula :=
+| TT : Formula
+| FF : Formula
 | CompF : Term -> Term -> CompOp -> Formula
 | AndF : Formula -> Formula -> Formula
 | OrF : Formula -> Formula -> Formula
@@ -161,7 +207,9 @@ Instance CondPropLogic : PropLogic Cond :=
   Or := OrC }.
 
 (* HybridProg notation *)
-Notation "x ::= t @ b" := (Atomic (Assign x t b))
+(*Notation "x ::= t @ b" := (Atomic (T, (x, t) :: nil, b))
+                        (at level 60) : HP_scope.*)
+Notation "x ::= t @ b" := (C_Assign ((x, t) :: nil) b)
                         (at level 60) : HP_scope.
 Notation "x ' ::= t" := (x, t) (at level 60) : HP_scope.
 Notation "[ x1 , .. , xn ]" := (cons x1 .. (cons xn nil) .. )
@@ -171,11 +219,12 @@ Notation "[ x1 , .. , xn ]" := (cons x1 .. (cons xn nil) .. )
 (*Notation " diffeqs @ b " :=
   (DiffEqHP1 diffeqs b)
     (at level 0) : HP_scope.*)
-Notation "p1 ; p2" := (SeqI p1 p2)
-  (at level 80, right associativity) : HP_scope.
+(*Notation "p1 ; p2" := (SeqI p1 p2)
+  (at level 80, right associativity) : HP_scope.*)
 Notation "'IFF' c @ b 'THEN' p1 'ELSE' p2" :=
-  (Ite c b p1 p2) (at level 90) : HP_scope.
-Infix "||" := (desugar) : HP_scope.
+  (C_Ite c b p1 p2) (at level 90) : HP_scope.
+(*Infix "||" := (desugar) : HP_scope.*)
+Infix "||" := (DiffEqHP) : HP_scope.
 Notation "p **" := (Rep p)
                      (at level 90) : HP_scope.
 
