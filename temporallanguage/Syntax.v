@@ -19,13 +19,22 @@ Inductive Term :=
 | MinusT : Term -> Term -> Term
 | MultT : Term -> Term -> Term.
 
+(* Same as terms, but can contain time
+   "Formula Term" *)
+Inductive FTerm :=
+| TimeFT : FTerm
+| VarFT : Var -> FTerm
+| RealFT : R -> FTerm
+| PlusFT : FTerm -> FTerm -> FTerm
+| MinusFT : FTerm -> FTerm -> FTerm
+| MultFT : FTerm -> FTerm -> FTerm.
+
 Inductive CompOp :=
 | Gt : CompOp
 | Ge : CompOp
 | Lt : CompOp
 | Le : CompOp
-| Eq : CompOp
-| Neq : CompOp.
+| Eq : CompOp.
 
 (* Conditionals *)
 Inductive Cond :=
@@ -49,10 +58,12 @@ Definition Assign := (Var * Term)%type.
 Definition time := nonnegreal.
 
 (*Definition DiscreteProg := (Cond * list Assign * R)%type.*)
-Inductive DiscreteProg :=
-| C_Assign : list Assign -> time -> DiscreteProg
-| C_Ite : Cond -> time -> DiscreteProg ->
-          DiscreteProg -> DiscreteProg.
+
+Definition DiscreteProgBranch :=
+  (Cond * time * list Assign * time) % type.
+
+Definition DiscreteProg :=
+  list DiscreteProgBranch.
 
 Definition DiffEq := (Var * Term)%type.
 
@@ -77,7 +88,7 @@ Inductive HybridProg :=
 (*| DiffEqHP1 : list DiffEq -> R -> HybridProg*)
 (* A discrete program running in parallel with a
    continuous one. *)
-| DiffEqHP : list DiffEq -> DiscreteProg -> HybridProg
+| DiffEqHP : list DiffEq -> Cond -> DiscreteProg -> HybridProg
 (* Sequencing programs *)
 (*| Seq : HybridProg -> HybridProg -> HybridProg*)
 (* Non-deterministic branching *)
@@ -138,7 +149,7 @@ Fixpoint desugar (p:FullDiscrete) (cd:list DiffEq) :=
 Inductive Formula :=
 | TT : Formula
 | FF : Formula
-| CompF : Term -> Term -> CompOp -> Formula
+| CompF : FTerm -> FTerm -> CompOp -> Formula
 | AndF : Formula -> Formula -> Formula
 | OrF : Formula -> Formula -> Formula
 | Imp : Formula -> Formula -> Formula
@@ -171,18 +182,18 @@ Notation "t ^^ n" := (pow t n) (at level 10) : HP_scope.
 (* This type class allows us to define a single notation
    for comparison operators and logical connectives in
    the context of a formula and conditionals. *)
-Class Comparison (T : Type) : Type :=
-{ Comp : Term -> Term -> CompOp -> T }.
+Class Comparison (T1 T2 : Type) : Type :=
+{ Comp : T1 -> T1 -> CompOp -> T2 }.
 
-Definition Gt' {T I} x y := @Comp T I x y Gt.
+Definition Gt' {T1 T2 I} x y := @Comp T1 T2 I x y Gt.
 Infix ">" := (Gt') : HP_scope.
-Definition Eq' {T I} x y := @Comp T I x y Eq.
+Definition Eq' {T1 T2 I} x y := @Comp T1 T2 I x y Eq.
 Infix "=" := (Eq') : HP_scope.
-Definition Ge' {T I} x y := @Comp T I x y Ge.
+Definition Ge' {T1 T2 I} x y := @Comp T1 T2 I x y Ge.
 Infix ">=" := (Ge') : HP_scope.
-Definition Le' {T I} x y := @Comp T I x y Le.
+Definition Le' {T1 T2 I} x y := @Comp T1 T2 I x y Le.
 Infix "<=" := (Le') : HP_scope.
-Definition Lt' {T I} x y := @Comp T I x y Lt.
+Definition Lt' {T1 T2 I} x y := @Comp T1 T2 I x y Lt.
 Infix "<" := (Lt') : HP_scope.
 
 Class PropLogic (T : Type) : Type :=
@@ -192,10 +203,10 @@ Class PropLogic (T : Type) : Type :=
 Infix "/\" := (And) : HP_scope.
 Infix "\/" := (Or) : HP_scope.
 
-Instance FormulaComparison : Comparison Formula :=
+Instance FormulaComparison : Comparison FTerm Formula :=
 { Comp := CompF }.
 
-Instance CondComparison : Comparison Cond :=
+Instance CondComparison : Comparison Term Cond :=
 { Comp := CompC }.
 
 Instance FormulaPropLogic : PropLogic Formula :=
@@ -209,8 +220,9 @@ Instance CondPropLogic : PropLogic Cond :=
 (* HybridProg notation *)
 (*Notation "x ::= t @ b" := (Atomic (T, (x, t) :: nil, b))
                         (at level 60) : HP_scope.*)
-Notation "x ::= t @ b" := (C_Assign ((x, t) :: nil) b)
-                        (at level 60) : HP_scope.
+(*Notation "x ::= t @ b" :=
+  (C_Assign ((x, t) :: nil) b)
+    (at level 60) : HP_scope.*)
 Notation "x ' ::= t" := (x, t) (at level 60) : HP_scope.
 Notation "[ x1 , .. , xn ]" := (cons x1 .. (cons xn nil) .. )
     (at level 70) : HP_scope.
@@ -221,8 +233,8 @@ Notation "[ x1 , .. , xn ]" := (cons x1 .. (cons xn nil) .. )
     (at level 0) : HP_scope.*)
 (*Notation "p1 ; p2" := (SeqI p1 p2)
   (at level 80, right associativity) : HP_scope.*)
-Notation "'IFF' c @ b 'THEN' p1 'ELSE' p2" :=
-  (C_Ite c b p1 p2) (at level 90) : HP_scope.
+(*Notation "'IFF' c @ b 'THEN' p1 'ELSE' p2" :=
+  (C_Ite c b p1 p2) (at level 90) : HP_scope.*)
 (*Infix "||" := (desugar) : HP_scope.*)
 Infix "||" := (DiffEqHP) : HP_scope.
 Notation "p **" := (Rep p)

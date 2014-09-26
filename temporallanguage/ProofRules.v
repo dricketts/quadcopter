@@ -25,7 +25,7 @@ Fixpoint is_st_formula (F:Formula) : bool :=
 Lemma st_formula : forall F beh1 beh2,
   is_st_formula F = true ->
   eval_formula F beh1 ->
-  beh1 R0 = beh2 R0 ->
+  beh1 zero_nnreal = beh2 zero_nnreal ->
   eval_formula F beh2.
 Proof.
   induction F; simpl in *; intros; auto;
@@ -40,16 +40,6 @@ Proof.
   - apply Bool.andb_true_iff in H. firstorder.
 Qed.
 
-Lemma branch_rule : forall p1 p2 I,
-  (|- (I /\ |p1|) --> []I) ->
-  (|- (I /\ |p2|) --> []I) ->
-  (|- (I /\ |Branch p1 p2|) --> []I).
-Proof.
-  simpl; intros.
-  destruct H1. destruct H3.
-  inversion_clear H3; firstorder.
-Qed.
-
 Ltac solve_ineq :=
   repeat match goal with
            | [ H : (_ < _ < _)%R |- _ ] => destruct H
@@ -58,7 +48,7 @@ Ltac solve_ineq :=
            | [ |- _ ] => solve [apply RIneq.Rle_refl]
          end.
 
-Lemma rep_rule : forall p I,
+(*Lemma rep_rule : forall p I,
   is_st_formula I = true ->
   (|- (I /\ |p|) --> []I) ->
   (|- (I /\ |p**|) --> []I).
@@ -97,7 +87,7 @@ Proof.
       unfold Rle in n. apply Rle_ge. apply Rnot_lt_le.
       intro. auto.
 Qed.
-
+*)
 (*Lemma is_derivable_eq : forall f1 f2 b,
   (forall x : Var, Ranalysis1.derivable (fun t : R => f1 t x)) ->
   (forall r, (0 <= r <= b)%R -> f1 r = f2 r) ->
@@ -200,24 +190,50 @@ Fixpoint subst_var_cond (c:Cond) (p:list Assign) :=
                        (subst_var_cond c2 p)
     | _ => c
   end.
+Print DiscreteProgBranch.
+Definition subst_var_discr_prog (p : DiscreteProg)
+           (substs: list Assign) :=
+List.map 
+(fun dpb : DiscreteProgBranch =>
+   match dpb with
+     | (c, ct, asgs, asgt) =>
+           ((subst_var_cond c substs), ct,
+           (List.map 
+             (fun asg : Assign =>
+                let (v, t) := asg in
+                (v, (subst_var_term t substs)))
+             asgs),
+           asgt)
+   end)
+p.
 
-Fixpoint subst_var_discr_prog (p:DiscreteProg) (a:list Assign) :=
+(*Fixpoint subst_var_discr_prog (p:DiscreteProg)
+         (a:list Assign) :=
   match p with
-    | ((c, p), b) =>
-      (subst_var_cond c a,
-       List.map (fun d => (fst d, subst_var_term (snd d) a)) p,
-       b)
+    | C_Assign a' b =>
+      C_Assign
+        (List.map
+           (fun d =>
+              (fst d, subst_var_term (snd d) a)) a')
+        b
+    | C_Ite c b p1 p2 =>
+      C_Ite (subst_var_cond c a) b
+            (subst_var_discr_prog p1 a)
+            (subst_var_discr_prog p2 a)
   end.
+*)
+
+Check subst_var_discr_prog.
 
 Fixpoint subst_var_prog (hp:HybridProg) (a:list Assign) :=
   match hp with
-    | DiffEqHP eqs p =>
+    | DiffEqHP eqs c p =>
        DiffEqHP (List.map
                    (fun d =>
                       (fst d, subst_var_term (snd d) a)) eqs)
+                (subst_var_cond c a)
                 (subst_var_discr_prog p a)
-    | Branch hp1 hp2 => Branch (subst_var_prog hp1 a)
-                               (subst_var_prog hp2 a)
+
     | Rep hp' => Rep (subst_var_prog hp' a)
   end.
 
@@ -282,14 +298,6 @@ Fixpoint deriv_term (t:Term) (eqs:list (Var * Term))
 (* For some formulas, differential induction does not work,
    so we use the following unprovable formula in those
    cases. *)
-Definition FalseFormula : Formula := #0 > #1.
-
-Lemma FalseFormulaFalse : forall st,
-  ~eval_formula FalseFormula st.
-Proof.
-  intros. simpl. apply RIneq.Rle_not_gt.
-  apply RIneq.Rle_0_1.
-Qed.
 
 (* When you take the synthetic derivative of a formula
    with a comparison operator, the operator does not
@@ -302,7 +310,7 @@ Fixpoint deriv_comp_op (op:CompOp) : CompOp :=
     | Lt => Le
     | Le => Le
     | Eq => Eq
-    | Neq => Eq
+    (*| Neq => Eq*)
   end.
 
 (* The derivative of a formula is essentially the derivative
@@ -319,7 +327,7 @@ Fixpoint deriv_formula (f:Formula) (eqs:list (Var * Term))
                       (deriv_formula f2 eqs)
   | OrF f1 f2 => AndF (deriv_formula f1 eqs)
                       (deriv_formula f2 eqs)
-  | _ => FalseFormula
+  | _ => FF
   end.
 
 (* Now we have a bunch of messy lemmas that we'll use
@@ -517,14 +525,16 @@ Lemma eval_comp_ind : forall f r diffeqs is_derivable
   Rle R0 r ->
   solves_diffeqs f diffeqs r is_derivable ->
   vars_unchanged f diffeqs r is_derivable ->
-  eval_comp t1 t2 (f R0) op ->
+  eval_comp t1 t2 (f zero_nnreal) op = true ->
   (forall st, eval_comp (deriv_term t1 diffeqs)
                         (deriv_term t2 diffeqs)
                         st
-                        (deriv_comp_op op)) ->
-  forall z, (0 <= z <= r)%R -> eval_comp t1 t2 (f z) op.
+                        (deriv_comp_op op) = true) ->
+  forall z, (0 <= z <= r)%R -> eval_comp t1 t2 (f z) op = true.
 Proof.
-  intros f r diffeqs is_derivable t1 t2 op Hr Hdiff1 Hdiff2
+admit.
+Qed.
+(*  intros f r diffeqs is_derivable t1 t2 op Hr Hdiff1 Hdiff2
          Hbase Hind z Hz.
   destruct Hz. destruct H. destruct Hr.
   destruct op; unfold eval_comp in *; simpl in *;
@@ -581,8 +591,9 @@ exact (f r).
 exact (f r).
 exact (f r).
 Qed.
+*)
 
-Lemma diffeq_rule : forall I c p d D,
+(*Lemma diffeq_rule : forall I c p d D,
   (|- (I /\ |DiffEqHP nil (c, p, R0)|) --> []I) ->
   (|- (I /\ |DiffEqHP D (c, nil, d)|) --> []I) ->
   (|- (I /\ |DiffEqHP D (c, p, d)|) --> []I).
@@ -597,11 +608,22 @@ Proof.
     + exists d. econstructor; eauto.
       constructor; auto. repeat constructor.
       intros. 
+*)
 
-Lemma diffeq_rule : forall I c p d D,
-  (|- (I /\ (lift_cond c)) --> (subst_assign I p)) ->
-  (|- (lift_cond c) --> deriv_formula I D) ->
-  (|- (I /\ |DiffEqHP D (c, p, d)|) --> []I).
+Check List.Forall.
+Print DiscreteProgBranch.
+
+Lemma diffeq_rule : forall I p C c,
+  List.Forall
+    (fun dpb =>
+       match dpb with
+         | (c, _, asgs, _) =>
+           (|- (I /\ (lift_cond c)) 
+                 --> (subst_assign I asgs))
+       end) p ->
+  (|- (lift_cond c)
+        --> deriv_formula I C) ->
+  (|- (I /\ |(DiffEqHP C c p)**|) --> []I).
 Proof.
   intros I c p d D Hassign Hderiv.
   induction I; simpl in *; intros; auto.

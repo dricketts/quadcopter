@@ -4,6 +4,7 @@ Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.Reals.Ranalysis1.
 Require Import Coq.Reals.RIneq.
 Require Import String.
+Require Import Sumbool.
 
 (************************************************)
 (* The semantics of differential dynamic logic. *)
@@ -15,33 +16,49 @@ Fixpoint eval_term (t:Term) (st:state) : R :=
   match t with
   | VarT x => st x
   | RealT r => r
-  | PlusT t1 t2 => (eval_term t1 st) + (eval_term t2 st)
-  | MinusT t1 t2 => (eval_term t1 st) - (eval_term t2 st)
-  | MultT t1 t2 => (eval_term t1 st) * (eval_term t2 st)
+  | PlusT t1 t2 => (eval_term t1 st) +
+                   (eval_term t2 st)
+  | MinusT t1 t2 => (eval_term t1 st) -
+                    (eval_term t2 st)
+  | MultT t1 t2 => (eval_term t1 st) *
+                   (eval_term t2 st)
   end.
 
+Definition Req_dec_sig : forall (r1 r2:R),
+  {r1 = r2} + {r1 <> r2}.
+Admitted.
+
+Definition Rneq_dec_sig : forall (r1 r2:R),
+  {r1 <> r2} + {r1 = r2}.
+Admitted.
+
 (* Semantics of comparison operators *)
-Definition eval_comp (t1 t2:Term) (st:state) (op:CompOp) :
-  Prop :=
-  let (e1, e2) := (eval_term t1 st, eval_term t2 st) in
-  let op := match op with
-              | Gt => Rgt
-              | Ge => Rge
-              | Lt => Rlt
-              | Le => Rle
-              | Eq => eq
-              | Neq => (fun t1 t2 => t1 <> t2)
-            end in
-  op e1 e2.
+Definition eval_comp (t1 t2:Term) (st:state)
+           (op:CompOp) : bool :=
+  let (e1, e2) :=
+      (eval_term t1 st, eval_term t2 st) in
+  let dec : sigT
+              (fun op => forall r1 r2,
+                           {op r1 r2} + {~op r1 r2})
+      := match op with
+           | Gt => existT _ Rgt Rgt_dec
+           | Ge => existT _ Rge Rge_dec
+           | Lt => existT _ Rlt Rlt_dec
+           | Le => existT _ Rle Rle_dec
+           | Eq => existT _ eq Req_dec_sig
+         end in
+  proj1_sig (bool_of_sumbool ((projT2 dec) e1 e2)).
 
 (* Semantics of conditionals *)
-Fixpoint eval_cond (c:Cond) (st:state) : Prop :=
+Fixpoint eval_cond (c:Cond) (st:state) : bool :=
   match c with
-  | T => True
-  | F => False
+  | T => true
+  | F => false
   | CompC t1 t2 op => eval_comp t1 t2 st op
-  | AndC c1 c2 => eval_cond c1 st /\ eval_cond c2 st
-  | OrC c1 c2 => eval_cond c1 st \/ eval_cond c2 st
+  | AndC c1 c2 => andb (eval_cond c1 st)
+                       (eval_cond c2 st)
+  | OrC c1 c2 => orb (eval_cond c1 st)
+                     (eval_cond c2 st)
   end.
 
 (* Expresses the property the a differentiable formula
@@ -109,7 +126,24 @@ Definition add_nonnegreal (r1 r2:nonnegreal) :=
     (Rplus_le_le_0_compat _ _ (cond_nonneg r1)
                           (cond_nonneg r2)).
 
-Inductive DiscreteJump :
+Definition zero_nnreal :=
+  (mknonnegreal R0 (Rge_refl _)).
+
+Fixpoint DiscreteJump' (s:state) (p:DiscreteProg)
+  (t:time) : state * time :=
+  match p with
+    | nil => (s, zero_nnreal)
+    | cons (c, bc, a, ba) p' =>
+      if eval_cond c s
+      then (fold_right update_st s a,
+            add_nonnegreal bc (add_nonnegreal ba t))
+      else DiscreteJump' s p' (add_nonnegreal bc t)
+  end.
+
+Definition DiscreteJump (s:state) (p:DiscreteProg) :
+  state * time := DiscreteJump' s p zero_nnreal.
+
+(*Inductive DiscreteJump :
   DiscreteProg -> state -> state -> time -> Prop :=
 | P_Assign : forall p b s,
    DiscreteJump (C_Assign p b) s
@@ -124,7 +158,7 @@ Inductive DiscreteJump :
    DiscreteJump p2 s1 s2 b2 ->
    DiscreteJump (C_Ite c b p1 p2) s1 s2
                 (add_nonnegreal b2 b).
-
+*)
 Definition merge_fun (f1 f2 f3:time->state) b :=
   (forall r, R0 <= (nonneg r) <= (nonneg b) -> f3 r = f1 r) /\
   (forall r, R0 <= (nonneg r) ->
@@ -137,15 +171,19 @@ Inductive Behavior :
   HybridProg -> (time->state) -> time -> Prop :=
 (* Semantics of a discrete program running in
    parallel with a continuous one. *)
-| DiscreteB : forall fcp f cp p (b:nonnegreal),
-   DiscreteJump p (f R0) (f b) b ->
+| DiscreteB : forall fcp f cp c p (b:nonnegreal),
+   DiscreteJump (f zero_nnreal) p = (f b, b) ->
    (* fcp solves the system of differential eqns. *)
    is_solution fcp cp (nonneg b) ->
+   (* the condition holds along solution to diffeq*)
+   (forall r, (nonneg r) < (nonneg b) ->
+              eval_cond c (fcp r) = true) -> 
    (* f agrees with fcp in [0,b) *)
-   (forall r, R0 <= r < (nonneg b) -> f r = fcp r) ->
+   (forall r, (nonneg r) < (nonneg b) ->
+              f r = fcp r) ->
    (* the state doesn't change after b *)
 (*   (forall r, b < r -> f r = f b) ->*)
-   Behavior (DiffEqHP cp p) f b
+   Behavior (DiffEqHP cp c p) f b
 
 (* Semantics of continuous evolution. The system can
    transition continuously from state s1 to state s2
@@ -200,19 +238,27 @@ Inductive Behavior :
    to a given behavior. When we state correctness
    properties of programs, we will quantify over the
    behavior.  *)
-Fixpoint eval_formula (f:Formula) (beh:R->state) : Prop :=
+Fixpoint eval_formula (f:Formula) (beh:time->state)
+  : Prop :=
   match f with
   | TT => True
   | FF => False
-  | CompF t1 t2 op => eval_comp t1 t2 (beh R0) op
-  | AndF f1 f2 => eval_formula f1 beh /\ eval_formula f2 beh
-  | OrF f1 f2 => eval_formula f1 beh \/ eval_formula f2 beh
-  | Imp f1 f2 => eval_formula f1 beh -> eval_formula f2 beh
+  | CompF t1 t2 op =>
+    eval_comp t1 t2 (beh zero_nnreal) op = true
+  | AndF f1 f2 =>
+    eval_formula f1 beh /\ eval_formula f2 beh
+  | OrF f1 f2 =>
+    eval_formula f1 beh \/ eval_formula f2 beh
+  | Imp f1 f2 =>
+    eval_formula f1 beh -> eval_formula f2 beh
   | Prog p => exists b, Behavior p beh b
-  | Always f' => forall t, t >= 0 ->
-                           eval_formula f' (fun r => beh (r+t))
-  | Eventually f' => exists t, t >= 0 /\
-                               eval_formula f' (fun r => beh (r+t))
+  | Always f' =>
+    forall t,
+      eval_formula f' (fun r => beh
+            (add_nonnegreal r t))
+  | Eventually f' =>
+    exists t, eval_formula f' (fun r => beh
+            (add_nonnegreal r t))
   end.
 
 (* Adding some notation for evaluation of formulas. *)
