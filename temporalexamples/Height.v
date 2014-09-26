@@ -10,9 +10,9 @@ Section HeightCtrl.
   (* The delays for evaluating the condition,
      running the first assignment, and
      running the second assignment. *)
-  Variable d1 : R.
-  Variable d2 : R.
-  Variable d3 : R.
+  Variable d1 : ptime.
+  Variable d2 : ptime.
+  Variable d3 : ptime.
 
   (* The setpoint of the controller. *)
   Variable c : R.
@@ -20,8 +20,8 @@ Section HeightCtrl.
   (* The controller. *)
   Definition ctrl :=
     IFF `"h" < #c @ d1
-    THEN "v" ::= #1 @ d2
-    ELSE "v" ::= --#1 @ d2.
+    THEN ["v" ::= #1] @ d2
+    ELSE ["v" ::= --#1] @ d2.
 
   (* The continuous dynamics. *)
   Definition world :=
@@ -31,11 +31,7 @@ Section HeightCtrl.
      parallel with the continuous dynamics.
      This just repeats some number of times. *)
   Definition sys :=
-    (ctrl || world)**.
-
-  Lemma safety_helper :
-    |- |sys| --> []`"v"*(#d1+#d2)+`"h" > #0.
-  Admitted.
+    ([[world & T]] || ctrl)**.
 
   (* The safety property. Any behavior produced by
      the system has the invariant h > 0. *)
