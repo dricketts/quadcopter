@@ -158,7 +158,7 @@ Definition add_nonnegreal (r1 r2:nonnegreal) :=
                           (cond_nonneg r2)).
 
 Definition T0 :=
-  (mknonnegreal R0 (Rge_refl _)).
+  (mknonnegreal R0 (Rle_refl _)).
 
 Definition convert_ptime (t:ptime) : time.
 Admitted.
@@ -259,8 +259,8 @@ Inductive Behavior :
    Behavior (Branch p1 p2) f b*)
 
 (* Repetition semantics with 0 repetitions. *)
-| Rep0 : forall s p,
-   Behavior (Rep p) (fun _ => s) (mknonnegreal R0 (Rle_refl _))
+| Rep0 : forall beh p,
+   Behavior (Rep p) beh (mknonnegreal R0 (Rle_refl _))
 
 (* Repetition semantics with at least 1 repetition. *)
 | RepN : forall f1 b1 fN bN f p,
@@ -288,7 +288,9 @@ Fixpoint eval_formula (f:Formula) (beh:time->state)
     eval_formula f1 beh \/ eval_formula f2 beh
   | Imp f1 f2 =>
     eval_formula f1 beh -> eval_formula f2 beh
-  | Prog p => exists b, Behavior p beh b
+  | Prog p => exists b, Behavior p beh b /\
+                        forall t, b <= nonneg t ->
+                                  beh b = beh t
   | Always f' =>
     forall t,
       eval_formula f' (fun r => beh

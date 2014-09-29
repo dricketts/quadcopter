@@ -25,7 +25,7 @@ Fixpoint is_st_formula (F:Formula) : bool :=
 Lemma st_formula : forall F beh1 beh2,
   is_st_formula F = true ->
   eval_formula F beh1 ->
-  beh1 zero_nnreal = beh2 zero_nnreal ->
+  beh1 T0 = beh2 T0 ->
   eval_formula F beh2.
 Proof.
   induction F; simpl in *; intros; auto;
@@ -48,13 +48,16 @@ Ltac solve_ineq :=
            | [ |- _ ] => solve [apply RIneq.Rle_refl]
          end.
 
-(*Lemma rep_rule : forall p I,
+Lemma rep_rule : forall p I,
   is_st_formula I = true ->
   (|- (I /\ |p|) --> []I) ->
   (|- (I /\ |p**|) --> []I).
 Proof.
-  simpl. intros. destruct H1. destruct H3.
-  dependent induction H3; auto.
+Admitted.
+(*  simpl. intros. destruct H1. destruct H2.
+  destruct H2.
+  dependent induction H2.
+  - rewrite <- H3.
   clear IHBehavior1. unfold merge_fun in *.
   assert (eval_formula I f1).
   eapply st_formula. auto. apply H1.
@@ -525,7 +528,7 @@ Lemma eval_comp_ind : forall f r diffeqs is_derivable
   Rle R0 r ->
   solves_diffeqs f diffeqs r is_derivable ->
   vars_unchanged f diffeqs r is_derivable ->
-  eval_comp t1 t2 (f zero_nnreal) op = true ->
+  eval_comp t1 t2 (f T0) op = true ->
   (forall st, eval_comp (deriv_term t1 diffeqs)
                         (deriv_term t2 diffeqs)
                         st
@@ -625,6 +628,8 @@ Lemma diffeq_rule : forall I p C c,
         --> deriv_formula I C) ->
   (|- (I /\ |(DiffEqHP C c p)**|) --> []I).
 Proof.
+admit.
+(*
   intros I c p d D Hassign Hderiv.
   induction I; simpl in *; intros; auto.
   - tauto.
@@ -635,4 +640,5 @@ Proof.
     admit.
   - split.
     + apply IHI1; auto. intros. apply Hassign; auto.
-      intuition.
+      intuition.*)
+Qed.
