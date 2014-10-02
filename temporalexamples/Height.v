@@ -37,8 +37,43 @@ Section HeightCtrl.
 
   Lemma add_nnreal_0_r : forall r,
     add_nonnegreal T0 r = r.
-  Admitted.    
+  Admitted.
+(*
+  Definition ind_inv : Formula :=
+    (`"h"-#c)^^2 <= (#d1+#d2)^^2.
 
+  (* The safety property. Any behavior produced by
+     the system has the invariant h > 0. *)
+  (* We'll need to add some initial conditions here.
+     It remains to be seen what those are. *)
+  Lemma safety :
+    |- (ind_inv /\ |sys|)
+         --> []ind_inv.
+    Proof.
+    apply rep_rule.
+    - reflexivity.
+    - simpl. intros.
+      destruct H as [Hinit [b [Hbeh Hrest] ] ].
+      inversion_clear Hbeh.
+      rewrite add_nnreal_0_r.
+      destruct (Rlt_dec t b).
+      + rewrite H2; auto.
+        unfold is_solution in *.
+        destruct H0 as [is_derivable [Hsol Hunch] ].
+        eapply eval_comp_ind; eauto.
+        * destruct b; auto.
+        * rewrite <- H2; auto.
+          apply (Rle_lt_trans T0 t b); auto.
+          destruct t; auto.
+        * simpl. unfold eval_comp. simpl. intros.
+          match goal with
+            |- context [Rle_dec ?e1 ?e2] =>
+               remember e1; remember e2
+          end.
+          field_simplify in Heqr0.
+          field_simplify in Heqr1.
+
+*)
   Definition ind_inv : Formula :=
     `"h" >= --`"v"*(#d1+#d2-`"t").
 
@@ -77,10 +112,14 @@ Section HeightCtrl.
           { destruct t; auto. }
           { apply Rlt_le; auto. }
       + unfold DiscreteJump in *. simpl in H.
+        rewrite <- Hrest.
         match goal with
           | [ _ : context [if ?e then _ else _]
               |- _ ] => destruct e eqn:Heq
         end.
+        * inversion H.
+          Arguments String.string_dec !s1 !s2.
+          unfold eval_comp, update_st. simpl.
         
         
     simpl. intros.
