@@ -116,10 +116,42 @@ Proof.
 Qed.
 
   Lemma discr_ind : forall I p,
-    is_st_formula I = true ->
-    (|- (I /\ |p|) --> []I) ->
-    (|- (I /\ |p**|) --> []I).
-  Admitted.
+   (* is_st_formula I = true ->*)
+    (|- I /\ (|p| --> []I)) ->
+    (|- (*I /\ |p**| -->*) []I).
+  Proof.
+    simpl. intros.
+    destruct t. destruct cond_nonneg.
+    - admit.
+    - Show Proof. firstorder. Show Proof.
+
+
+ firstorder.
+Show Proof.
+Variable tr : trace string.
+Variable p : HybridProg string.
+Variable t : time.
+Variable I : Formula string.
+Eval simpl in eval_formula string (I /\ (|p | --> []I))
+                      (fun r : nonnegreal => tr (add_time r t)).
+Print and_ind.
+Definition test :=
+
+(fun
+               H5 : eval_formula string (I /\ (|p | --> []I))
+                      (fun r : nonnegreal => tr (add_time r t)) =>
+             and_ind
+               (fun
+                  (H6 : eval_formula string I
+                          (fun r : nonnegreal => tr (add_time r t)))
+                  (_ : eval_formula string (|p | --> []I)
+                         (fun r : nonnegreal => tr (add_time r t))) => H6) H5).
+    simpl. intros.
+    split.
+    - apply H.
+    - intros.
+      firstorder.
+      Show Proof.
 
   Lemma seq_rule : forall I p1 p2,
     (|- (I /\ |p1|) --> []I) ->
