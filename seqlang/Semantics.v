@@ -10,19 +10,6 @@ Require Import String.
 Section Semantics.
   Open Scope R_scope.
 
-  Variable Var : Type.
-  Definition Term := Term Var.
-  Definition HybridProg := HybridProg Var.
-  Definition Formula := Formula Var.
-  Definition state := state Var.
-  Definition Cond := Cond Var.
-  Definition Skip := Skip Var.
-  Definition Assign := Assign Var.
-  Definition Continuous := Continuous Var.
-  Definition Seq := Seq Var.
-  Definition Ite := Ite Var.
-  Definition Rep := Rep Var.
-
   (* Semantics of real valued terms *)
   Fixpoint eval_term (t:Term) (st:state) : R :=
     match t with
@@ -60,10 +47,10 @@ Section Semantics.
    is a solution to a list of differential equations
    in the range 0 to r. *)
   Definition solves_diffeqs (f : R -> state)
-             (diffeqs : list (Var * Term)) (r : R)
+             (diffeqs : list DiffEq) (r : R)
              (is_derivable : forall x, derivable (fun t => f t x)) :=
     forall x d,
-      List.In (x, d) diffeqs ->
+      List.In (DiffEqC x d) diffeqs ->
       forall z, R0 <= z <= r ->
                 derive (fun t => f t x) (is_derivable x) z =
                 eval_term d (f z).
@@ -72,10 +59,10 @@ Section Semantics.
    does not change any variables without differential
    equations in diffeqs. *)
   Definition vars_unchanged (f : R -> state)
-             (diffeqs : list (Var * Term)) (r : R)
+             (diffeqs : list DiffEq) (r : R)
              (is_derivable : forall x, derivable (fun t => f t x)) :=
     forall x,
-      ~(exists d, List.In (x, d) diffeqs) ->
+      ~(exists d, List.In (DiffEqC x d) diffeqs) ->
       forall z, R0 <= z <= r ->
                 derive (fun t => f t x) (is_derivable x) z = R0.
   (* Is this equivalent to the following? I think not. *)
@@ -84,7 +71,7 @@ Section Semantics.
   (* Prop expressing that f is a solution to diffeqs in
    [0,r]. *)
   Definition is_solution (f : R -> state)
-             (diffeqs : list (Var * Term)) (r : R) :=
+             (diffeqs : list DiffEq) (r : R) :=
     exists is_derivable,
       (* (2) f is a solution to diffeqs *)
       solves_diffeqs f diffeqs r is_derivable /\
@@ -155,8 +142,8 @@ Section Semantics.
                   Behavior (Ite c p1 p2) st tr
 
   (* Repetition semantics with 0 repetitions. *)
-  | Rep0 : forall p s l,
-             Behavior (Rep p) s l
+  | Rep0 : forall p s,
+             Behavior (Rep p) s (Finish s)
 
   (* Repetition semantics with at least 1 repetition. *)
   | RepN : forall p s tr tr',
@@ -167,8 +154,14 @@ Section Semantics.
   (** None -> x < y
    ** Some t -> x = y + t
    **)
-  Axiom time_left : forall x y : time, option time.
-  Axiom time_0 : time.
+  Definition time_left (x y : time) : option time :=
+    let t := x - y in
+    match Rlt_dec R0 t with
+      | left LT => Some (mknonnegreal t (Rlt_le _ _ LT))
+      | right _ => None
+    end.
+  Definition time_0 : time :=
+    mknonnegreal R0 (Rle_refl _).
   Axiom add_time : time -> time -> time.
 
   Definition trace := time -> state.
@@ -198,8 +191,8 @@ Section Semantics.
       | AndF f1 f2 => eval_formula f1 tr /\ eval_formula f2 tr
       | OrF f1 f2 => eval_formula f1 tr \/ eval_formula f2 tr
       | Imp f1 f2 => eval_formula f1 tr -> eval_formula f2 tr
-      | Prog p => exists e, Behavior p (tr time_0) e /\
-                            toFunction e = tr
+      | Prog p => exists e s, Behavior p s e /\
+                              toFunction e = tr
       | Always f' =>
         forall t, eval_formula f' (fun r => tr (add_time r t))
       | Eventually f' =>
@@ -211,5 +204,5 @@ Section Semantics.
 End Semantics.
 
 (* Adding some notation for evaluation of formulas. *)
-Notation "|- f" := (forall tr, eval_formula string f tr)
+Notation "|- f" := (forall tr, eval_formula f tr)
                      (at level 100) : HP_scope.

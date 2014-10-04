@@ -2,6 +2,7 @@ Require Import SeqLang.Syntax.
 Require Import SeqLang.Semantics.
 Require Import Rbase.
 Require Import String.
+Require Import Equality.
 
 Open Scope HP_scope.
 Open Scope string_scope.
@@ -15,17 +16,17 @@ Section HeightCtrl.
 
   (* Reading in the current height. *)
   Definition read :=
-    "H" ::= `"h"; "T" ::= `"t".
+    "H" ::= "h"; "T" ::= "t".
 
   (* The controller. *)
   Definition ctrl :=
-    IFF `"H" < #0
-    THEN "v" ::= #1
-    ELSE "v" ::= --#1.
+    IFF "H" < 0
+    THEN "v" ::= 1
+    ELSE "v" ::= --1.
 
   (* The continuous dynamics. *)
   Definition world :=
-    ["h"' ::= `"v", "t"' ::= #1].
+    ["h"' ::= "v", "t"' ::= 1].
 
   (* The entire system. The controller reads in the
      current height, runs the continuous program
@@ -33,19 +34,19 @@ Section HeightCtrl.
   Definition sys :=
     (read; world @ d; ctrl)**.
 
-  Definition init : Formula string :=
-    (--#1 = `"v" \/ `"v" = #1) /\
-    --#d <=`"h" /\ `"h" <= #d /\
-    `"t" = #0 /\ `"T" = #0.
+  Definition init : Formula :=
+    (--1 = "v" \/ "v" = 1) /\
+    --d <= "h" /\ "h" <= d /\
+    "t" = 0 /\ "T" = 0.
 
-  Definition safe : Formula string :=
-    --#2*#d <=`"h" /\ `"h" <= #2*#d.
+  Definition safe : Formula :=
+    --2*d <="h" /\ "h" <= 2*d.
 
-  Definition ind_inv : Formula string :=
-    (`"v"=#1 --> #d-(`"t"-`"T") <= #2*#d-`"h") /\
-    (`"v"=--#1 --> #d-(`"t"-`"T") <= #2*#d+`"h") /\
-    `"t"-`"T" <= #d /\
-    (--#1 = `"v" \/ `"v" = #1).
+  Definition ind_inv : Formula :=
+    ("v"=1 --> d-("t"-"T") <= 2*d-"h") /\
+    ("v"=--1 --> d-("t"-"T") <= 2*d+"h") /\
+    "t"-"T" <= d /\
+    (--1 = "v" \/ "v" = 1).
 
   Lemma weaken_hyp : forall F1 F1' F2,
     (|- F1 --> F1') ->
@@ -53,11 +54,11 @@ Section HeightCtrl.
     (|- F1 --> F2).
   Proof. firstorder. Qed.
 
-  Lemma strengthen_concl : forall F1 F2 F2',
+(*  Lemma strengthen_concl : forall F1 F2 F2',
     (|- F2' --> F2) ->
     (|- F1 --> F2') ->
     (|- F1 --> F2).
-  Proof. firstorder. Qed.
+  Proof. firstorder. Qed.*)
 
   Lemma always_imp : forall F1 F2,
     (|- F1 --> F2) ->
@@ -84,7 +85,7 @@ Section HeightCtrl.
     |- F --> F.
   Proof. firstorder. Qed.
 
-Fixpoint is_st_formula {Var} (F:Formula Var) : bool :=
+Fixpoint is_st_formula (F:Formula) : bool :=
   match F with
     | CompF _ _ _ => true
     | AndF F1 F2 => andb (is_st_formula F1)
@@ -96,12 +97,11 @@ Fixpoint is_st_formula {Var} (F:Formula Var) : bool :=
     | _ => false
   end.
 
-Lemma st_formula : forall Var (F:Formula Var)
-                          beh1 beh2,
+Lemma st_formula : forall F beh1 beh2,
   is_st_formula F = true ->
-  eval_formula _ F beh1 ->
+  eval_formula F beh1 ->
   beh1 time_0 = beh2 time_0 ->
-  eval_formula _ F beh2.
+  eval_formula F beh2.
 Proof.
   induction F; simpl in *; intros; auto;
   try discriminate.
@@ -115,45 +115,39 @@ Proof.
   - apply Bool.andb_true_iff in H. firstorder.
 Qed.
 
-  Lemma discr_ind : forall I p,
-   (* is_st_formula I = true ->*)
-    (|- I /\ (|p| --> []I)) ->
-    (|- (*I /\ |p**| -->*) []I).
+Close Scope HP_scope.
+Require Import FunctionalExtensionality.      
+  Lemma event_app_tr : forall e1 e2 tr,
+    toFunction (Event_app e1 e2) = tr ->
+    exists (tr1 tr2:trace) (b:time),
+      tr = fun t:time => if Rlt_dec t b
+                         then tr1 t
+                         else tr2 t.
   Proof.
-    simpl. intros.
-    destruct t. destruct cond_nonneg.
-    - admit.
-    - Show Proof. firstorder. Show Proof.
+    induction e1; intros e2 tr Hfun; simpl in *.
+    - exists tr. exists tr. exists time_0.
+      apply functional_extensionality. intro t.
+      destruct (Rlt_dec t time_0); reflexivity.
+    - exists (toFunction e1).
+      specialize (IHe1 
+      exists (toFunction e2) 
 
+  Lemma discr_ind : forall I p,
+    is_st_formula I = true ->
+    (|- (I /\ |p|) --> []I) ->
+    (|- (I /\ |p**|) --> []I).
+  Proof.
+    simpl. intros I p Hst HI tr H t.
+    destruct H as [Heval [e [s [Hbeh Hfun] ] ] ].
+    generalize dependent tr.
+    dependent induction Hbeh; intros.
+    - simpl in *. rewrite <- Hfun.
+      rewrite Hfun. auto.
+    - 
 
- firstorder.
-Show Proof.
-Variable tr : trace string.
-Variable p : HybridProg string.
-Variable t : time.
-Variable I : Formula string.
-Eval simpl in eval_formula string (I /\ (|p | --> []I))
-                      (fun r : nonnegreal => tr (add_time r t)).
-Print and_ind.
-Definition test :=
-
-(fun
-               H5 : eval_formula string (I /\ (|p | --> []I))
-                      (fun r : nonnegreal => tr (add_time r t)) =>
-             and_ind
-               (fun
-                  (H6 : eval_formula string I
-                          (fun r : nonnegreal => tr (add_time r t)))
-                  (_ : eval_formula string (|p | --> []I)
-                         (fun r : nonnegreal => tr (add_time r t))) => H6) H5).
-    simpl. intros.
-    split.
-    - apply H.
-    - intros.
-      firstorder.
-      Show Proof.
 
   Lemma seq_rule : forall I p1 p2,
+    is_st_formula I = true ->
     (|- (I /\ |p1|) --> []I) ->
     (|- (I /\ |p2|) --> []I) ->
     (|- (I /\ |p1; p2|) --> []I).

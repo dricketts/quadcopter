@@ -7,7 +7,7 @@ Require Import Coq.Reals.RIneq.
 (* The syntax of differential dynamic logic.    *)
 (************************************************)
 Section Syntax.
-  Variable Var : Type.
+  Definition Var := string.
 
   (* All variables are real-valued. *)
   Definition state := Var -> R.
@@ -35,7 +35,8 @@ Section Syntax.
   | OrC : Cond -> Cond -> Cond
   | NegC : Cond -> Cond.
 
-  Definition DiffEq := (Var * Term)%type.
+  Inductive DiffEq :=
+  | DiffEqC : Var -> Term -> DiffEq.
 
   (* Programs containing discrete and continuous parts. *)
   Inductive HybridProg :=
@@ -87,81 +88,90 @@ End Syntax.
 Delimit Scope HP_scope with HP.
 
 (*Term notation *)
-Notation " # a " := (RealT string a) (at level 0) : HP_scope.
-Notation " ` a " := (VarT string a) (at level 0) : HP_scope.
-Definition T0 := RealT string 0.
-Definition T1 := RealT string 1.
-Infix "+" := (PlusT string) : HP_scope.
-Infix "-" := (MinusT string) : HP_scope.
-Notation "-- x" := (MinusT string (RealT string R0) x)
+Definition NatC (n:nat) : R :=
+  INR n.
+Coercion NatC : nat >-> R.
+Definition ConstC (c:R) : Term :=
+  RealT c.
+Coercion ConstC : R >-> Term.
+(*Notation " # a " := (RealT string a) (at level 0) : HP_scope.*)
+Definition VarC (x:string) : Term :=
+  VarT x.
+Coercion VarC : string >-> Term.
+(*Notation " ` a " := (VarT string a) (at level 0) : HP_scope.*)
+(*Definition T0 := RealT string 0.
+Definition T1 := RealT string 1.*)
+Infix "+" := (PlusT) : HP_scope.
+Infix "-" := (MinusT) : HP_scope.
+Notation "-- x" := (MinusT (RealT R0) x)
                      (at level 0) : HP_scope.
-Infix "*" := (MultT string) : HP_scope.
-Fixpoint pow Var (t : Term Var) (n : nat) :=
+Infix "*" := (MultT) : HP_scope.
+Fixpoint pow (t : Term) (n : nat) :=
   match n with
-  | O => RealT Var 1
-  | S n => MultT Var t (pow Var t n)
+  | O => RealT 1
+  | S n => MultT t (pow t n)
   end.
-Notation "t ^^ n" := (pow string t n) (at level 10) : HP_scope.
+Notation "t ^^ n" := (pow t n) (at level 10) : HP_scope.
 
 (* This type class allows us to define a single notation
    for comparison operators and logical connectives in
    the context of a formula and conditionals. *)
-Class Comparison (V : Type) (T : Type -> Type) : Type :=
-{ Comp : Term V -> Term V -> CompOp -> T V }.
+Class Comparison (T : Type) : Type :=
+{ Comp : Term -> Term -> CompOp -> T }.
 
-Definition Gt' {V T I} x y := @Comp V T I x y Gt.
+Definition Gt' {T I} x y := @Comp T I x y Gt.
 Infix ">" := (Gt') : HP_scope.
-Definition Eq' {V T I} x y := @Comp V T I x y Eq.
+Definition Eq' {T I} x y := @Comp T I x y Eq.
 Infix "=" := (Eq') : HP_scope.
-Definition Ge' {V T I} x y := @Comp V T I x y Ge.
+Definition Ge' {T I} x y := @Comp T I x y Ge.
 Infix ">=" := (Ge') : HP_scope.
-Definition Le' {V T I} x y := @Comp V T I x y Le.
+Definition Le' {T I} x y := @Comp T I x y Le.
 Infix "<=" := (Le') : HP_scope.
-Definition Lt' {V T I} x y := @Comp V T I x y Lt.
+Definition Lt' {T I} x y := @Comp T I x y Lt.
 Infix "<" := (Lt') : HP_scope.
 
-Class PropLogic (V : Type) (T : Type -> Type) : Type :=
-{ And : T V -> T V -> T V;
-  Or : T V -> T V -> T V }.
+Class PropLogic (T : Type) : Type :=
+{ And : T -> T -> T;
+  Or : T -> T -> T }.
 
 Infix "/\" := (And) : HP_scope.
 Infix "\/" := (Or) : HP_scope.
 
-Instance FormulaComparison Var : Comparison Var Formula :=
-{ Comp := CompF Var }.
+Instance FormulaComparison : Comparison Formula :=
+{ Comp := CompF }.
 
-Instance CondComparison Var : Comparison Var Cond :=
-{ Comp := CompC Var }.
+Instance CondComparison : Comparison Cond :=
+{ Comp := CompC }.
 
-Instance FormulaPropLogic Var : PropLogic Var Formula :=
-{ And := AndF Var;
-  Or := OrF Var }.
+Instance FormulaPropLogic : PropLogic Formula :=
+{ And := AndF;
+  Or := OrF }.
 
-Instance CondPropLogic Var : PropLogic Var Cond :=
-{ And := AndC Var;
-  Or := OrC Var }.
+Instance CondPropLogic : PropLogic Cond :=
+{ And := AndC;
+  Or := OrC }.
 
 (* HybridProg notation *)
-Notation "x ::= t" := (Assign string x t)
+Notation "x ::= t" := (Assign x t)
                         (at level 60) : HP_scope.
-Notation "x ' ::= t" := (x, t) (at level 60) : HP_scope.
+Notation "x ' ::= t" := (DiffEqC x t) (at level 60) : HP_scope.
 Notation "[ x1 , .. , xn ]" := (cons x1 .. (cons xn nil) .. )
     (at level 70) : HP_scope.
-Notation "diffeqs @ b" := (Continuous string diffeqs b)
+Notation "diffeqs @ b" := (Continuous diffeqs b)
                             (at level 75) : HP_scope.
-Notation "p1 ; p2" := (Seq string p1 p2)
+Notation "p1 ; p2" := (Seq p1 p2)
   (at level 80, right associativity) : HP_scope.
 Notation "'IFF' c 'THEN' p1 'ELSE' p2" :=
-  (Ite string c p1 p2) (at level 90) : HP_scope.
-Notation "p **" := (Rep string p)
+  (Ite c p1 p2) (at level 90) : HP_scope.
+Notation "p **" := (Rep p)
                      (at level 90) : HP_scope.
 
 (* Formula notation *)
-Notation "f1 --> f2" := (Imp string f1 f2)
+Notation "f1 --> f2" := (Imp f1 f2)
                           (at level 97) : HP_scope.
-Notation "| p |" := (Prog string p)
+Notation "| p |" := (Prog p)
                       (at level 95) : HP_scope.
-Notation "[] f" := (Always string f)
+Notation "[] f" := (Always f)
                      (at level 95) : HP_scope.
-Notation "<> f" := (Eventually string f)
+Notation "<> f" := (Eventually f)
                      (at level 95) : HP_scope.
