@@ -115,23 +115,83 @@ Proof.
   - apply Bool.andb_true_iff in H. firstorder.
 Qed.
 
-Close Scope HP_scope.
-Require Import FunctionalExtensionality.      
-  Lemma event_app_tr : forall e1 e2 tr,
-    toFunction (Event_app e1 e2) = tr ->
-    exists (tr1 tr2:trace) (b:time),
-      tr = fun t:time => if Rlt_dec t b
-                         then tr1 t
-                         else tr2 t.
-  Proof.
-    induction e1; intros e2 tr Hfun; simpl in *.
-    - exists tr. exists tr. exists time_0.
-      apply functional_extensionality. intro t.
-      destruct (Rlt_dec t time_0); reflexivity.
-    - exists (toFunction e1).
-      specialize (IHe1 
-      exists (toFunction e2) 
+Lemma bad :
+  |- ("x" = 0 /\ |"x" ::= 1|) --> (2 = 0).
+Proof.
+  simpl. intros. destruct H as [Hinit [e [s [Hbeh] ] ] ].
+  inversion Hbeh.
+  inversion H4.
+  subst e. simpl in *.
+  subst tr.
+  unfold eval_comp in *. simpl in *.
+  rewrite H5 in Hinit. contradict Hinit.
+  eapply F_1_neq_0.
+  apply Rfield.
+Qed.
 
+Lemma assign_rule : forall x t I,
+  is_st_formula I = true ->
+  (|- (
+  (|- (I /\ |x ::= t|) --> []I).
+
+Lemma Rle_add_time1 : forall (t1 t2:time),
+  (t1 <= add_time t1 t2)%R.
+Admitted.
+
+Fixpoint max_time (e:Event) : time :=
+  match e with
+    | Finish _ => time_0
+    | Evolve f t e' => max_time e'
+  end.
+
+Require Import FunctionalExtensionality.      
+  Lemma event_app_tr : forall e1 e2,
+      toFunction (Event_app e1 e2) =
+      fun t:time =>
+        match time_left t (max_time e1) with
+          | Some rem => toFunction e2 rem
+          | None => toFunction e1 t
+        end.
+  Proof.
+    induction e1; intros e2; simpl in *.
+    - unfold time_left.
+      apply functional_extensionality.
+      intro t. destruct (Rlt_dec t time_0).
+      + destruct t. unfold time_0. simpl in *.
+        contradict r. apply Rle_not_lt; auto.
+      + simpl. 
+    - exists (toFunction e2). exists (toFunction e2).
+      exists time_0. apply functional_extensionality. intro t.
+      destruct (Rlt_dec t time_0); reflexivity.
+    - destruct (IHe1 e2) as [tr1 [tr2 [b Heq] ] ].
+      exists (fun r:time =>
+                match time_left r t with
+                  | Some rem => tr1 rem
+                  | None => s r
+                end).
+      exists (fun r:time =>
+                match time_left r t with
+                  | Some rem => tr2 rem
+                  | None => s r
+                end).
+      rewrite Heq.
+      exists (add_time t b).
+      apply functional_extensionality.
+      intro x. unfold time_left. simpl.
+      destruct (Rlt_dec x t).
+      + destruct (Rlt_dec x (t + b)); auto.
+      + simpl. destruct (Rlt_dec (x - t) b);
+        destruct (Rlt_dec x (t + b)); auto.
+        apply Rplus_lt_le_compat with (r3:=t) (r4:=t) in r.
+        rewrite Rplus_comm in r. rewrite Rplus_minus in r.
+        rewrite Rplus_comm in r. intuition.
+        apply Rle_refl.
+        contradict n0.
+        apply Rlt_minus in r. apply Rminus_lt.
+        admit.
+  Qed.
+
+Open Scope HP_scope.
   Lemma discr_ind : forall I p,
     is_st_formula I = true ->
     (|- (I /\ |p|) --> []I) ->
@@ -143,7 +203,7 @@ Require Import FunctionalExtensionality.
     dependent induction Hbeh; intros.
     - simpl in *. rewrite <- Hfun.
       rewrite Hfun. auto.
-    - 
+    - subst tr0. pose proof (event_app_tr.
 
 
   Lemma seq_rule : forall I p1 p2,

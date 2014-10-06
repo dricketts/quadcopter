@@ -154,15 +154,21 @@ Section Semantics.
   (** None -> x < y
    ** Some t -> x = y + t
    **)
-  Definition time_left (x y : time) : option time :=
-    let t := x - y in
-    match Rlt_dec R0 t with
-      | left LT => Some (mknonnegreal t (Rlt_le _ _ LT))
-      | right _ => None
-    end.
+  Definition time_left (x y : time) : option time.
+    refine (
+        match Rlt_dec x y with
+          | left _ => None
+          | right LT => Some (mknonnegreal (x-y) _)
+        end).
+    apply Rnot_lt_le. intro.
+    apply Rminus_lt in H. auto.
+  Defined.
   Definition time_0 : time :=
     mknonnegreal R0 (Rle_refl _).
-  Axiom add_time : time -> time -> time.
+  Definition add_time (t1 t2:time) : time :=
+    mknonnegreal (nonneg t1 + nonneg t2)
+    (Rplus_le_le_0_compat _ _ (cond_nonneg t1)
+                          (cond_nonneg t2)).
 
   Definition trace := time -> state.
 
