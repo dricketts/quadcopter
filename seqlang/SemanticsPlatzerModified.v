@@ -87,15 +87,38 @@ Section Semantics.
     (forall y, x <> y -> s x = s' x).
 
   Close Scope HP_scope.
-
+(*
   Record nelist (A : Type) : Type :=
     mkNelist { nel : list A; cond_nel : nel <> nil}.
-  
-  Arguments mkNelist [A] _ _.
-  Arguments nel [A] _.
-  Arguments cond_nel [A] _ _.
+ *)
 
+  Require Import Vector.
 
+  Print Vector.t.
+
+  Inductive nevec (A : Type) : nat -> Type :=
+  | neone : A -> nevec A 1%nat
+  | necons : A -> forall n : nat,
+                    nevec A n -> nevec A (S n).
+
+  Arguments neone [A] _.
+  Arguments necons [A] _ _ _.
+
+  Definition nefirst {A : Type} {n : nat}
+             (nl : nevec A n) : A :=
+    match nl with
+      | neone a => a
+      | necons a _ _ => a
+    end.
+
+  Fixpoint nelast {A : Type} {n : nat}
+           (nl : nevec A n) : A :=
+    match nl with
+      | neone a => a
+      | necons _ _ nl' => nelast nl'
+    end.
+
+  (*
   Definition nefirst {A : Type} (nl : nelist A) : A.
     inversion nl as [l nemp].
     destruct l as [| h t].
@@ -110,32 +133,13 @@ Section Semantics.
     - destruct t as [| h' t'].
       + exact h. 
       + exact (List.last (h' :: t') h').
-  (* this might become awful to reason about *)
-  Defined.
+   *)
 
   (* function from time to states, and time bound *)
-  Definition trace := ((time -> nelist state) * time)%type.
+  Print sigT.
+  Definition trace :=
+    ((time -> {n : nat & nevec state n}) * time)%type.
 
-  (*
-  Definition partial := ((time->state) * time)%type.
-
-  Inductive trace :=
-  | one : partial -> trace
-  | next : partial -> trace -> trace.
-   *)
-  (*
-  Fixpoint last (tr:trace) :=
-    match tr with
-      | one f => f
-      | Next _ tr' => last tr'
-    end.
-
-  Definition start (tr:trace) :=
-    match tr with
-      | one f => f
-      | next f _ => f
-    end.
-   *)
 
   (* May introduce a discontinuity *)
   Definition tr_append (tr1 tr2:trace) : trace.
@@ -162,21 +166,36 @@ Section Semantics.
   Definition time_0 : time :=
     mknonnegreal R0 (Rle_refl _).
 
+  (*
   Definition st_fun (s:state) : trace.
     refine (fun _ => (mkNelist (s :: nil) _), time_0).
     intro H; inversion H.
   Defined.
+   *)
 
+  Check existT.
+
+  Definition st_fun (s : state) : trace :=
+    ((fun _ => existT _ _ (neone s)), time_0).
+
+  (*
   Definition Now (tr:trace) :=
     nefirst ((fst tr) time_0).
+   *)
+  Axiom Now : trace -> state. 
 
+  (*
   Definition connected (tr1 tr2:trace) :=
     let (f1, t1) := tr1 in
     let (f2, _) := tr2 in
     nelast (f1 t1) = nefirst (f2 time_0).
+   *)
+
+  Axiom connected : trace -> trace -> Prop.
 
   Local Open Scope list_scope.
 
+  (*
   (* Helper functions for inductive behavior defn *)
   Definition discHelp1 (s1 : state) : trace.
     refine (fun _ => mkNelist (s1 :: nil) _, time_0).
@@ -192,14 +211,22 @@ Section Semantics.
     refine (fun t => mkNelist (f t :: nil) _, b).
     intro H; inversion H.
   Defined.
+   *)
 
+  Check necons.
+  Print trace.
+  
   Inductive Behavior :
     HybridProg -> trace -> Prop :=
   | C_Skip : forall s,
-               Behavior Skip (discHelp2 s s)
+               Behavior Skip
+               (fun _ => existT _ _
+                (necons s _ (neone s)), time_0)
   | C_Assign : forall x t st st',
                  updated_st st x t st' ->
-                 Behavior (Assign x t) (discHelp2 st st')
+                 Behavior (Assign x t)
+                 (fun _ => existT _ _
+                  (necons st _ (neone st')), time_0)
   (* Semantics of continuous evolution. The system can
    transition continuously from state s1 to state s2
    according to differential equations diffeqs if
@@ -214,7 +241,9 @@ Section Semantics.
   | C_Cont : forall cp f (b r:time),
                r <= b ->
                is_solution f cp r ->
-               Behavior (Continuous cp b) (contHelp f r)
+               Behavior (Continuous cp b)
+               (fun (t : time) => existT _ _
+                 (neone (f t)), b)
 
   (* Semantics of sequencing. Nothing special here. *)
   | C_Seq : forall p1 p2 tr1 tr2,
@@ -237,7 +266,9 @@ Section Semantics.
 
   (* Repetition semantics with 0 repetitions. *)
   | Rep0 : forall p s,
-             Behavior (Rep p) (discHelp1 s)
+             Behavior (Rep p)
+             (fun _ => existT _ _
+               (neone s), time_0)
 
   (* Repetition semantics with at least 1 repetition. *)
   | RepN : forall p tr tr',
@@ -269,7 +300,30 @@ Section Semantics.
      to a given behavior. When we state correctness
      properties of programs, we will quantify over the
      behavior.  *)
-Print trace.
+  Require Import Vectors.Fin.
+  Print Fin.
+
+  (* match p as ? in ? return ? *)
+(*
+  Fixpoint ne_nth_tail {A : Type} (nl : nelist A l)
+             (p : Fin.t l) : nelist A :=
+    match p as _p return (nelist A)
+      | F1 _ => nl
+      | FS _ p' =>
+        match nl with
+          | neone _ => nl
+          | necons _ nl' => ne_nth_tail nl' p'
+        end
+    end.
+  *)
+
+  Axiom ne_nth_tail : forall (A : Type) (l : nat) (nl : nevec A l)
+                             (p : Fin.t l),
+                        {l' : nat & nevec A l'}.
+
+  Axiom NnrEq_dec : nonnegreal -> nonnegreal -> bool.
+
+  Axiom subtract_time : time -> time -> time.
 
   Fixpoint eval_formula (f:Formula) (tr:trace) : Prop :=
     match f with
@@ -279,6 +333,25 @@ Print trace.
       | OrF f1 f2 => eval_formula f1 tr \/ eval_formula f2 tr
       | Imp f1 f2 => eval_formula f1 tr -> eval_formula f2 tr
       | Prog p => Behavior p tr
+      | Always f' =>
+        let (fn, bd) := tr in
+        forall (t : time), (*also must require t < bd *)
+          let sts_len := fun tm => (projT1 (fn tm)) in
+          let sts := fun tm => (projT2 (fn tm)) in
+          forall p : (Fin.t (sts_len t)), 
+            let newf :=
+                ((fun (time : time) =>
+                   if (NnrEq_dec time time_0) then
+                     (ne_nth_tail state (sts_len t) (sts t) p)
+                   else
+                     (fn (add_time t time))
+                 ), subtract_time bd t)
+                     
+            in eval_formula f' newf
+      | Eventually f' => True
+    end.
+
+(*
       | Always f' => 
         let (fn, bd) := tr in
         eval_formula f' tr /\
@@ -288,7 +361,7 @@ Print trace.
         let (fn, bd) := tr in
         exists t, eval_formula f'
           (fun r => fn (add_time r t), bd)
-    end.
+*)
       
   Close Scope R_scope.
 
