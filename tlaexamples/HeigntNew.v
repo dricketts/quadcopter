@@ -56,15 +56,25 @@ Section HeightCtrl.
     (And (Comp x y Lt) (Comp y z Le)) : HP_scope.
 
   Definition Ind_Inv : Formula :=
-    ("v" = 1   --> (--3*d <= "H1" <= d /\
-                    0 <= "H"-"H1" <= "TR"-"TC" /\
-                    0 <= "h"-"H" <= "t"-"TR")) /\
-    ("v" = --1 --> (--d <= "H1" <= 3*d /\
-                    0 <= "H1"-"H" <= "TR"-"TC" /\
-                    0 <= "H"-"h" <= "t"-"TR")) /\
+    (("v" = 1 /\ "TR" >= "TC")
+       --> (--3*d <= "H1" <= d /\
+            "H"-"H1" = "TR"-"TC" /\
+            "h"-"H" = "t"-"TR")) /\
+    (("v" = 1 /\ "TR" < "TC")
+       --> (--3*d + "TC"-"TR" <= "H1" <= d /\
+            "H"="H1" /\
+            "h"-"H1" = "t"-"TR")) /\
+    (("v" = --1 /\ "TR" >= "TC")
+       --> (--d <= "H1" <= 3*d /\
+            "H1"-"H" = "TR"-"TC" /\
+            "H"-"h" = "t"-"TR")) /\
+    (("v" = --1 /\ "TR" < "TC")
+       --> (--d <= "H1" <= 3*d-("TC"-"TR") /\
+            "H"="H1" /\
+            "H1"-"h" = "t"-"TR")) /\
     0 <= "t"-"TR" <= d /\
     0 <= "t"-"TC" <= d /\
-    --d <= "TR" - "TC" <= d /\
+(*    --d <= "TR" - "TC" <= d /\*)
     ("v"=--1 \/ "v" = 1).
 (*
     (("v" = 1 /\ "h" < "H1") --> ((--3*d + ("TC"-"TR"+"d")) <= "H1" < 0) /\
@@ -94,6 +104,7 @@ Section HeightCtrl.
     - apply imp_trans with (F2:=[]Ind_Inv).
       + apply inv_discr_ind; auto. unfold Next, Evolve.
         Time prove_inductive. solve_linear.
+
       + apply always_imp. apply ind_inv_safe.
 
 apply imp_trans with (F2:=Ind_Inv /\ []Next).
