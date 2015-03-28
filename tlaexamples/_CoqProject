@@ -1,7 +1,6 @@
 -R ../Z3-plugin/src Z3
 -R ../tla TLA
 -R ../coq-ext-lib/theories ExtLib
--I ../compile
 -I ../Charge/Charge!/bin
 -R . Examples
 System.v
@@ -14,6 +13,3 @@ SecondDerivShimCtrl.v
 SecondDerivUtil.v
 SensorWithDelayRangeSndOrder.v
 SecondDerivShim.v
-
-# AbstractIndAccCtrl.v
-# OneDimAccShimUtil.v
