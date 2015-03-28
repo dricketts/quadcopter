@@ -1,8 +1,27 @@
-This directory contains the systems that we've specified using our version of TLA. Many of these systems are out of date and may no long build. At the moment, only look at the following files:
+This directory contains our Sys abstraction (specified in rTLA, our variant of TLA) and the systems that we've specified using our Sys abstraction. It also contains an old version of our height shim, verified in monolithically rTLA without the Sys abstraction. This version no longer builds, primarily for syntactic reasons, but we include it here for comparison.
 
-1. AbstractIndAccCtrl.v
-2. OneDimAccShim1.v - a concrete height upper bound shim. This is a refinement of AbstractIndAccCtrl.v.
-3. OneDimAccShim2.v - another concrete height upper bound shim. This is a refinement of AbstractIndAccCtrl.v as well.
-4. OneDimAccShimUtil.v - this file defines useful functions and lemmas for the two height upper bound shims.
+Velocity Shim
+-------------
+- FirstDerivShimCtrl.v - the shim logic, assuming an upper bound on the current velocity.
+- FirstDerivShim.v - the shim logic composed with various sensor and delay compensation modules
 
-In order to build AbstractIndAccCtrl.v and OneDimAccShimUtil.v (on which the two height upper bound shims depend), you have to run make in the tla directory and then make in this directory. At some point, we should fix this.
+Height Shim
+-----------
+- SecondDerivShimCtrl.v - the shim logic, assuming an upper bound on the current velocity and height
+- SecondDerivShim.v - the shim logic composed with various sensor and delay compensation modules
+
+Error Correction
+----------------
+- SensorWithError.v - a sensor module that continuously reads a physical variable to within err of the actual value
+- SensorWithDelayRange.v - a delay compensation module based on the first derivative of a variable and a current upper bound on the variable
+- SensorWithDelayRangeSndOrder.v - a delay compensation module based on the second derivative of a variable and a current upper bound on the variable and its first derivative
+
+Old Height Shim
+---------------
+This shim no longer builds, but here are the relevant files:
+
+- AbstractIndAccCtrl.v
+- OneDimAccShim1.v - a concrete height upper bound shim. This is a refinement of AbstractIndAccCtrl.v.
+- OneDimAccShim2.v - another concrete height upper bound shim. This is a refinement of AbstractIndAccCtrl.v as well.
+- OneDimAccShimUtil.v - this file defines useful functions and lemmas for the two height upper bound shims.
+
