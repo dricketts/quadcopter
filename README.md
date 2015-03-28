@@ -1,6 +1,8 @@
 VeriDrone
 ==========
 
+This contains the verification work discussed in our EMSOFT 15 submission. See below for information on installing dependencies and the layout of the directories.
+
 Dependencies
 ------------
 
@@ -25,6 +27,6 @@ Directory Structure
 -------------------
 This project contains three directories:
 
-1. tla - our embedding of TLA, proof rules, automation, and some arithmetic facts
-2. tlaexamples - our Sys abstraction and proof rules for our Sys (System.v) as well as various systems specified and verified using Sys.
+1. tla - our embedding of TLA (rTLA), proof rules, automation, and some arithmetic facts
+2. tlaexamples - our Sys abstraction and proof rules for our Sys (System.v) as well as various systems specified and verified using Sys that are discussed in our submission.
 3. Z3-plugin - a plugin for running Z3 on real arithmetic goals from Coq.
