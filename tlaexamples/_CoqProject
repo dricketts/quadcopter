@@ -6,7 +6,6 @@
 System.v
 FirstDerivShimCtrl.v
 SensorWithError.v
-SensorWithDelay.v
 SensorWithDelayRange.v
 FirstDerivShim.v
 SecondDerivShimCtrl.v

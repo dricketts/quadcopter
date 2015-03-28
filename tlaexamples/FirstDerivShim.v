@@ -3,7 +3,6 @@ Require Import TLA.TLA.
 Require Import TLA.BasicProofRules.
 Require Import Examples.System.
 Require Import Examples.SensorWithError.
-Require Import Examples.SensorWithDelay.
 Require Import Examples.SensorWithDelayRange.
 Require Import Examples.FirstDerivShimCtrl.
 
@@ -30,8 +29,7 @@ Proof.
     + tlaIntro.
       pose proof (FirstDerivShimCtrl.ctrl_safe ub d ltrue).
       charge_apply H.
-      unfold Spec. unfold SensorWithDelay.SenseSafe.
-      charge_split; try charge_assumption.
+      unfold Spec. charge_split; try charge_assumption.
       rewrite landC. tlaRevert. rewrite curry.
       tlaIntro. apply always_imp. solve_linear.
   - apply always_imp. charge_tauto.
@@ -52,7 +50,7 @@ Theorem ctrl_sense_delay_safe : forall ub d,
 Proof.
   intros ub d.
   apply imp_trans with
-  (F2:=[]((SensorWithDelay.SenseSafe "v" "Vmax" "Vmin") //\\
+  (F2:=[]((SensorWithDelayRange.SenseSafe "v" "Vmax" "Vmin") //\\
           "v" <= ub)).
   - apply Compose.
     + tlaIntro. apply SensorWithDelayRange.sense_safe;
@@ -60,8 +58,7 @@ Proof.
     + tlaIntro.
       pose proof (FirstDerivShimCtrl.ctrl_safe ub d ltrue).
       charge_apply H.
-      unfold Spec. unfold SensorWithDelay.SenseSafe.
-      charge_split; try charge_assumption.
+      unfold Spec. charge_split; try charge_assumption.
       rewrite landC. tlaRevert. rewrite Always_and.
       apply always_imp. solve_linear.
   - apply always_imp. charge_tauto.
