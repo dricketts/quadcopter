@@ -1,7 +1,9 @@
 -R ../Z3-plugin/src Z3
 -R . TLA
+-R ../hTLA hTLA
 -R ../coq-ext-lib/theories ExtLib
 -I ../Charge/Charge!/bin
 Stream.v
 HyStream.v
 HyStreamTrans.v
+HybridStream.v
