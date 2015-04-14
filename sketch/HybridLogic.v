@@ -278,16 +278,313 @@ Section localized.
   Definition enabled (ap : ActionProp) : StateProp :=
     Exists st', fun st => ap st st'.
 
-  Fixpoint AnyOf {L} {LL : ILogicOps L} (ls : list L) : L :=
-    match ls with
-    | nil => lfalse
-    | cons l ls => l \\// AnyOf ls
-    end.
+  Lemma and_forall : forall {T} (F G : T -> Prop),
+      ((forall x, F x) /\ (forall x, G x)) <->
+      (forall x, F x /\ G x).
+  Proof. firstorder. Qed.
 
-  Fixpoint AllOf {L} {LL : ILogicOps L} (ls : list L) : L :=
-    match ls with
-    | nil => ltrue
-    | cons l ls => l //\\ AllOf ls
+
+  (** Reasoning about [through] **)
+  Lemma through_and : forall P Q, through P //\\ through Q -|- through (P //\\ Q).
+  Proof.
+    intros. apply and_forall. intros.
+    unfold through. simpl. destruct (firstStep x); intuition; firstorder.
+  Qed.
+
+  Lemma through_or : forall P Q, through P \\// through Q |-- through (P \\// Q).
+  Proof.
+    intros. red. simpl.
+    unfold through. intro. destruct (firstStep t); intuition; firstorder.
+  Qed.
+
+  Lemma through_ex : forall T (P : T -> _),
+      Exists x : T, through (P x) |-- through (lexists P).
+  Proof.
+    intros; red; simpl.
+    unfold through. intro. intros.
+    destruct H. destruct (firstStep t); eauto.
+  Qed.
+
+  Lemma through_all : forall T (P : T -> _),
+      Forall x : T, through (P x) |-- through (lforall P).
+  Proof.
+    intros; red; simpl.
+    unfold through. intro. intros.
+    destruct (firstStep t); eauto.
+  Qed.
+
+  Definition throughC (P : StateProp) : CActionProp :=
+    fun r f =>
+      forall r', (0 < r' <= r)%R -> P (f r').
+
+  Definition throughD (P : StateProp) : DActionProp :=
+    fun _ fin => P fin.
+
+
+  (** This is more continuous reasoning!
+   ** - Things get a little bit more complex here.
+   **)
+  Require Import Coq.Reals.Ranalysis1.
+
+  (** NOTE: It is necessary to have a topology on the continuous state **)
+
+  Axiom is_deriv_state_pt
+  : forall (f : R -> tlaState) (t : R) (val : tlaState), Prop.
+(*
+    exists is_derivable : forall v : tlaVar, derivable_pt (fun x => f x v) t,
+      forall (v : tlaVar),
+        derive_pt (fun x => f x v) t (is_derivable v) = val v.
+*)
+  (** NOTE: pr_nu says "forall p1 p2, derive_pt f x p1 = derive_pt f x p2" **)
+
+  Definition deriv_on_interval (P : (R -> tlaState) -> Prop) (t : R) (f : R -> tlaState) : Prop.
+(*
+    exists is_derivable : forall (v : tlaVar) (t' : R), (0 <= t' < t)%R -> derivable_pt (fun x => f x v) t',
+      forall f' : R -> tlaState,
+        (forall v t' (pf : (0 <= t' < t)%R),
+            derive_pt (fun x => f x v) t' (is_derivable v t' pf) = f' t' v) ->
+        P f'.
+*)
+  Admitted.
+
+  Axiom endsOn : StateProp -> ActionProp.
+
+  Definition startsFromC (P : StateProp) : CActionProp :=
+    fun t f => P (f 0)%R.
+
+  Definition endsOnC (P : StateProp) : CActionProp :=
+    fun t f => P (f t).
+
+  Definition deriv_formula(G : StateProp) : CActionProp :=
+    startsFromC G -->> throughC G.
+
+(*
+Theorem deriv_formula_and : forall H P Q,
+    deriv_formula H P //\\ deriv_formula H Q |-- deriv_formula H (P //\\ Q).
+Proof.
+  intros. unfold deriv_formula.
+  setoid_rewrite <- through_and.
+  red. simpl. tauto.
+Qed.
+
+Theorem deriv_formula_or_weak : forall H P Q,
+    deriv_formula H P \\// deriv_formula H Q |-- deriv_formula H (P \\// Q).
+Proof.
+  intros. unfold deriv_formula.
+  setoid_rewrite <- through_or.
+  red. simpl. tauto.
+Qed.
+*)
+
+  Definition Dt_R (g : R -> R) (P : (R -> R) -> CActionProp) : CActionProp :=
+    fun t f =>
+      exists is_derivable : forall (t' : R), (0 <= t' < t)%R -> derivable_pt g t',
+        forall g' : R -> R,
+          (forall t' (pf : (0 <= t' < t)%R),
+              derive_pt g t' (is_derivable t' pf) = g' t') ->
+          P g' t f.
+
+  Definition Dt (g : tlaState -> R) (P : (R -> R) -> CActionProp) : CActionProp :=
+    fun t f =>
+      Dt_R (fun x => g (f x)) P t f.
+
+  Definition tlaCore : Type := (R * (R -> tlaState))%type.
+
+  Axiom tlaState_get : tlaState -> string -> R.
+
+  Definition get : tlaCore -> string -> R :=
+    fun tlc v =>
+      tlaState_get (snd tlc (fst tlc)) v.
+
+
+  Definition Dt' (g : R -> (R -> tlaState) -> R)
+                 (P : (R -> (R -> tlaState) -> R) -> CActionProp)
+    : CActionProp.
+  (*
+    fun t f =>
+      Dt_R (fun x => g (f x)) P t f.
+   *)
+  Admitted.
+
+  Eval simpl in
+      (** does the derivative of a function [R -> R * R] make sense?
+       **)
+      Dt_R (fun t => get (st t) "x")
+         (fun f' => 
+
+  Eval simpl in
+      Dt' (fun st => get st "x")
+          (fun f' => (fun t => get (f' t) "x") = fun _ => 1)%R //\\
+      Dt' (fun st => get st "y") (fun dy => dy = 1)%R
+      |-- Dt' (fun st => get st "x" + get st "y") (fun df => df = 2).
+
+
+
+  Definition It_R (g : R -> R) (P : (R -> R) -> CActionProp) : CActionProp :=
+    fun t f =>
+      forall f_, antiderivative g f_ 0 t ->
+                 P (fun x => f_ x - f_ 0)%R t f.
+
+  Theorem Dt_It : forall f P, It_R f (fun f_ => Dt_R f_ P) -|- P f.
+  Proof.
+    unfold It_R, Dt_R. intros.
+    red. simpl. do 2 (apply and_forall; intro).
+    split.
+    { intros.
+      admit. }
+    { intros.
+      red in H0. destruct H0.
+      admit. }
+  Qed.
+
+  Theorem It_Dt : forall f P, Dt_R f (fun f' => It_R f' (fun f_ => P (fun x => f_ x + f 0)%R)) -|- P f.
+  Proof.
+    unfold It_R, Dt_R. intros.
+    do 2 (apply and_forall; intro).
+    split.
+    { red; simpl; intros.
+      destruct H.
+      unfold antiderivative in *.
+      admit. }
+    { admit. }
+  Qed.
+
+  Lemma Dt_plus : forall f g P,
+      Dt (fun x => f x + g x)%R P -|- Dt f (fun f' => Dt g (fun g' => P (fun x => f' x + g' x))%R).
+  Proof.
+    intros. unfold Dt.
+    red. simpl.
+    apply and_forall; intro.
+    apply and_forall; intro.
+    split.
+    { intros. admit. }
+    { admit. }
+  Qed.
+
+  Definition embedC (P : Prop) : CActionProp := fun _ _ => P.
+
+  Require Import ExtLib.Tactics.
+
+  (** This formalism is not quite correct **)
+  Theorem deriv_formula_eq : forall (H : StateProp) (f g : tlaState -> R),
+      let Z : StateProp := ap (fmap (@eq R) f) g in
+      Dt f (fun f' => Dt g (fun g' => embedC (f' = g'))) (* incomplete *)
+      |-- deriv_formula Z.
+  Proof.
+    simpl. unfold deriv_formula. simpl. intros.
+    unfold throughC, Dt, startsFromC, embedC in *.
+    forward_reason.
+    intros.
+    red in H0. forward_reason.
+    assert (exists g',
+               (forall (t' : R) (pf : (0 <= t' < t)%R),
+                   derive_pt (fun x0 : R => f (t0 x0)) t' (x t' pf) = g' t')).
+    { admit. (* not provable *) }
+    destruct H4.
+    specialize (H0 _ H4).
+    destruct H0.
+    assert (exists g',
+               (forall (t' : R) (pf : (0 <= t' < t)%R),
+                   derive_pt (fun x0 : R => g (t0 x0)) t' (x1 t' pf) = g' t')).
+    { admit. (* not provable *) }
+    destruct H5.
+    specialize (H0 _ H5).
+    Require Coq.Reals.MVT.
+    generalize (@MVT.null_derivative_loc (fun x => f (t0 x) - g (t0 x))%R 0 r').
+    intro.
+    assert (forall x3 : R,
+               (0 < x3 < r')%R ->
+               derivable_pt (fun x4 : R => (f (t0 x4) - g (t0 x4))%R) x3).
+    { intros. eapply derivable_pt_minus; eauto.
+      eapply x. admit.
+      eapply x1. admit. }
+    specialize (H6 H7).
+    match goal with
+    | H : ?X -> ?Y -> _ |- _ =>
+      assert X by admit; assert Y by admit; forward_reason
     end.
+    subst.
+    clear - H6 H1. red in H6.
+    assert ((0 <= r' <= r')%R) by admit.
+    specialize (H6 _ H).
+    rewrite H1 in *.
+    admit.
+  Qed.
+
+(* TODO: Revise this formalism 
+Theorem deriv_formula_eq : forall (H : StateProp) (f g : tlaState -> R),
+    let Z : StateProp := ap (fmap (@eq R) f) g in
+    startsFromC H -->> (** this should be in the current state **)
+        Dt f (fun f' => Dt g (fun g' => f' = g'))) (* incomplete *)
+    |-- deriv_formula H Z.
+Proof.
+  simpl. unfold deriv_formula. simpl. intros.
+  specialize (H0 H1).
+  unfold throughC, Dt, startsFromC, embedC in *.
+  forward_reason.
+  intros.
+  red in H0. forward_reason.
+  assert (exists g',
+             (forall (t' : R) (pf : (0 <= t' < t)%R),
+                 derive_pt (fun x0 : R => f (t0 x0)) t' (x t' pf) = g' t')).
+  { admit. (* not provable *) }
+  destruct H5.
+  specialize (H0 _ H5).
+  destruct H0.
+  assert (exists g',
+             (forall (t' : R) (pf : (0 <= t' < t)%R),
+                 derive_pt (fun x0 : R => g (t0 x0)) t' (x1 t' pf) = g' t')).
+  { admit. (* not provable *) }
+  destruct H6.
+  specialize (H0 _ H6).
+  Require Coq.Reals.MVT.
+  generalize (@MVT.null_derivative_loc (fun x => f (t0 x) - g (t0 x))%R 0 r').
+  intro.
+  assert (forall x3 : R,
+           (0 < x3 < r')%R ->
+           derivable_pt (fun x4 : R => (f (t0 x4) - g (t0 x4))%R) x3).
+  { intros. eapply derivable_pt_minus; eauto.
+    eapply x. admit.
+    eapply x1. admit. }
+  specialize (H7 H8).
+  match goal with
+  | H : ?X -> ?Y -> _ |- _ => assert X; [ | assert Y; [ | forward_reason ] ]
+  end.
+  admit. admit.
+  clear - H7 H2 H3 H4. red in H7.
+  rewrite H2 in H7.
+  rewrite RIneq.Rminus_diag_eq in H7 by reflexivity.
+  specialize (H7 r').
+  assert ((0 <= r' <= r')%R) by admit.
+  specialize (H7 H).
+  admit.
+Qed.
+*)
+
+(** This is the old differential induction rule **)
+Theorem starts_continuously_through_now : forall G d F GI,
+    startsFromC GI //\\ (deriv_on_interval d) |-- throughC GI ->
+    deriv_on_interval d |-- deriv_formula GI G ->
+    F |-- startsFromC GI //\\ startsFromC G //\\ (deriv_on_interval d) -->> throughC G.
+Proof.
+  simpl. intros.
+  clear H.
+  destruct H2 as [ ? [ ? ? ] ].
+  specialize (H0 _ _ H3).
+  red in H0.
+  eapply H0; eauto.
+Qed.
+
+(*
+Theorem diff_ind : forall Hyps G cp F,
+  is_st_formula G ->
+  is_st_formula Hyps ->
+  (F |-- Continuous cp) ->
+  ((Hyps //\\ Continuous cp) |-- next Hyps) ->
+  (F |-- G) ->
+  (F |-- Hyps) ->
+  (Hyps |-- Continuous cp -->> deriv_formula G) ->
+  (F |-- next G).
+*)
 
 End localized.
