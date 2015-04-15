@@ -1,12 +1,11 @@
-Require Import TLA.HybridStream.
+Require Import Coq.Reals.Rdefinitions.
+Require Import ExtLib.Structures.Applicative.
+Require Import ExtLib.Structures.Functor.
+Require Import ExtLib.Data.Fun.
 Require Import Charge.Logics.ILogic.
 Require Charge.Logics.ILInsts.
-Require Import Coq.Strings.String.
-Require Import ExtLib.Structures.Applicative.
-Require Import Coq.Reals.Rdefinitions.
 
-Require Import ExtLib.Data.Fun.
-Require Import ExtLib.Structures.Functor.
+Require Import hTLA.HybridStream.
 
 Existing Instance Applicative_Fun.
 Existing Instance Functor_Fun.
@@ -320,7 +319,7 @@ Section localized.
   Definition throughD (P : StateProp) : DActionProp :=
     fun _ fin => P fin.
 
-
+(**
   (** This is more continuous reasoning!
    ** - Things get a little bit more complex here.
    **)
@@ -586,5 +585,5 @@ Theorem diff_ind : forall Hyps G cp F,
   (Hyps |-- Continuous cp -->> deriv_formula G) ->
   (F |-- next G).
 *)
-
+**)
 End localized.
