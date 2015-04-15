@@ -5,6 +5,7 @@ Stream.v
 Syntax.v
 Semantics.v
 LogicLemmas.v
+ChargeTactics.v
 Lib.v
 BasicProofRules.v
 DifferentialInduction.v
