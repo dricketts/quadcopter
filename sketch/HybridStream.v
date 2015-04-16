@@ -6,10 +6,17 @@ Set Implicit Arguments.
 Set Strict Implict.
 
 Section with_state.
+  (** Note that nothing in this file requires derivatives,
+   ** everything can be up to a metric space
+   **)
 
   Variable ST : Type.
 
   (** [STc] is the continuous part of the state, [STd] is the discrete part **)
+  (** TODO: This is meant to be a product, but this definition is
+   **       insufficiently constrained
+   ** - Is there any benefit to overlapping? NO
+   **)
   Class HybridState : Type :=
   { STc : Type
   ; STd : Type
