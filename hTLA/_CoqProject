@@ -1,0 +1,8 @@
+-R ../Z3-plugin/src Z3
+-R ../coq-ext-lib/theories ExtLib
+-I ../Charge/Charge!/bin
+-R ../ChargeTactics ChargeTactics
+-R . hTLA
+DiscreteStream.v
+DiscreteLogic.v
+LibContinuous.v
