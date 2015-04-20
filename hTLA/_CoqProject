@@ -6,3 +6,5 @@
 DiscreteStream.v
 DiscreteLogic.v
 LibContinuous.v
+LibContinuousDiffIndBound.v
+LibContinuousDiffIndUnbounded.v
