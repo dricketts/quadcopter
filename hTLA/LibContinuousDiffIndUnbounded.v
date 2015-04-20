@@ -8,6 +8,7 @@ Require Import ExtLib.Structures.Functor.
 Require Import ExtLib.Structures.Applicative.
 Require Import hTLA.DiscreteLogic.
 Require Import hTLA.LibContinuous.
+Require Import hTLA.ListProps.
 
 Section parametric.
   Variable tlaState : Type.
@@ -277,22 +278,6 @@ Section parametric.
     admit.
   Qed.
 
-  Section any_all.
-    Context {L} {LL : ILogicOps L}.
-
-    Fixpoint AnyOf  (ls : list L) : L :=
-      match ls with
-      | nil => lfalse
-      | cons l ls => l \\// AnyOf ls
-      end.
-
-    Fixpoint AllOf (ls : list L) : L :=
-      match ls with
-      | nil => ltrue
-      | cons l ls => l //\\ AllOf ls
-      end.
-  End any_all.
-
 (*
   Lemma Dt_permute : forall f g P,
       (forall f f' g g' a t,
@@ -348,12 +333,6 @@ Section parametric.
     fun p =>
       is_derivative_R f' (fun t => f (p t)).
 
-  (** NOTE: This is not pretty! The problem stems from the
-   ** fact that the type of functions does not capture the range that the
-   ** properties are valid on. This means that we need to state a
-   ** Properness fact about [P], but, at the same time, the properness fact
-   ** is not modular.
-   **)
   Lemma is_derivative_Dt : forall f f' P,
       is_derivative f' f |-- P f' ->
       is_derivative f' f |-- Dt f P.

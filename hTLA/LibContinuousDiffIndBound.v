@@ -8,6 +8,7 @@ Require Import ExtLib.Structures.Functor.
 Require Import ExtLib.Structures.Applicative.
 Require Import hTLA.DiscreteLogic.
 Require Import hTLA.LibContinuous.
+Require Import hTLA.ListProps.
 
 Section parametric.
   Variable tlaState : Type.
@@ -301,22 +302,6 @@ Section parametric.
 (*
 *)
   Admitted.
-
-  Section any_all.
-    Context {L} {LL : ILogicOps L}.
-
-    Fixpoint AnyOf  (ls : list L) : L :=
-      match ls with
-      | nil => lfalse
-      | cons l ls => l \\// AnyOf ls
-      end.
-
-    Fixpoint AllOf (ls : list L) : L :=
-      match ls with
-      | nil => ltrue
-      | cons l ls => l //\\ AllOf ls
-      end.
-  End any_all.
 
 (*
   Lemma Dt_permute : forall f g P,

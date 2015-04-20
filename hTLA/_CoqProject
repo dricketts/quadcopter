@@ -5,6 +5,7 @@
 -R . hTLA
 DiscreteStream.v
 DiscreteLogic.v
+ListProps.v
 LibContinuous.v
 LibContinuousDiffIndBound.v
 LibContinuousDiffIndUnbounded.v
