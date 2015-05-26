@@ -157,6 +157,8 @@ Fixpoint unnext_term (t:Term) : Term :=
     | InvT t => InvT (unnext_term t)
     | CosT t => CosT (unnext_term t)
     | SinT t => SinT (unnext_term t)
+    | SqrtT t => SqrtT (unnext_term t)
+    | ArctanT t => ArctanT (unnext_term t)
   end.
 
 (* Removes ! from variables in a Formula *)

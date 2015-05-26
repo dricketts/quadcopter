@@ -2,6 +2,11 @@ Require Import TLA.Syntax.
 Require Import TLA.Semantics.
 Require Import TLA.Lib.
 Require Import TLA.Automation.
+Require Import Coq.Reals.R_sqrt.
+Require Import Coq.Reals.Ratan.
+
+
+
 
 (* Various proof rules for TLA in general *)
 
@@ -26,6 +31,8 @@ Fixpoint next_term (t:Term) :=
     | InvT t => InvT (next_term t)
     | CosT t => CosT (next_term t)
     | SinT t => SinT (next_term t)
+    | SqrtT t => SqrtT (next_term t)
+    | ArctanT t => ArctanT (next_term t)
   end.
 
 (* Puts ! on all variables in a Formula *)
@@ -62,6 +69,8 @@ Fixpoint is_st_term (t:Term) : bool :=
     | InvT t => is_st_term t
     | CosT t => is_st_term t
     | SinT t => is_st_term t
+    | SqrtT t => is_st_term t
+    | ArctanT t => is_st_term t
   end.
 
 (* Prop expressing that the Formula has no
