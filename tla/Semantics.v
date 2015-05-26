@@ -1,3 +1,4 @@
+Require Import Coq.Lists.List.
 Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.Reals.Rtrigo_def.
 Require Export TLA.Syntax.
@@ -36,15 +37,23 @@ Fixpoint eval_term (t:Term) (s1 s2:state) : R :=
 (* Semantics of comparison operators *)
 Definition eval_comp (t1 t2:Term) (op:CompOp) (s1 s2:state) :
   Prop :=
-  let (e1, e2) := (eval_term t1 s1 s2, eval_term t2 s1 s2) in
-  let op := match op with
-              | Gt => Rgt
-              | Ge => Rge
-              | Lt => Rlt
-              | Le => Rle
-              | Eq => eq
-            end in
-  op e1 e2.
+  match op with
+  | Gt => Rgt
+  | Ge => Rge
+  | Lt => Rlt
+  | Le => Rle
+  | Eq => eq
+  end (eval_term t1 s1 s2) (eval_term t2 s1 s2).
+
+Fixpoint subst (s : list (Var * Term)) : state -> state :=
+  match s with
+  | nil => fun x => x
+  | (v,e) :: s =>
+    fun st v' => if String.string_dec v' v then
+                   eval_term e st st
+                 else
+                   subst s st v'
+  end.
 
 (* Semantics of temporal formulas *)
 Fixpoint eval_formula (F:Formula) (tr:trace) :=
@@ -65,6 +74,8 @@ Fixpoint eval_formula (F:Formula) (tr:trace) :=
     | Always F => forall n, eval_formula F (nth_suf n tr)
     | Eventually F => exists n, eval_formula F (nth_suf n tr)
     | Embed P => P (hd tr) (hd (tl tr))
+    | Rename s F =>
+      eval_formula F (stream_map (subst s) tr)
   end.
 
 

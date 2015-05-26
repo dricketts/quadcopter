@@ -48,7 +48,8 @@ Inductive Formula :=
 | Enabled : Formula -> Formula
 | Always : Formula -> Formula
 | Eventually : Formula -> Formula
-| Embed : (state -> state -> Prop) -> Formula.
+| Embed : (state -> state -> Prop) -> Formula
+| Rename : list (Var * Term) -> Formula -> Formula.
 
 (************************************************)
 (* Some notation for the logic.                 *)

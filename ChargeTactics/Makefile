@@ -3,7 +3,7 @@
 coq: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
-Makefile.coq: Makefile _CoqProject
+Makefile.coq: Makefile $(VS)
 	coq_makefile -f _CoqProject -o Makefile.coq
 
 clean:: Makefile.coq
