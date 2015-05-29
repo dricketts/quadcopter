@@ -33,12 +33,20 @@ Section P.
   Definition Abs (t : Term) (f : Term -> Formula) : Formula :=
     (t > 0 -->> f t) //\\ (t <= 0 -->> f (--t)).
 
+  (* forall e, exists d, |x| <= d -> [] |x| <= e *)
   Definition Stable x : Formula :=
     Forall a : R,
-      a > 0 -->>
+      a > 0 -->>                (* boundary *)
       Exists b : R,
-        b > 0 //\\
+        b > 0 //\\              (* start *)
         ((Abs x (fun t => t < b)) -->> []Abs x (fun t => t < a)).
+
+  (* exists \alpha \beta \delta, exists x_0,
+       x = x_0 /\ |x| <= \delta  -> [] |x| <= \alpha * |x_0| * e^(-\beta * t) *)
+  (*Definition ExpStable x : Formula :=
+    Exists a, b, d, x0 : R,
+      ((x = x0) //\\ (Abs x (fun t => t < d))) -->>
+         []Abs x (fun z => a * ... * exp_in ...)*)
 
   Ltac decompose_hyps :=
     repeat first [rewrite land_lor_distr_R |
@@ -137,22 +145,35 @@ Section P.
           [ solve_linear | charge_intros ].
           decompose_hyps.
           { solve_linear. clear H3. z3 solve_dbg.
-     *)   
-          
-  Lemma spec_stable :
+     *)
+
+
+ Lemma always_next :
+   []IndInv |-- [] BasicProofRules.next IndInv.
+     (* is_st_formula : Formula -> Prop (basicproofrules) *)
+ Proof.
+ Admitted.
+
+
+ Lemma spec_stable :
     |-- Spec -->> Stable "x".
   Proof.
     charge_intros. tlaAssert ([]IndInv).
     { apply lrevert. apply spec_indinv. }
     { unfold Stable. charge_intros.
-      eapply lexistsR. instantiate (1:=x).
+      rename x into b.
+      eapply lexistsR. instantiate (1:=b).
       charge_split.
       - charge_tauto.
       - charge_intros.
         eapply BasicProofRules.discr_indX
-        with (A:=IndInv //\\ Next //\\ BasicProofRules.next IndInv).
+        with (A:=IndInv //\\ Next //\\ BasicProofRules.next IndInv //\\ "t"! >= 0).
         + tlaIntuition.
         + unfold Spec. repeat rewrite <- BasicProofRules.Always_and.
+          repeat charge_split.
+          * charge_tauto.
+          * charge_tauto.
+
           admit.
         + charge_tauto.
         + unfold Next. simpl BasicProofRules.next.
@@ -162,24 +183,25 @@ Section P.
               [ solve_linear | ].
             charge_intros. decompose_hyps.
             { charge_split; charge_intros.
-              + eapply diff_ind with (Hyps:="v" < 0) (G:="x" < x).
+              + unfold IndInv. eapply diff_ind with (Hyps:="v" < 0) (G:="x" < b).
                 - tlaIntuition.
                 - tlaIntuition.
                 - charge_tauto.
                 - eapply unchanged_continuous.
                   * charge_tauto.
-                  * solve_linear.
+                  * simpl Unchanged. restoreAbstraction. solve_linear.
                 - eapply unchanged_continuous.
                   * charge_tauto.
                   * solve_linear.
                 - eapply unchanged_continuous.
                   * charge_tauto.
                   * solve_linear.
-                - solve_linear.
-              + solve_nonlinear. }
+                - simpl deriv_formula. solve_linear.
+              + unfold IndInv.
+                solve_nonlinear. }
             { charge_split; charge_intros.
               + solve_nonlinear.
-              + eapply diff_ind with (Hyps:="v" >= 0) (G:=--"x" < x).
+              + eapply diff_ind with (Hyps:="v" >= 0) (G:=--"x" < b).
                 - tlaIntuition.
                 - tlaIntuition.
                 - charge_tauto.
