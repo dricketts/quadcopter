@@ -148,11 +148,23 @@ Section P.
      *)
 
 
- Lemma always_next :
-   []IndInv |-- [] BasicProofRules.next IndInv.
-     (* is_st_formula : Formula -> Prop (basicproofrules) *)
- Proof.
- Admitted.
+  Lemma always_next :
+    forall F,
+      BasicProofRules.is_st_formula F ->
+      []F |-- []BasicProofRules.next F.
+  (* is_st_formula : Formula -> Prop (basicproofrules) *)
+  Proof.
+    intros.
+   apply lrevert.
+   rewrite BasicProofRules.always_st.
+   rewrite <- BasicProofRules.Always_and.
+   charge_intros.
+   charge_tauto.
+   tlaIntuition.
+ Qed.
+
+   (* apply lrevert.
+    * apply BasicProofRules.next_inv with (N:=true)(I:=IndInv). *)
 
 
  Lemma spec_stable :
@@ -173,8 +185,14 @@ Section P.
           repeat charge_split.
           * charge_tauto.
           * charge_tauto.
-
-          admit.
+          * rewrite always_next with (F := IndInv).
+            charge_assumption.
+            tlaIntuition.
+          * unfold Next.
+            rewrite <- BasicProofRules.Always_and.
+            rewrite always_next with (F := "t" >= 0).
+            charge_tauto.
+            tlaIntuition.
         + charge_tauto.
         + unfold Next. simpl BasicProofRules.next.
           restoreAbstraction. decompose_hyps.
