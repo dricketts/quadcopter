@@ -1,4 +1,5 @@
 Require Import Coq.Reals.Rdefinitions.
+Require Import Reals.Rtrigo_def. (* for exp *)
 Require Import TLA.TLA.
 Import LibNotations.
 Require Import TLA.DifferentialInduction.
@@ -43,10 +44,17 @@ Section P.
 
   (* exists \alpha \beta \delta, exists x_0,
        x = x_0 /\ |x| <= \delta  -> [] |x| <= \alpha * |x_0| * e^(-\beta * t) *)
-  (*Definition ExpStable x : Formula :=
-    Exists a, b, d, x0 : R,
+  (* - How to encode |x0|?
+     - what constraints exist on the constants?
+   *)
+  Definition ExpStable x t : Formula :=
+    Exists a:R,   a > 0 -->>
+    Exists b:R,   b > 0 -->>
+    Exists d:R,   d > 0 -->>
+    Exists x0:R, x0 > 0 -->>
       ((x = x0) //\\ (Abs x (fun t => t < d))) -->>
-         []Abs x (fun z => a * ... * exp_in ...)*)
+         []Abs x (fun z => z < (a * x0 * exp (-b * t))). (* what is `t`? *)
+
 
   Ltac decompose_hyps :=
     repeat first [rewrite land_lor_distr_R |
@@ -145,29 +153,25 @@ Section P.
           [ solve_linear | charge_intros ].
           decompose_hyps.
           { solve_linear. clear H3. z3 solve_dbg.
-     *)
+ *)
 
-
+  (* ???? Move to BasicProofRules.v ???? *)
   Lemma always_next :
     forall F,
       BasicProofRules.is_st_formula F ->
       []F |-- []BasicProofRules.next F.
-  (* is_st_formula : Formula -> Prop (basicproofrules) *)
   Proof.
     intros.
-   apply lrevert.
-   rewrite BasicProofRules.always_st.
-   rewrite <- BasicProofRules.Always_and.
-   charge_intros.
-   charge_tauto.
-   tlaIntuition.
- Qed.
-
-   (* apply lrevert.
-    * apply BasicProofRules.next_inv with (N:=true)(I:=IndInv). *)
+    apply lrevert.
+    rewrite BasicProofRules.always_st.
+    rewrite <- BasicProofRules.Always_and.
+    charge_intros.
+    charge_tauto.
+    tlaIntuition.
+  Qed.
 
 
- Lemma spec_stable :
+  Lemma spec_stable :
     |-- Spec -->> Stable "x".
   Proof.
     charge_intros. tlaAssert ([]IndInv).
