@@ -1,5 +1,6 @@
 Require Import Coq.Reals.Rdefinitions.
 Require Import Reals.Rtrigo_def. (* for exp *)
+Require Import Reals.Rbasic_fun.
 Require Import TLA.TLA.
 Import LibNotations.
 Require Import TLA.DifferentialInduction.
@@ -34,8 +35,8 @@ Section P.
   Definition Abs (t : Term) (f : Term -> Formula) : Formula :=
     (t > 0 -->> f t) //\\ (t <= 0 -->> f (--t)).
 
-  (* forall e, exists d, |x| <= d -> [] |x| <= e *)
-  Definition Stable x : Formula :=
+  (* forall a, exists b, |x| <= b -> [] |x| <= a *)
+  Definition Stable (x : Term) : Formula :=
     Forall a : R,
       a > 0 -->>                (* boundary *)
       Exists b : R,
@@ -47,13 +48,21 @@ Section P.
   (* - How to encode |x0|?
      - what constraints exist on the constants?
    *)
-  Definition ExpStable x t : Formula :=
-    Exists a:R,   a > 0 -->>
-    Exists b:R,   b > 0 -->>
-    Exists d:R,   d > 0 -->>
-    Exists x0:R, x0 > 0 -->>
-      ((x = x0) //\\ (Abs x (fun t => t < d))) -->>
-         []Abs x (fun z => z < (a * x0 * exp (-b * t))). (* what is `t`? *)
+  (* Definition ExpStable x t : Formula :=
+   *   Exists a:R,   a > 0 -->>
+   *   Exists b:R,   b > 0 -->>
+   *   Exists d:R,   d > 0 -->>
+   *   Exists x0:R, x0 > 0 -->>
+   *     ((x = x0) //\\ (Abs x (fun t => t < d))) -->>
+   *        []Abs x (fun z => z < (a * x0 * exp (-b * t))). (* what is `t`? *) *)
+
+
+  Definition ExpStable x t: Formula :=
+    Exists a : R, a > 0 //\\
+    Exists b : R, b < 0 //\\
+    Exists x0: R, x = x0 -->>
+    Exists d : R, d > 0 //\\ (Abs x (fun z => z < d)) -->>
+    []Abs x (fun z => z < (a * (Rabs x0) * exp (-b * t))).
 
 
   Ltac decompose_hyps :=
