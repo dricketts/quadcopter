@@ -153,26 +153,12 @@ Section P.
           { solve_linear. clear H3. z3 solve_dbg.
  *)
 
-  (* ???? Move to BasicProofRules.v ???? *)
-  Lemma always_next :
-    forall F,
-      BasicProofRules.is_st_formula F ->
-      []F |-- []BasicProofRules.next F.
-  Proof.
-    intros.
-    apply lrevert.
-    rewrite BasicProofRules.always_st.
-    rewrite <- BasicProofRules.Always_and.
-    charge_intros.
-    charge_tauto.
-    tlaIntuition.
-  Qed.
 
-  Lemma spec_expstable :
-    |-- Spec -->> ExpStable "x".
-  Proof.
-    charge_intros.
-  Qed.
+  (* Lemma spec_expstable :
+   *   |-- Spec -->> ExpStable "x".
+   * Proof.
+   *   charge_intros.
+   * Qed. *)
 
 
   Lemma spec_stable :
@@ -193,12 +179,12 @@ Section P.
           repeat charge_split.
           * charge_tauto.
           * charge_tauto.
-          * rewrite always_next with (F := IndInv).
+          * rewrite BasicProofRules.always_next with (F := IndInv).
             charge_assumption.
             tlaIntuition.
           * unfold Next.
             rewrite <- BasicProofRules.Always_and.
-            rewrite always_next with (F := "t" >= 0).
+            rewrite BasicProofRules.always_next with (F := "t" >= 0).
             charge_tauto.
             tlaIntuition.
         + charge_tauto.
