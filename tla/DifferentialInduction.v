@@ -45,7 +45,7 @@ Definition get_deriv (x:Var) (eqs:list DiffEq)
                        (String.string_dec x y))) eqs).
 
 (* option map on two inputs *)
-Definition option_map2 {A B C} (f:A->B->C) 
+Definition option_map2 {A B C} (f:A->B->C)
   (a:option A) (b:option B) : option C :=
   match a, b with
     | Some a, Some b => Some (f a b)
@@ -88,12 +88,14 @@ Fixpoint deriv_term (t:Term) (eqs:list DiffEq)
     option_map2 MultT
                 (Some cos(t))
                 (deriv_term t eqs)
-  | SqrtT t => 
-    option_map2 MultT 
-                (Some (MultT (InvT (RealT 2)) (InvT (SqrtT t)))) 
+  | SqrtT t =>
+    option_map2 MultT
+                (Some (MultT (InvT (RealT 2)) (InvT (SqrtT t))))
                 (deriv_term t eqs)
-  | ArctanT t => 
+  | ArctanT t =>
     option_map InvT (Some (PlusT (RealT R1) (MultT t t)))
+  | ExpT t =>
+    None                        (* TODO *)
   end.
 
 (* Takes the "derivative" of a comparison operator.

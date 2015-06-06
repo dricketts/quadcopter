@@ -1,6 +1,6 @@
 Require Import Coq.Reals.Rdefinitions.
-Require Import Reals.Rtrigo_def. (* for exp *)
-Require Import Reals.Rbasic_fun.
+Require Import Coq.Reals.Rbasic_fun.
+Require Import Coq.Reals.Rtrigo_def.
 Require Import TLA.TLA.
 Import LibNotations.
 Require Import TLA.DifferentialInduction.
@@ -43,26 +43,15 @@ Section P.
         b > 0 //\\              (* start *)
         ((Abs x (fun t => t < b)) -->> []Abs x (fun t => t < a)).
 
-  (* exists \alpha \beta \delta, exists x_0,
-       x = x_0 /\ |x| <= \delta  -> [] |x| <= \alpha * |x_0| * e^(-\beta * t) *)
-  (* - How to encode |x0|?
-     - what constraints exist on the constants?
-   *)
-  (* Definition ExpStable x t : Formula :=
-   *   Exists a:R,   a > 0 -->>
-   *   Exists b:R,   b > 0 -->>
-   *   Exists d:R,   d > 0 -->>
-   *   Exists x0:R, x0 > 0 -->>
-   *     ((x = x0) //\\ (Abs x (fun t => t < d))) -->>
-   *        []Abs x (fun z => z < (a * x0 * exp (-b * t))). (* what is `t`? *) *)
-
-
-  Definition ExpStable x t: Formula :=
-    Exists a : R, a > 0 //\\
-    Exists b : R, b < 0 //\\
-    Exists x0: R, x = x0 -->>
-    Exists d : R, d > 0 //\\ (Abs x (fun z => z < d)) -->>
-    []Abs x (fun z => z < (a * (Rabs x0) * exp (-b * t))).
+  (* exists a, b, d, x0 :
+       x = x0 /\ |x| <= d  -> [] |x| <= a * |x0| * e^(-b * t) *)
+  Definition ExpStable x : Formula :=
+    Exists a : R,    a > 0  //\\
+    Exists b : R,    b < 0  //\\
+    Exists x0: R,    x = x0 //\\
+    Exists T : R,    T = "T" //\\
+    (* Exists d : R,    d > 0  //\\ (Abs x (fun z => z < d)) //\\ *)
+       []Abs x (fun z => z < (a * (Rabs x0) * exp(-- b * ("T" - T))))%HP.
 
 
   Ltac decompose_hyps :=
@@ -179,6 +168,12 @@ Section P.
     tlaIntuition.
   Qed.
 
+  Lemma spec_expstable :
+    |-- Spec -->> ExpStable "x".
+  Proof.
+    charge_intros.
+  Qed.
+
 
   Lemma spec_stable :
     |-- Spec -->> Stable "x".
@@ -248,6 +243,9 @@ Section P.
                 - solve_linear. }
           * solve_linear. }
 Qed.
+
+
+
 
 End P.
 

@@ -46,6 +46,7 @@ Fixpoint subst_term_term (t1 t2 : Term) (x : Var)
     | RealT _ => t1
     | SqrtT t => SqrtT (subst_term_term t t2 x next)
     | ArctanT t => ArctanT (subst_term_term t t2 x next)
+    | ExpT t => ExpT (subst_term_term t t2 x next)
   end.
 
 (* If next is true, substitutes t for x! in F.
@@ -107,7 +108,7 @@ Lemma next_subst_term : forall t1 t2 x,
   next_term (subst_term_term t1 t2 x false) =
   subst_term_term (next_term t1) (next_term t2) x true.
 Proof.
-  Admitted. 
+  Admitted.
 (*
   induction t1; simpl; auto; intros; try discriminate;
   try solve [ apply andb_prop in H;
@@ -144,7 +145,7 @@ Qed.
 Lemma subst_term_term_eq_varnext : forall t1 t2 x,
   x! = t2 |-- subst_term_term t1 t2 x true = t1.
 Proof.
-  Admitted. 
+  Admitted.
 (*
   induction t1; intros; breakAbstraction; try tlaRefl;
   simpl; unfold eval_comp;

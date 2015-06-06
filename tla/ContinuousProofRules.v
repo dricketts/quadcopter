@@ -60,7 +60,7 @@ induction cp.  intros F x Hin Hcont Hsuf.
       apply H10.
     * unfold derive in H2. firstorder.
       apply H3. auto. left; auto. psatzl R.
-    * intuition. 
+    * intuition.
   + apply IHcp with (x:=x).
     apply H.
     simpl in *. unfold tlaEntails in *. simpl in *.
@@ -113,6 +113,7 @@ Fixpoint term_unchanged (t:Term) (eqs:list DiffEq) : bool :=
     | SinT t => term_unchanged t eqs
     | SqrtT t => term_unchanged t eqs
     | ArctanT t => term_unchanged t eqs
+    | ExpT t => term_unchanged t eqs
   end.
 
 Fixpoint formula_unchanged (F:Formula) (eqs:list DiffEq)
