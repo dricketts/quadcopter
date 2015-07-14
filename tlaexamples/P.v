@@ -51,7 +51,7 @@ Section P.
     Exists x0: R,    x = x0 //\\
     Exists T : R,    T = "T" //\\
     (* Exists d : R,    d > 0  //\\ (Abs x (fun z => z < d)) //\\ *)
-       []Abs x (fun z => z < (a * (Rabs x0) * exp(-- b * ("T" - T))))%HP.
+       []Abs x (fun z => z < (a * (Rabs x0) * exp(b * ("T" - T))))%HP.
 
 
   Ltac decompose_hyps :=
@@ -228,10 +228,77 @@ Section P.
                   * solve_linear.
                 - solve_linear. }
           * solve_linear. }
-Qed.
+  Qed.
 
+  Lemma Exists_with_st : forall G P (t : Term),
+      (forall x : R, G |-- t = x -->> P x) ->
+      G |-- Exists x : R, P x.
+  Proof.
+    breakAbstraction.
+    intros.
+    specialize (H _ tr H0 eq_refl).
+    eexists. eauto.
+  Qed.
 
+  Lemma R_tri : forall v : Term,
+      |-- v < 0 \\// v = 0 \\// v > 0.
+  Proof.
+  Admitted.
 
+(*
+  Term = state -> R
+  "x" * 2 : (state -> R)
+*)
+
+  Lemma Abs_impl : forall t P Q,
+      Abs t (fun x => P x -->> Q x) -|- Abs t P -->> Abs t Q.
+  Proof.
+    unfold Abs.
+  Admitted.
+
+  Lemma spec_exp_stable :
+    |-- Spec -->> ExpStable "x".
+  Proof.
+    unfold ExpStable.
+    charge_intro.
+    tlaAssert ("x" < 0 \\// "x" = 0 \\// "x" > 0).
+    { apply forget_prem. apply R_tri. }
+    charge_intro.
+    decompose_hyps.
+    { eapply Exists_with_st with (t := --"x"); intro.
+      admit. }
+    { admit. }
+    { (* pick a *)
+      eapply Exists_with_st with (t := 2 * "x"); intro.
+      charge_intro.
+      charge_split.
+      { solve_linear. }
+      (* pick b *)
+      apply @lexistsR with (x:=(-2 * d)%R); eauto with typeclass_instances.
+(*      apply Exists_with_st with (t := --2 * d); intro. *)
+      charge_intros.
+      charge_split.
+      { solve_linear. }
+      apply Exists_with_st with (t := "x"); intro.
+      charge_intro.
+      charge_split.
+      { charge_tauto. }
+      apply Exists_with_st with (t := "T"); intro.
+      charge_intro.
+      charge_split.
+      { solve_linear. }
+      tlaAssert ([] IndInv). (* inductive invariant *)
+      { tlaAssert Spec.
+        - charge_tauto.
+        - apply forget_prem. eapply spec_indinv. }
+      { apply forget_prem.
+        eapply BasicProofRules.always_imp.
+        unfold IndInv.
+        rewrite <- Abs_impl.
+        unfold Abs; charge_split.
+        { admit. }
+        { admit. } } }
+  Qed.
 
 End P.
 
