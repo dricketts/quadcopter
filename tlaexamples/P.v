@@ -49,9 +49,9 @@ Section P.
     Exists a : R,    a > 0  //\\
     Exists b : R,    b < 0  //\\
     Exists x0: R,    x = x0 //\\
-    Exists T : R,    T = "T" //\\
+    Exists T : R,    T = "t" //\\
     (* Exists d : R,    d > 0  //\\ (Abs x (fun z => z < d)) //\\ *)
-       []Abs x (fun z => z < (a * (Rabs x0) * exp(b * ("T" - T))))%HP.
+       []Abs x (fun z => z < (a * (Rabs x0) * exp(b * ("t" - T))))%HP.
 
 
   Ltac decompose_hyps :=
@@ -242,19 +242,27 @@ Section P.
 
   Lemma R_tri : forall v : Term,
       |-- v < 0 \\// v = 0 \\// v > 0.
-  Proof.
-  Admitted.
+  Proof. solve_linear. Qed.
 
 (*
   Term = state -> R
   "x" * 2 : (state -> R)
 *)
 
+  Lemma impl_distr : forall F G H,
+      F -->> G -->> H |-- (F -->> G) -->> (F -->> H).
+  Proof. solve_linear. Qed.
+
+
   Lemma Abs_impl : forall t P Q,
       Abs t (fun x => P x -->> Q x) -|- Abs t P -->> Abs t Q.
   Proof.
     unfold Abs.
-  Admitted.
+    eexists.
+    solve_linear.
+
+    admit.
+  Qed.
 
   Lemma spec_exp_stable :
     |-- Spec -->> ExpStable "x".
@@ -262,28 +270,42 @@ Section P.
     unfold ExpStable.
     charge_intro.
     tlaAssert ("x" < 0 \\// "x" = 0 \\// "x" > 0).
-    { apply forget_prem. apply R_tri. }
+    { apply forget_prem. solve_linear. }
     charge_intro.
     decompose_hyps.
+    (* x < 0 *)
     { eapply Exists_with_st with (t := --"x"); intro.
+      (* charge_intros.
+       * charge_split.
+       * { solve_linear. }
+       * apply @lexistsR with (x:=(2 * d)%R); eauto with typeclass_instances.
+       * charge_intros.
+       * charge_split. *)
       admit. }
+
+    (*   (* x = 0 *)
+     * { eapply Exists_with_st with (t := 0); intro.
+     *   admit. } *)
     { admit. }
     { (* pick a *)
       eapply Exists_with_st with (t := 2 * "x"); intro.
+      rename x into a.
       charge_intro.
       charge_split.
       { solve_linear. }
       (* pick b *)
       apply @lexistsR with (x:=(-2 * d)%R); eauto with typeclass_instances.
-(*      apply Exists_with_st with (t := --2 * d); intro. *)
+      (*      apply Exists_with_st with (t := --2 * d); intro. *)
       charge_intros.
       charge_split.
       { solve_linear. }
       apply Exists_with_st with (t := "x"); intro.
+      rename x into x0.
       charge_intro.
       charge_split.
       { charge_tauto. }
-      apply Exists_with_st with (t := "T"); intro.
+      apply Exists_with_st with (t := "t"); intro.
+      rename x into T.
       charge_intro.
       charge_split.
       { solve_linear. }
@@ -291,11 +313,28 @@ Section P.
       { tlaAssert Spec.
         - charge_tauto.
         - apply forget_prem. eapply spec_indinv. }
-      { apply forget_prem.
+      { (* apply forget_prem. *)
         eapply BasicProofRules.always_imp.
-        unfold IndInv.
-        rewrite <- Abs_impl.
-        unfold Abs; charge_split.
+        unfold Abs.
+        charge_intros.
+        charge_split.
+        { charge_intros.
+          (*    ((Spec //\\ []IndInv) //\\ b > 0) //\\ Abs "x" (fun t : Term => t < b)
+   |-- []Abs "x" (fun t : Term => t < b)
+           *)
+          unfold IndInv.
+
+          eapply BasicProofRules.discr_indX
+          with (A:=IndInv //\\ Next //\\ BasicProofRules.next IndInv //\\ "t"! >= 0).
+
+
+          admit. }
+        { charge_intros. admit.}
+
+        (* |v| * t <= |x| < x * Rabs x0 * exp((-2 * d)%R * ("T" - x1))  *)
+
+        (* rewrite <- Abs_impl. *)
+
         { admit. }
         { admit. } } }
   Qed.
