@@ -48,3 +48,7 @@
         #:x-min 0 #:y-min 0
         #:x-label "time"	 
         #:y-label "x"))
+
+(define (tests)
+  (for/list [(i 10)]
+    (graph)))
