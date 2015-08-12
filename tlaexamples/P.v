@@ -52,6 +52,78 @@ End Exp.
 
 Open Scope string_scope.
 Open Scope HP_scope.
+Section Line.
+  Variables a : R.
+  (* Local Open Scope R_scope. *)
+  Hypothesis a_gt_0 : (a > 0)%R.
+  (* Hypothesis b_gt_0 : (b > 0)%R. *)
+  Variable t0 : R.
+  Variable x0 : R.
+  Hypothesis x0_ge_0 : (x0 >= 0)%R.
+  Variable delta : R.
+  Hypothesis delta_gt_0 : (delta > 0)%R.
+  Let b : R := (/ delta)%R.
+
+  Definition L : Term :=
+    --b * x0 * ("t" - t0) + x0.
+
+  Definition World : Formula :=
+    Continuous (["x"' ::= "v", "v"' ::= 0, "t"' ::= 1]) //\\ "t"! < t0 + delta.
+
+  Definition Init : Formula :=
+    "t"=t0 //\\ "v"=--b * "x" //\\ "x" = x0.
+
+  Definition Safe : Formula :=
+    0 <= "x" <= L.
+
+  Local Coercion RealT : R >-> Term.
+
+  Theorem Lines : |-- Init //\\ []World -->> []Safe.
+  Proof.
+    assert (b > 0)%R.
+    { unfold b. solve_nonlinear. }
+    eapply BasicProofRules.imp_trans
+      with (F2 := [](     Safe
+                     //\\ --"x" * / (delta - ("t" - t0)) <= "v" <= --b * x0
+                     //\\ t0 <= "t" <= delta + t0)).
+    { charge_intros. eapply BasicProofRules.discr_indX.
+      { compute. tauto. }
+      { charge_assumption. }
+      { apply landL1.
+        unfold Init, Safe.
+        charge_split.
+        { unfold L.
+          eapply lcut with (R := "t" - t0 = 0); [ solve_linear | ].
+          charge_intros. solve_linear.
+          rewrite H2. solve_linear. }
+        charge_split.
+        { (* this should be true because everything is equal *)
+          admit. }
+        { solve_linear. } }
+      { unfold Safe, World, L.
+        eapply diff_ind
+          with (Hyps := "v" = --b * x0 //\\ "t" >= t0). (* this is the differential invariant *)
+        { compute. tauto. }
+        { compute. tauto. }
+        { charge_assumption. }
+        { eapply diff_ind with (Hyps := ltrue).
+          { compute. tauto. }
+          { compute. tauto. }
+          { charge_assumption. }
+          { charge_assumption. }
+          { charge_assumption. }
+          { charge_tauto. }
+          { simpl deriv_formula.
+            solve_linear. } }
+        { charge_assumption. }
+        { charge_split; try charge_assumption. }
+        { simpl deriv_formula; restoreAbstraction.
+          charge_split; [ charge_split | ].
+          Focus 2.
+
+
+End Line.
+
 Section P.
 
   Variable d : R.
