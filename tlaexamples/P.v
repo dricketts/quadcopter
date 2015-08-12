@@ -8,9 +8,50 @@ Require Import TLA.ContinuousProofRules.
 Require Import ChargeTactics.Lemmas.
 Require Import ArithFacts.
 
+Section Exp.
+  Variables a b : R.
+  Local Open Scope R_scope.
+  Hypothesis a_gt_0 : a > 0.
+  Hypothesis b_gt_0 : b > 0.
+
+  Definition f (t: R) : R :=
+    a * exp (-b*t).
+
+  Definition Deriv_f (t :R) :R :=
+    -a * b * exp (-b*t).
+
+  Definition Tangent (x:R) : (R -> R) :=
+    fun t => Deriv_f x * (t - x) + f x.
+
+  Definition fun_le (f g : R -> R) : Prop :=
+    forall t, f t <= g t.
+
+  Lemma tangent_lt_exp :
+    forall t, fun_le (Tangent t) f.
+  Proof.
+    intros. red. unfold Tangent. unfold f. unfold Deriv_f.
+    intro. assert (t < t0 \/ t=t0 \/ t > t0). solve_linear.
+    destruct H.
+    { SearchAbout exp.
+      assert (-b*t0 < -b * t). solve_nonlinear.
+      eapply Rpower.exp_increasing in H0.
+      admit. }
+    destruct H.
+    { subst. solve_linear. }
+    { assert (-b*t < -b*t0). solve_nonlinear.
+      eapply Rpower.exp_increasing in H0.
+      SearchAbout Rpower.ln.
+      admit.
+    }
+  Admitted.
+
+
+
+End Exp.
+
+
 Open Scope string_scope.
 Open Scope HP_scope.
-
 Section P.
 
   Variable d : R.
@@ -46,12 +87,12 @@ Section P.
   (* exists a, b, d, x0 :
        x = x0 /\ |x| <= d  -> [] |x| <= a * |x0| * e^(-b * t) *)
   Definition ExpStable x : Formula :=
-    Exists a : R,    a > 0  //\\
-    Exists b : R,    b < 0  //\\
-    Exists x0: R,    x = x0 //\\
+    Exists a : R,    a > 0   //\\ (* a = 2 *)
+    Exists b : R,    b > 0   //\\ (* b = 1/(a*x0) *)
+    Exists x0: R,    x = x0  //\\
     Exists T : R,    T = "t" //\\
     (* Exists d : R,    d > 0  //\\ (Abs x (fun z => z < d)) //\\ *)
-       []Abs x (fun z => z < (a * (Rabs x0) * exp(b * ("t" - T))))%HP.
+       []Abs x (fun z => z < (a * (Rabs x0) * exp(--b * ("t" - T))))%HP.
 
 
   Ltac decompose_hyps :=
@@ -293,8 +334,10 @@ Section P.
       charge_intro.
       charge_split.
       { solve_linear. }
-      (* pick b *)
-      apply @lexistsR with (x:=(-2 * d)%R); eauto with typeclass_instances.
+      (* pick b
+            (x:=(-2 * d)%R)
+       *)
+      apply @lexistsR with (x:=(d)%R); eauto with typeclass_instances.
       (*      apply Exists_with_st with (t := --2 * d); intro. *)
       charge_intros.
       charge_split.
@@ -323,7 +366,20 @@ Section P.
    |-- []Abs "x" (fun t : Term => t < b)
            *)
           unfold IndInv.
+          tlaAssert ("t" > 0).
+          { admit. }
+          tlaAssert ("v" < 0 \\// "v" >= 0).
+          { solve_linear. }
+          charge_intros.
+          decompose_hyps.
+          { "t" > T /\ "t" > 0 /\ a > 0 /\
 
+}
+          { etransitivity. 2: eapply ILogic.lfalseL.
+            solve_nonlinear. } }
+        {
+          SearchAbout R.
+          destruct (
           eapply BasicProofRules.discr_indX
           with (A:=IndInv //\\ Next //\\ BasicProofRules.next IndInv //\\ "t"! >= 0).
 
@@ -343,3 +399,14 @@ End P.
 
 Close Scope string_scope.
 Close Scope HP_scope.
+
+(*
+
+exp decay function
+f = \x -> |x| <= |x0|*a*e^[b*(T-T0)]
+
+Let initial d-t function be y = -x + 1
+- if constant interrupts (epsilon ~= 0) , gradient is very similar to original line
+- *one* delayed interrupt (epsilon >= 0.5) would force x towards 0, with a long tail.
+
+*)
