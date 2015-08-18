@@ -89,7 +89,27 @@ Section Line.
     solve_linear.
   Qed.
 
-  (* Theorem Tangent_le :  *)
+  (*
+  (* exists a, b, d, x0 :
+       x = x0 /\ |x| <= d  -> [] |x| <= a * |x0| * e^(-b * t) *)
+  Definition ExpStable x : Formula :=
+    Exists a : R,    a > 0   //\\ (* a = 2 *)
+    Exists b : R,    b > 0   //\\ (* b = 1/(a*x0) *)
+    Exists x0: R,    x = x0  //\\
+    Exists T : R,    T = "t" //\\
+    (* Exists d : R,    d > 0  //\\ (Abs x (fun z => z < d)) //\\ *)
+    []Abs x (fun z => z < (a * (Rabs x0) * exp(--b * ("t" - T))))%HP.
+   *)
+
+  Definition E : Term :=
+    a * x0 * exp(--b * "t").
+
+  Theorem Tangent_le :
+    (x0 <= a * x0 * exp (-b * t0))%R ->
+    |-- [] E >= L.
+  Proof.
+    (* This is the proof that the exponential is concave up *)
+  Admitted.
 
   Theorem Parallel_lines_lt :
     |-- Init //\\ []World -->> []Safe.
