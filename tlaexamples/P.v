@@ -8,48 +8,6 @@ Require Import TLA.ContinuousProofRules.
 Require Import ChargeTactics.Lemmas.
 Require Import ArithFacts.
 
-Section Exp.
-  Variables a b : R.
-  Local Open Scope R_scope.
-  Hypothesis a_gt_0 : a > 0.
-  Hypothesis b_gt_0 : b > 0.
-
-  Definition f (t: R) : R :=
-    a * exp (-b*t).
-
-  Definition Deriv_f (t :R) :R :=
-    -a * b * exp (-b*t).
-
-  Definition Tangent (x:R) : (R -> R) :=
-    fun t => Deriv_f x * (t - x) + f x.
-
-  Definition fun_le (f g : R -> R) : Prop :=
-    forall t, f t <= g t.
-
-  Lemma tangent_lt_exp :
-    forall t, fun_le (Tangent t) f.
-  Proof.
-    intros. red. unfold Tangent. unfold f. unfold Deriv_f.
-    intro. assert (t < t0 \/ t=t0 \/ t > t0). solve_linear.
-    destruct H.
-    { SearchAbout exp.
-      assert (-b*t0 < -b * t). solve_nonlinear.
-      eapply Rpower.exp_increasing in H0.
-      admit. }
-    destruct H.
-    { subst. solve_linear. }
-    { assert (-b*t < -b*t0). solve_nonlinear.
-      eapply Rpower.exp_increasing in H0.
-      SearchAbout Rpower.ln.
-      admit.
-    }
-  Admitted.
-
-
-
-End Exp.
-
-
 Open Scope string_scope.
 Open Scope HP_scope.
 Section Line.
@@ -80,14 +38,10 @@ Section Line.
   Local Coercion RealT : R >-> Term.
 
   Theorem Rmult_0_left : forall r, (eq (0 * r) 0)%R.
-  Proof.
-    solve_linear.
-  Qed.
+  Proof. solve_linear. Qed.
 
   Theorem Rmult_0_right : forall r, (eq (r * 0) 0)%R.
-  Proof.
-    solve_linear.
-  Qed.
+  Proof. solve_linear. Qed.
 
   (*
   (* exists a, b, d, x0 :
@@ -116,9 +70,7 @@ Section Line.
   Proof.
     assert (b > 0)%R.
     { unfold b. solve_nonlinear. }
-    About diff_ind.
-    (* temporal invariant for discrete induction *)
-    Check BasicProofRules.imp_trans.
+    (* strengthened temporal invariant for discrete induction *)
     eapply BasicProofRules.imp_trans
     with (F2 := [](     "x" = L
                    //\\ "v" = --b * x0
@@ -140,7 +92,8 @@ Section Line.
         { solve_linear. } }
       { unfold Safe, World, L.
         (* this is the differential invariant *)
-        transitivity (BasicProofRules.next ("x" = L //\\ "v" = -- (b) * x0 //\\ t0 <= "t") //\\ BasicProofRules.next ("t" <= t0 +delta)).
+        transitivity (BasicProofRules.next ("x" = L //\\ "v" = -- (b) * x0 //\\ t0 <= "t")
+                 //\\ BasicProofRules.next ("t" <= t0 +delta)).
         { charge_split.
           2: charge_assumption.
           eapply diff_ind with (Hyps := "v" = --b*x0).
@@ -155,7 +108,8 @@ Section Line.
             { charge_tauto. }
             { charge_tauto. }
             { simpl. solve_linear. } }
-          { unfold L. charge_split. charge_assumption.
+          { unfold L.
+            charge_split. charge_assumption.
             charge_split. charge_assumption.
             solve_linear. }
           { charge_tauto. }
