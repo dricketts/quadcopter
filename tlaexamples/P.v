@@ -24,10 +24,10 @@ Section Exp.
   Definition L : Term :=
     --b * x0 * ("t" - t0) + x0.
 
-  Definition World : Formula :=
+  Let World : Formula :=
     Continuous (["x"' ::= "v", "v"' ::= 0, "t"' ::= 1]) //\\ "t"! <= t0 + delta.
 
-  Definition Init : Formula :=
+  Let Init : Formula :=
     "t" = t0 //\\ "v" = --b * "x" //\\ "x" = x0.
 
   Definition Safe : Formula :=
@@ -41,28 +41,22 @@ Section Exp.
   Theorem Rmult_0_right : forall r, (eq (r * 0) 0)%R.
   Proof. solve_linear. Qed.
 
-  (*
-  (* exists a, b, d, x0 :
-       x = x0 /\ |x| <= d  -> [] |x| <= a * |x0| * e^(-b * t) *)
-  Definition ExpStable x : Formula :=
-    Exists a : R,    a > 0   //\\ (* a = 2 *)
-    Exists b : R,    b > 0   //\\ (* b = 1/(a*x0) *)
-    Exists x0: R,    x = x0  //\\
-    Exists T : R,    T = "t" //\\
-    (* Exists d : R,    d > 0  //\\ (Abs x (fun z => z < d)) //\\ *)
-    []Abs x (fun z => z < (a * (Rabs x0) * exp(--b * ("t" - T))))%HP.
-   *)
-
   Definition E : Term :=
     a * x0 * exp(--b * "t").
 
+  (* Does not work with 0 <= "x" < E for some reason... *)
+  Definition Exp_Safe : Formula :=
+    0 <= "x" <= E.
+
+  (* (1) This is the proof that the exponential is concave up. *)
   Theorem Tangent_le_exp :
     (x0 <= a * x0 * exp (-b * t0))%R ->
-    |-- [] E >= L.
+    |-- [] (L <= E).
   Proof.
-    (* This is the proof that the exponential is concave up *)
   Admitted.
 
+  (* (2) This is the proof that we are always below
+         the tangent drawn at the start of the run. *)
   Theorem Spec_lt_tangent :
     |-- Init //\\ []World -->> []Safe.
   Proof.
@@ -91,7 +85,7 @@ Section Exp.
       { unfold Safe, World, L.
         (* this is the differential invariant *)
         transitivity (BasicProofRules.next ("x" = L //\\ "v" = -- (b) * x0 //\\ t0 <= "t")
-                 //\\ BasicProofRules.next ("t" <= t0 +delta)).
+                 //\\ BasicProofRules.next ("t" <= t0 + delta)).
         { charge_split.
           2: charge_assumption.
           eapply diff_ind with (Hyps := "v" = --b*x0).
@@ -129,6 +123,14 @@ Section Exp.
       z3 solve; admit. }
   Qed.
 
+  (* Exponential stability is the composition of (1) and (2) *)
+  Theorem Exp_stable :
+    |-- Init //\\ []World -->> []Exp_Safe.
+  Proof.
+    charge_intros. tlaAssert ([]Safe).
+    { apply lrevert. apply Spec_lt_tangent. }
+  Admitted.
+
 
 End Exp.
 
@@ -137,13 +139,13 @@ Section P.
   Variable d : R.
   Hypothesis d_gt_0 : (d > 0)%R.
 
-  Definition World : Formula :=
+  Let World : Formula :=
     Continuous (["x"' ::= "v", "v"' ::= 0, "t"' ::= --1]).
 
   Definition Ctrl : Formula :=
     "v"! = --"x"/d //\\ Unchanged (["x", "t"]).
 
-  Definition Init : Formula :=
+  Let Init : Formula :=
     "v" = --"x"/d //\\ "t" <= d.
 
   Definition Next : Formula :=
