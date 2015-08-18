@@ -10,11 +10,9 @@ Require Import ArithFacts.
 
 Open Scope string_scope.
 Open Scope HP_scope.
-Section Line.
+Section Exp.
   Variables a : R.
-  (* Local Open Scope R_scope. *)
   Hypothesis a_gt_0 : (a > 0)%R.
-  (* Hypothesis b_gt_0 : (b > 0)%R. *)
   Variable t0 : R.
   Hypothesis t0_ge_0 : (t0 >= 0)%R.
   Variable x0 : R.
@@ -58,14 +56,14 @@ Section Line.
   Definition E : Term :=
     a * x0 * exp(--b * "t").
 
-  Theorem Tangent_le :
+  Theorem Tangent_le_exp :
     (x0 <= a * x0 * exp (-b * t0))%R ->
     |-- [] E >= L.
   Proof.
     (* This is the proof that the exponential is concave up *)
   Admitted.
 
-  Theorem Parallel_lines_lt :
+  Theorem Spec_lt_tangent :
     |-- Init //\\ []World -->> []Safe.
   Proof.
     assert (b > 0)%R.
@@ -114,8 +112,8 @@ Section Line.
             solve_linear. }
           { charge_tauto. }
           { simpl. breakAbstraction.
-            repeat rewrite Rmult_0_right.
             repeat rewrite Rmult_0_left.
+            repeat rewrite Rmult_0_right.
             solve_linear. } }
         { charge_tauto. } } }
     { unfold Safe.
@@ -132,9 +130,7 @@ Section Line.
   Qed.
 
 
-
-
-End Line.
+End Exp.
 
 Section P.
 
