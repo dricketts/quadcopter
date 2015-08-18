@@ -58,6 +58,7 @@ Section Line.
   Hypothesis a_gt_0 : (a > 0)%R.
   (* Hypothesis b_gt_0 : (b > 0)%R. *)
   Variable t0 : R.
+  Hypothesis t0_ge_0 : (t0 >= 0)%R.
   Variable x0 : R.
   Hypothesis x0_ge_0 : (x0 >= 0)%R.
   Variable delta : R.
@@ -68,24 +69,40 @@ Section Line.
     --b * x0 * ("t" - t0) + x0.
 
   Definition World : Formula :=
-    Continuous (["x"' ::= "v", "v"' ::= 0, "t"' ::= 1]) //\\ "t"! < t0 + delta.
+    Continuous (["x"' ::= "v", "v"' ::= 0, "t"' ::= 1]) //\\ "t"! <= t0 + delta.
 
   Definition Init : Formula :=
-    "t"=t0 //\\ "v"=--b * "x" //\\ "x" = x0.
+    "t" = t0 //\\ "v" = --b * "x" //\\ "x" = x0.
 
   Definition Safe : Formula :=
     0 <= "x" <= L.
 
   Local Coercion RealT : R >-> Term.
 
-  Theorem Lines : |-- Init //\\ []World -->> []Safe.
+  Theorem Rmult_0_left : forall r, (eq (0 * r) 0)%R.
+  Proof.
+    solve_linear.
+  Qed.
+
+  Theorem Rmult_0_right : forall r, (eq (r * 0) 0)%R.
+  Proof.
+    solve_linear.
+  Qed.
+
+  (* Theorem Tangent_le :  *)
+
+  Theorem Parallel_lines_lt :
+    |-- Init //\\ []World -->> []Safe.
   Proof.
     assert (b > 0)%R.
     { unfold b. solve_nonlinear. }
+    About diff_ind.
+    (* temporal invariant for discrete induction *)
+    Check BasicProofRules.imp_trans.
     eapply BasicProofRules.imp_trans
-      with (F2 := [](     Safe
-                     //\\ --"x" * / (delta - ("t" - t0)) <= "v" <= --b * x0
-                     //\\ t0 <= "t" <= delta + t0)).
+    with (F2 := [](     "x" = L
+                   //\\ "v" = --b * x0
+                   //\\ t0 <= "t" <= t0 + delta)).
     { charge_intros. eapply BasicProofRules.discr_indX.
       { compute. tauto. }
       { charge_assumption. }
@@ -97,29 +114,50 @@ Section Line.
           charge_intros. solve_linear.
           rewrite H2. solve_linear. }
         charge_split.
-        { (* this should be true because everything is equal *)
-          admit. }
+        { breakAbstraction. unfold b.
+          intuition. subst. rewrite H0.
+          reflexivity. }
         { solve_linear. } }
       { unfold Safe, World, L.
-        eapply diff_ind
-          with (Hyps := "v" = --b * x0 //\\ "t" >= t0). (* this is the differential invariant *)
-        { compute. tauto. }
-        { compute. tauto. }
-        { charge_assumption. }
-        { eapply diff_ind with (Hyps := ltrue).
-          { compute. tauto. }
-          { compute. tauto. }
+        (* this is the differential invariant *)
+        transitivity (BasicProofRules.next ("x" = L //\\ "v" = -- (b) * x0 //\\ t0 <= "t") //\\ BasicProofRules.next ("t" <= t0 +delta)).
+        { charge_split.
+          2: charge_assumption.
+          eapply diff_ind with (Hyps := "v" = --b*x0).
+          { compute ; tauto. }
+          { compute ; tauto. }
           { charge_assumption. }
-          { charge_assumption. }
-          { charge_assumption. }
+          { eapply diff_ind with (Hyps := ltrue).
+            { compute ; tauto. }
+            { compute ; tauto. }
+            { charge_assumption. }
+            { charge_tauto. }
+            { charge_tauto. }
+            { charge_tauto. }
+            { simpl. solve_linear. } }
+          { unfold L. charge_split. charge_assumption.
+            charge_split. charge_assumption.
+            solve_linear. }
           { charge_tauto. }
-          { simpl deriv_formula.
+          { simpl. breakAbstraction.
+            repeat rewrite Rmult_0_right.
+            repeat rewrite Rmult_0_left.
             solve_linear. } }
-        { charge_assumption. }
-        { charge_split; try charge_assumption. }
-        { simpl deriv_formula; restoreAbstraction.
-          charge_split; [ charge_split | ].
-          Focus 2.
+        { charge_tauto. } } }
+    { unfold Safe.
+      eapply BasicProofRules.always_imp.
+      unfold L.
+      breakAbstraction. split.
+      2: solve_linear.
+      intuition.
+      rewrite H2.
+      assert ((Stream.hd tr "t") >= t0)%R.
+      solve_nonlinear.
+      unfold b.
+      z3 solve; admit. }
+  Qed.
+
+
 
 
 End Line.
