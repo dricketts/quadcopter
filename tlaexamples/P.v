@@ -11,8 +11,10 @@ Require Import ArithFacts.
 Open Scope string_scope.
 Open Scope HP_scope.
 Section Exp.
+(*
   Variables a : R.
   Hypothesis a_gt_0 : (a > 0)%R.
+*)
   Variable t0 : R.
   Hypothesis t0_ge_0 : (t0 >= 0)%R.
   Variable x0 : R.
@@ -42,18 +44,44 @@ Section Exp.
   Proof. solve_linear. Qed.
 
   Definition E : Term :=
-    a * x0 * exp(--b * "t").
+    x0 * exp(--b * ("t" - t0)).
 
   (* Does not work with 0 <= "x" < E for some reason... *)
   Definition Exp_Safe : Formula :=
     0 <= "x" <= E.
 
+  Lemma prove_always : forall P,
+      BasicProofRules.is_st_formula P ->
+      (forall st, eval_formula P (Stream.forever st)) ->
+      |-- [] P.
+  Proof.
+    red. red. red. red. simpl. fold eval_formula.
+    intros.
+    eapply st_formula_hd; [ assumption | eapply H0 | ].
+    instantiate (1 := Stream.hd (Stream.nth_suf n tr)).
+    reflexivity.
+  Qed.
+
   (* (1) This is the proof that the exponential is concave up. *)
   Theorem Tangent_le_exp :
-    (x0 <= a * x0 * exp (-b * t0))%R ->
     |-- [] (L <= E).
   Proof.
-  Admitted.
+    unfold L, E.
+    eapply prove_always.
+    { compute. tauto. }
+    { intros.
+      simpl. generalize (st "t"). clear. intro t.
+      pose (L := (fun t => (0 - b) * x0 * (t - t0) + x0)%R).
+      pose (E := (fun t => x0 * exp ((0 - b) * (t - t0)))%R).
+      change (L t <= E t)%R.
+      cut (0 <= (fun t => E t - L t) t)%R.
+      { clear. solve_linear. }
+      (* This is really close but the standard library does not have the
+       * theorem for the open interval. It is a theorem that is very similar to
+       * MVT.nonneg_derivative_1
+       *)
+      admit. }
+  Qed.
 
   (* (2) This is the proof that we are always below
          the tangent drawn at the start of the run. *)
@@ -120,7 +148,23 @@ Section Exp.
       assert ((Stream.hd tr "t") >= t0)%R.
       solve_nonlinear.
       unfold b.
-      z3 solve; admit. }
+      clear - x0_ge_0 delta_gt_0 H5.
+      assert (x0 * delta >= x0 * (Stream.hd tr "t" - t0))%R.
+      { solve_nonlinear. }
+      eapply RIneq.Rmult_le_reg_l with (r:=(delta)%R).
+      { solve_nonlinear. }
+      rewrite Rmult_0_right.
+      rewrite Raxioms.Rmult_comm.
+      rewrite RIneq.Rmult_plus_distr_r.
+      cutrewrite (eq ((0 - / delta) * x0 * (Stream.hd tr "t" - t0) * delta + x0 * delta)%R
+                     ((0 - / delta) * delta * x0 * (Stream.hd tr "t" - t0) + x0 * delta)%R).
+      2: solve_linear.
+      rewrite Rmult_minus_distr_r.
+      rewrite Rmult_0_left.
+      rewrite (Raxioms.Rmult_comm (/delta) delta).
+      rewrite RIneq.Rinv_r.
+      2: solve_linear.
+      solve_nonlinear. }
   Qed.
 
   (* Exponential stability is the composition of (1) and (2) *)
@@ -129,8 +173,15 @@ Section Exp.
   Proof.
     charge_intros. tlaAssert ([]Safe).
     { apply lrevert. apply Spec_lt_tangent. }
-  Admitted.
-
+    apply forget_prem.
+    rewrite Tangent_le_exp.
+    tlaRevert.
+    rewrite <- curry.
+    rewrite BasicProofRules.Always_and.
+    apply BasicProofRules.always_imp.
+    unfold Safe, Exp_Safe.
+    solve_linear.
+  Qed.
 
 End Exp.
 
