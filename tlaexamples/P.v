@@ -50,6 +50,14 @@ Section Exp.
   Definition Exp_Safe : Formula :=
     0 <= "x" <= E.
 
+  Lemma b_gt_0 :
+    (b > 0)%R.
+  Proof.
+    unfold b.
+    apply RIneq.Rlt_gt. apply RIneq.Rinv_0_lt_compat.
+    solve_linear.
+  Qed.
+
   Lemma prove_always : forall P,
       BasicProofRules.is_st_formula P ->
       (forall st, eval_formula P (Stream.forever st)) ->
@@ -62,6 +70,56 @@ Section Exp.
     reflexivity.
   Qed.
 
+  Lemma R_tricotomy : forall a b : R, (a < b \/ a = b \/ a > b)%R.
+  Proof. clear. solve_linear. Qed.
+
+
+  Ltac simplify_deriv_pt :=
+    repeat first
+           [ rewrite Rmult_0_right
+           | rewrite Rmult_0_left
+           | rewrite Raxioms.Rplus_0_l
+           | rewrite RIneq.Rplus_0_r
+           | rewrite RIneq.Rmult_0_r
+           | rewrite RIneq.Rmult_0_l
+           | rewrite Ranalysis1.derive_pt_id
+           | rewrite Ranalysis4.derive_pt_exp
+           | generalize Ranalysis1.derive_pt_minus;
+             unfold Ranalysis1.minus_fct;
+             intro H'; rewrite H'; clear H'
+           | generalize Ranalysis1.derive_pt_const;
+             unfold Ranalysis1.fct_cte;
+             intro H'; rewrite H'; clear H'
+           | generalize Ranalysis1.derive_pt_mult;
+             unfold Ranalysis1.mult_fct;
+             intro H';
+             match goal with
+             | |- context [ Ranalysis1.derive_pt (fun x : R => @?F x * @?G x)%R ?X _ ] =>
+               erewrite (@H' F G X _ _) ; simpl in H'
+             end; clear H'
+           | generalize Ranalysis1.derive_pt_plus;
+             unfold Ranalysis1.plus_fct;
+             intro H';
+             match goal with
+             | |- context [ Ranalysis1.derive_pt (fun x : R => @?F x + @?G x)%R ?X _ ] =>
+               erewrite (@H' F G X _ _) ; simpl in H'
+             end; clear H'
+           | generalize Ranalysis1.derive_pt_minus;
+             unfold Ranalysis1.minus_fct;
+             intro H';
+             match goal with
+             | |- context [ Ranalysis1.derive_pt (fun x : R => @?F x - @?G x)%R ?X _ ] =>
+               erewrite (@H' F G X _ _) ; simpl in H'
+             end; clear H'
+           | generalize Ranalysis1.derive_pt_comp;
+             unfold Ranalysis1.comp;
+             intro H';
+             match goal with
+             | |- context [ Ranalysis1.derive_pt (fun x : R => exp (@?F x))%R ?X _ ] =>
+               rewrite (H' F exp X _ _); simpl in H' end; clear H'
+           | rewrite RIneq.Rminus_0_l
+           | rewrite RIneq.Rminus_0_r ].
+
   (* (1) This is the proof that the exponential is concave up. *)
   Theorem Tangent_le_exp :
     |-- [] (L <= E).
@@ -70,17 +128,61 @@ Section Exp.
     eapply prove_always.
     { compute. tauto. }
     { intros.
-      simpl. generalize (st "t"). clear. intro t.
+      simpl. generalize (st "t"). clear World Init st. intro t.
       pose (L := (fun t => (0 - b) * x0 * (t - t0) + x0)%R).
       pose (E := (fun t => x0 * exp ((0 - b) * (t - t0)))%R).
       change (L t <= E t)%R.
       cut (0 <= (fun t => E t - L t) t)%R.
       { clear. solve_linear. }
-      (* This is really close but the standard library does not have the
-       * theorem for the open interval. It is a theorem that is very similar to
-       * MVT.nonneg_derivative_1
-       *)
-      admit. }
+      cutrewrite ((eq 0 (E t0 - L t0))%R).
+      { destruct (R_tricotomy t t0) as [ ? | [ ? | ? ] ].
+        { cut (L t - E t <= L t0 - E t0)%R; [ clear ; solve_linear | ].
+          eapply MVT.derive_increasing_interv_var
+            with (a:=t) (b:=t0) (f:=(fun x => L x - E x)%R); try assumption.
+          2: solve_linear.
+          2: solve_linear.
+          intros. unfold L, E.
+          Require Import Reals.
+          simplify_deriv_pt.
+          (* Provable! **)
+          assert (exp (- b * (t1 - t0)) > 1)%R.
+          { rewrite <- exp_0.
+            eapply RIneq.Rlt_gt.
+            eapply Rpower.exp_increasing.
+            generalize b_gt_0. solve_nonlinear. }
+          generalize dependent (exp (- b * (t1 - t0)))%R.
+          intros.
+          ring_simplify.
+          generalize b_gt_0. intro.
+          assert (b * x0 >= 0)%R.
+          { solve_nonlinear. }
+          { generalize dependent (b * x0)%R. solve_nonlinear. } }
+        { subst. clearbody L; clearbody E. solve_linear. }
+        { eapply MVT.derive_increasing_interv_var
+            with (a:=t0) (b:=t) (f:=(fun x => E x - L x)%R); try assumption.
+          2: solve_linear.
+          2: solve_linear.
+          intros; unfold L, E.
+          simplify_deriv_pt.
+          (* Provable! **)
+          assert (exp (- b * (t1 - t0)) < 1)%R.
+          { rewrite <- exp_0.
+            eapply Rpower.exp_increasing.
+            generalize b_gt_0. solve_nonlinear. }
+          generalize dependent (exp (- b * (t1 - t0)))%R.
+          intros.
+          ring_simplify.
+          generalize b_gt_0. intro.
+          assert (x0 * b >= 0)%R.
+          { solve_nonlinear. }
+          { cutrewrite (eq (-x0 * r * b) (-r * (x0 * b)))%R.
+            generalize dependent (x0 * b) %R.
+            solve_nonlinear.
+            ring. } } }
+      { unfold L, E.
+        cutrewrite (eq ((0 - b) * (t0 - t0)) 0)%R.
+        rewrite exp_0. solve_linear.
+        solve_linear. } }
   Qed.
 
   (* (2) This is the proof that we are always below
