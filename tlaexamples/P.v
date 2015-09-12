@@ -95,22 +95,19 @@ Section Exp.
              intro H';
              match goal with
              | |- context [ Ranalysis1.derive_pt (fun x : R => @?F x * @?G x)%R ?X _ ] =>
-               erewrite (@H' F G X _ _) ; simpl in H'
-             end; clear H'
+               erewrite (@H' F G X _ _) ; simpl in H' end; clear H'
            | generalize Ranalysis1.derive_pt_plus;
              unfold Ranalysis1.plus_fct;
              intro H';
              match goal with
              | |- context [ Ranalysis1.derive_pt (fun x : R => @?F x + @?G x)%R ?X _ ] =>
-               erewrite (@H' F G X _ _) ; simpl in H'
-             end; clear H'
+               erewrite (@H' F G X _ _) ; simpl in H' end; clear H'
            | generalize Ranalysis1.derive_pt_minus;
              unfold Ranalysis1.minus_fct;
              intro H';
              match goal with
              | |- context [ Ranalysis1.derive_pt (fun x : R => @?F x - @?G x)%R ?X _ ] =>
-               erewrite (@H' F G X _ _) ; simpl in H'
-             end; clear H'
+               erewrite (@H' F G X _ _) ; simpl in H' end; clear H'
            | generalize Ranalysis1.derive_pt_comp;
              unfold Ranalysis1.comp;
              intro H';
@@ -118,7 +115,8 @@ Section Exp.
              | |- context [ Ranalysis1.derive_pt (fun x : R => exp (@?F x))%R ?X _ ] =>
                rewrite (H' F exp X _ _); simpl in H' end; clear H'
            | rewrite RIneq.Rminus_0_l
-           | rewrite RIneq.Rminus_0_r ].
+           | rewrite RIneq.Rminus_0_r
+           ].
 
   (* (1) This is the proof that the exponential is concave up. *)
   Theorem Tangent_le_exp :
