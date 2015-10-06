@@ -137,8 +137,8 @@ Section P.
           [ solve_linear | charge_intros ].
           decompose_hyps.
           { solve_linear. clear H3. z3 solve_dbg.
-     *)   
-          
+     *)
+
   Lemma spec_stable :
     |-- Spec -->> Stable "x".
   Proof.

@@ -8,38 +8,44 @@ Require Import ChargeTactics.Lemmas.
    that is a list of vars captures the variables
    appearing in the term. *)
 Inductive ParTerm : list Var -> Type :=
-| VarPT : forall x, ParTerm (x::nil)
-| NatPT : nat -> ParTerm nil
-| RealPT : R -> ParTerm nil
-| PlusPT : forall {xs ys},
+| VarPT    : forall x, ParTerm (x::nil)
+| NatPT    : nat -> ParTerm nil
+| RealPT   : R -> ParTerm nil
+| PlusPT   : forall {xs ys},
     ParTerm xs -> ParTerm ys -> ParTerm (xs ++ ys)
-| MinusPT : forall {xs ys},
+| MinusPT  : forall {xs ys},
     ParTerm xs -> ParTerm ys -> ParTerm (xs ++ ys)
-| MultPT : forall {xs ys},
+| MultPT   : forall {xs ys},
     ParTerm xs -> ParTerm ys -> ParTerm (xs ++ ys)
-| InvPT : forall {xs}, ParTerm xs -> ParTerm xs
-| CosPT : forall {xs}, ParTerm xs -> ParTerm xs
-| SinPT : forall {xs}, ParTerm xs -> ParTerm xs
-| SqrtPT : forall {xs}, ParTerm xs -> ParTerm xs
+| InvPT    : forall {xs}, ParTerm xs -> ParTerm xs
+| CosPT    : forall {xs}, ParTerm xs -> ParTerm xs
+| SinPT    : forall {xs}, ParTerm xs -> ParTerm xs
+| SqrtPT   : forall {xs}, ParTerm xs -> ParTerm xs
 | ArctanPT : forall {xs}, ParTerm xs -> ParTerm xs
-| ExpPT : forall {xs}, ParTerm xs -> ParTerm xs
-| MaxPT : forall {xs ys},
+| ExpPT    : forall {xs}, ParTerm xs -> ParTerm xs
+| MaxPT    : forall {xs ys},
     ParTerm xs -> ParTerm ys -> ParTerm (xs ++ ys)
 .
 
+Print CompOp.
+Print state.
+Print Formula.
+Print state. Print trace.
+Print eval_formula.
+SearchAbout Formula.
 (* Conditionals in the parallel language. The type parameter
    that is a list of vars captures the variables
    appearing in the conditional. *)
 Inductive Cond : list Var -> Type :=
-| TRUEP : Cond nil
+| TRUEP  : Cond nil
 | FALSEP : Cond nil
-| CompP : forall {xs ys},
+| CompP  : forall {xs ys},
     ParTerm xs -> ParTerm ys -> CompOp -> Cond (xs ++ ys)
-| AndP : forall {xs ys},
+| AndP   : forall {xs ys},
     Cond xs -> Cond ys -> Cond (xs ++ ys)
-| OrP : forall {xs ys},
+| OrP    : forall {xs ys},
     Cond xs -> Cond ys -> Cond (xs ++ ys)
-| NegP : forall {xs}, Cond xs -> Cond xs.
+| NegP   : forall {xs}, Cond xs -> Cond xs.
 
 Definition sets_disjoint {T} (a b : list T) : Prop :=
     forall x,
@@ -117,12 +123,11 @@ Fixpoint eval_Cond {xs} (c : Cond xs) (st : state) : bool :=
 Definition merge_states (xs1 xs2 : list Var)
            (st1 st2 : state) : state :=
   fun x =>
-    if List.existsb (fun y => if String.string_dec x y
+    if (* List.in_dec String.string_dec x xs1 *)
+    List.existsb (fun y => if String.string_dec x y
                               then true else false) xs1
     then st1 x
-    else if List.existsb (fun y => if String.string_dec x y
-                                   then true else false) xs2
-         then st2 x else st1 x.
+    else st2 x.
 
 Fixpoint eval_Parallel {ins outs} (p : Parallel ins outs)
          (st : state) : state :=
@@ -147,43 +152,288 @@ Definition tlaParD {ins outs} (p : Parallel ins outs) :=
 
 (* Language definition complete. *)
 
-Fixpoint Term_to_ParTerm (t : Syntax.Term) :
-  { xs : list Var & ParTerm xs } :=
-  match t with
-  | VarNowT x => existT _ _ (VarPT x)
-  | NatT n => existT _ _ (NatPT n)
-  | RealT r => existT _ _ (RealPT r)
-  | PlusT t1 t2 =>
-    existT _ _
-           (PlusPT (projT2 (Term_to_ParTerm t1))
-                   (projT2 (Term_to_ParTerm t2)))
-  | MinusT t1 t2 =>
-    existT _ _
-           (MinusPT (projT2 (Term_to_ParTerm t1))
-                   (projT2 (Term_to_ParTerm t2)))
-  | MultT t1 t2 =>
-    existT _ _
-           (MultPT (projT2 (Term_to_ParTerm t1))
-                   (projT2 (Term_to_ParTerm t2)))
-  | InvT t =>
-    existT _ _ (InvPT (projT2 (Term_to_ParTerm t)))
-  | CosT t =>
-    existT _ _ (CosPT (projT2 (Term_to_ParTerm t)))
-  | SinT t =>
-    existT _ _ (SinPT (projT2 (Term_to_ParTerm t)))
-  | SqrtT t =>
-    existT _ _ (SqrtPT (projT2 (Term_to_ParTerm t)))
-  | ArctanT t =>
-    existT _ _ (ArctanPT (projT2 (Term_to_ParTerm t)))
-  | ExpT t =>
-    existT _ _ (ExpPT (projT2 (Term_to_ParTerm t)))
-  | MaxT t1 t2 =>
-    existT _ _
-           (MaxPT (projT2 (Term_to_ParTerm t1))
-                  (projT2 (Term_to_ParTerm t2)))
-  | _ => existT _ _ (NatPT 0)
-  end.
+(* TODO TODO TODO *)
+(* This is the goal for next week *)
+(* if f abstracts p, then f s1 s2 <- eval p s1 = s2*)
+(* Formula :: state -> state -> prop *)
 
+Definition Abstracts {ins outs} (f : Formula) (p : Parallel ins outs) : Prop :=
+  forall st1 st2 st3 sts,
+    eq (eval_Parallel p st1) st2 ->
+    (forall x, In x outs -> st2 x = st3 x) ->
+    eval_formula f (Stream.Cons st1 (Stream.Cons st3 sts)).
+
+Print eval_ParTerm.
+Definition Abstracts_term {ins} (t: TLA.Syntax.Term) (p: ParTerm ins) : Prop :=
+  forall st1 st2, eq (eval_term t st1 st2) (eval_ParTerm p st1).
+
+Lemma sets_disjoint_cons : forall {T} (a: T) b c,
+    sets_disjoint (a :: b) c <->
+    sets_disjoint b c /\ ~In a c.
+Proof.
+  intros. unfold sets_disjoint. split.
+  { intro. split.
+    { intros. intro. eapply H. eassumption. simpl. tauto. }
+    { intro. simpl in H. apply H in H0. tauto. } }
+  { intros. simpl; intro.
+    destruct H1; subst.
+    { tauto. }
+    { destruct H. clear H2.
+      eapply H; eassumption. } }
+Qed.
+
+Lemma sets_disjoint_commut : forall {T} (a : list T) b,
+    sets_disjoint a b <-> sets_disjoint b a.
+Proof.
+  intros. unfold sets_disjoint, not.
+  split; intros; firstorder.
+Qed.
+
+Lemma sets_disjoint_concat : forall {T} (a : list T) b c,
+    sets_disjoint (a ++ b) c ->
+    sets_disjoint a c /\ sets_disjoint b c.
+Proof.
+  intros. split; firstorder.
+Qed.
+
+(* intros. unfold sets_disjoint. split.
+ *   { intros. eapply H. destruct a.
+ *     { eapply in_or_app. tauto. }
+ *     { eapply in_or_app. tauto. } }
+ *   { destruct a.
+ *     { simpl in H. unfold sets_disjoint in H. assumption. }
+ *     { unfold sets_disjoint in H.
+ *       intros. apply H. apply in_or_app. right. assumption. } }
+ * Qed. *)
+
+
+Lemma And_synth_Par
+: forall {ins1 ins2 outs1 outs2}
+         A (A' : Parallel ins1 outs1)
+         B (B' : Parallel ins2 outs2),
+    Abstracts A A' ->
+    Abstracts B B' ->
+    forall sd : sets_disjoint outs1 outs2,
+      Abstracts (A //\\ B) (Par sd A' B').
+Proof.
+  intros. unfold Abstracts. intros. breakAbstraction.
+  unfold Abstracts in *.
+  split.
+  { eapply H.
+    { reflexivity. }
+    { clear H H0.
+      subst.
+      intros.
+      rewrite <- H2; [ | eapply in_app_iff; tauto ].
+      clear H2.
+      unfold merge_states.      (* rewrite for in_dec *)
+Check in_dec.
+      cutrewrite (eq (existsb
+                    (fun y : String.string =>
+                       if String.string_dec x y then true else false) outs1) true).
+      { reflexivity. }
+      { clear - H.
+        induction outs1; simpl.
+        { red in H. destruct H. }
+        { destruct (String.string_dec x a).
+          { simpl. reflexivity. }
+          { simpl. eapply IHouts1.
+            destruct H. congruence. assumption. } } } } }
+  { eapply H0.
+    { reflexivity. }
+    { clear H H0.
+      subst.
+      intros.
+      rewrite <- H2 ; [ | eapply in_app_iff; tauto ].
+      clear H2.
+      unfold merge_states.  (* rewrite for in_dec *)
+      cutrewrite (eq (existsb
+         (fun y : String.string =>
+            if String.string_dec x y then true else false) outs1) false).
+      { reflexivity. }
+      { clear - sd H.
+        induction outs1.
+        { simpl. reflexivity. }
+        { simpl. rewrite IHouts1.
+          { destruct (String.string_dec x a).
+            2: reflexivity.
+            simpl. subst.
+            apply sets_disjoint_cons in sd.
+            exfalso; tauto. }
+          { apply sets_disjoint_cons in sd. tauto. } } } } }
+Qed.
+Print Assign.
+Print ParTerm.
+
+Arguments Assign v {_} t : rename.
+Theorem Next_assign_synth
+  : forall {ins} (v : Var) (t : TLA.Syntax.Term) (t' : ParTerm ins),
+    Abstracts_term t t' ->
+    Abstracts (v! = t) (Assign v t').
+Proof.
+  intros.
+  unfold Abstracts. simpl. intros. subst. rewrite <- H1; [| tauto].
+  destruct String.string_dec.
+  red in H.
+  auto.
+  congruence.
+Qed.
+
+Theorem Real_term_synth
+  : forall (r : R),
+    Abstracts_term r (RealPT r).
+Proof. compute. reflexivity. Qed.
+
+Theorem Var_term_synth
+  : forall (v : Var),
+    Abstracts_term v (VarPT v).
+Proof. compute. reflexivity. Qed.
+
+Theorem Plus_term_synth
+  : forall {ins1 ins2}
+           A (A' : ParTerm ins1)
+           B (B' : ParTerm ins2),
+    Abstracts_term A A' ->
+    Abstracts_term B B' ->
+    Abstracts_term (A + B) (PlusPT A' B').
+Proof.
+  unfold Abstracts_term. simpl. intros.
+  rewrite H. rewrite H0.
+  reflexivity.
+Qed.
+
+(* Theorem Next_assign_synth_real
+ *   : forall (v : Var) (e : R),
+ *     Abstracts (v! = e) (Assign v (RealPT e)).
+ * Proof.
+ *   intros.
+ *   unfold Abstracts. simpl. intros. subst. specialize (H0 v). rewrite <- H0.
+ *   { destruct String.string_dec.
+ *     { reflexivity. }
+ *     { congruence. } }
+ *   { tauto. }
+ * Qed. *)
+
+Ltac synthTerm :=
+  repeat first [ eapply And_synth_Par
+               | eapply Next_assign_synth
+               | eapply Plus_term_synth
+               | eapply Var_term_synth
+               | eapply Real_term_synth ].
+
+Local Open Scope string_scope.
+Goal exists ins outs, exists prog : Parallel ins outs,
+      Abstracts ("x"! = "y" + 2 + 1 + 1+ 1+ 1+ 1+ 1+ 1)%HP prog.
+Proof.
+  do 3 eexists.
+  synthTerm.
+Qed.
+Print Unnamed_thm.
+
+
+Goal exists ins outs, exists prog : Parallel ins outs,
+      Abstracts ("x"! = 2 //\\ "y"! = 3)%HP prog.
+Proof.
+  do 3 eexists.
+  synthTerm.
+  (* eapply And_synth_Par; apply Next_assign_synth_real. *)
+  Grab Existential Variables.
+  unfold sets_disjoint. intros. intro. red in H. destruct H.
+  Focus 2. assumption.
+  destruct H0. congruence.
+  assumption.
+Qed.
+
+Print Unnamed_thm.
+
+Print BasicProofRules.
+SearchAbout option.
+Require Import ExtLib.Structures.Monad.
+Require Import ExtLib.Data.Monads.OptionMonad.
+SearchAbout option Monad.
+
+Import MonadNotation.
+
+Fixpoint Term_to_ParTerm (t : Syntax.Term) :
+  option { xs : list Var & ParTerm xs } :=
+  match t with
+  | VarNowT x => Some (existT _ _ (VarPT x))
+  | NatT n    => Some (existT _ _ (NatPT n))
+  | RealT r   => Some (existT _ _ (RealPT r))
+  | PlusT t1 t2 =>
+    t1 <- Term_to_ParTerm t1 ;;
+    t2 <- Term_to_ParTerm t2 ;;
+    ret (existT _ _
+           (PlusPT (projT2 t1)
+                   (projT2 t2)))
+  | MinusT t1 t2 =>
+    t1 <- Term_to_ParTerm t1 ;;
+    t2 <- Term_to_ParTerm t2 ;;
+    ret (existT _ _
+           (MinusPT (projT2 t1)
+                   (projT2 t2)))
+  | MultT t1 t2 =>
+    t1 <- Term_to_ParTerm t1 ;;
+    t2 <- Term_to_ParTerm t2 ;;
+    ret (existT _ _
+           (MultPT (projT2 t1)
+                   (projT2 t2)))
+  | InvT t =>
+    t <- Term_to_ParTerm t ;;
+      ret (existT _ _ (InvPT (projT2 t)))
+  | CosT t =>
+    t <- Term_to_ParTerm t ;;
+      ret (existT _ _ (CosPT (projT2 t)))
+  | SinT t =>
+    t <- Term_to_ParTerm t ;;
+      ret (existT _ _ (SinPT (projT2 t)))
+  | SqrtT t =>
+    t <- Term_to_ParTerm t ;;
+      ret (existT _ _ (SqrtPT (projT2 t)))
+  | ArctanT t =>
+    t <- Term_to_ParTerm t ;;
+      ret (existT _ _ (ArctanPT (projT2 t)))
+  | ExpT t =>
+    t <- Term_to_ParTerm t ;;
+      ret (existT _ _ (ExpPT (projT2 t)))
+  | MaxT t1 t2 =>
+    t1 <- Term_to_ParTerm t1 ;;
+    t2 <- Term_to_ParTerm t2 ;;
+    ret (existT _ _
+           (MaxPT (projT2 t1)
+                   (projT2 t2)))
+  | _ => None
+  end%monad.
+
+Theorem Term_to_ParTerm_sound
+  : forall t x,
+    Term_to_ParTerm t = Some x ->
+    Abstracts_term t (projT2 x).
+Proof.
+  induction t; simpl.
+  { inversion 1. subst. simpl. eapply Var_term_synth. }
+  { inversion 1. }
+  { admit. }
+  { admit. }
+  { destruct (Term_to_ParTerm t1); try congruence.
+    destruct (Term_to_ParTerm t2); try congruence.
+    inversion 1; simpl.
+    eapply Plus_term_synth. eapply IHt1. reflexivity. eapply IHt2; reflexivity. }
+Admitted.
+
+Goal exists ins outs, exists prog : Parallel ins outs,
+      Abstracts ("x"! = "y" + 2 + 1 + 1 + 1 + 1 + 1)%HP prog.
+Proof.
+  do 3 eexists.
+  eapply Next_assign_synth.
+  eapply Term_to_ParTerm_sound.
+  compute. reflexivity.
+Defined.
+Print Unnamed_thm0.
+Print Unnamed_thm1.
+
+
+(* TODO TODO TODO *)
 Fixpoint Formula_to_Cond (F : Formula) :
   { xs : list Var & Cond xs } :=
   match F with
