@@ -69,26 +69,27 @@ Inductive Parallel : list Var -> list Var -> Type :=
 Fixpoint eval_ParTerm {xs} (t : ParTerm xs) (st : state)
   : Value :=
   match t with
-  | VarPT x => st x
-  | NatPT n => Coq.Reals.Raxioms.INR n
-  | RealPT r => r
-  | PlusPT _ _ t1 t2 =>
+  | VarPT x           => st x
+  | NatPT n           => Coq.Reals.Raxioms.INR n
+  | RealPT r          => r
+  | PlusPT _ _ t1 t2  =>
     eval_ParTerm t1 st + eval_ParTerm t2 st
   | MinusPT _ _ t1 t2 =>
     eval_ParTerm t1 st - eval_ParTerm t2 st
-  | MultPT _ _ t1 t2 =>
+  | MultPT _ _ t1 t2  =>
     eval_ParTerm t1 st * eval_ParTerm t2 st
-  | InvPT _ t => / (eval_ParTerm t st)
-  | CosPT _ t => Rtrigo_def.cos (eval_ParTerm t st)
-  | SinPT _ t => Rtrigo_def.sin (eval_ParTerm t st)
-  | SqrtPT _ t => R_sqrt.sqrt (eval_ParTerm t st)
-  | ArctanPT _ t => Ratan.atan (eval_ParTerm t st)
-  | ExpPT _ t => Rtrigo_def.exp (eval_ParTerm t st)
-  | MaxPT _ _ t1 t2 =>
+  | InvPT _ t         => / (eval_ParTerm t st)
+  | CosPT _ t         => Rtrigo_def.cos (eval_ParTerm t st)
+  | SinPT _ t         => Rtrigo_def.sin (eval_ParTerm t st)
+  | SqrtPT _ t        => R_sqrt.sqrt (eval_ParTerm t st)
+  | ArctanPT _ t      => Ratan.atan (eval_ParTerm t st)
+  | ExpPT _ t         => Rtrigo_def.exp (eval_ParTerm t st)
+  | MaxPT _ _ t1 t2   =>
     Rbasic_fun.Rmax (eval_ParTerm t1 st) (eval_ParTerm t2 st)
   end%R.
 
-Definition eval_ParComp {xs ys} (t1:ParTerm xs)
+Definition eval_ParComp {xs ys}
+           (t1:ParTerm xs)
            (t2:ParTerm ys) (op:CompOp)
            (st:state) : bool :=
   if match op as _op return
@@ -152,20 +153,19 @@ Definition tlaParD {ins outs} (p : Parallel ins outs) :=
 
 (* Language definition complete. *)
 
-(* TODO TODO TODO *)
-(* This is the goal for next week *)
-(* if f abstracts p, then f s1 s2 <- eval p s1 = s2*)
-(* Formula :: state -> state -> prop *)
-
 Definition Abstracts {ins outs} (f : Formula) (p : Parallel ins outs) : Prop :=
   forall st1 st2 st3 sts,
     eq (eval_Parallel p st1) st2 ->
     (forall x, In x outs -> st2 x = st3 x) ->
     eval_formula f (Stream.Cons st1 (Stream.Cons st3 sts)).
 
-Print eval_ParTerm.
 Definition Abstracts_term {ins} (t: TLA.Syntax.Term) (p: ParTerm ins) : Prop :=
   forall st1 st2, eq (eval_term t st1 st2) (eval_ParTerm p st1).
+
+(* TODO TODO TODO *)
+Print eval_Cond.
+(* Definition Abstracts_formula {ins} (f: TLA.Syntax.Formula) (c : Cond ins) : Prop :=
+ *   forall st sts, eq (eval_formula f (Stream.Cons st sts)) (eval_Cond c st). *)
 
 Lemma sets_disjoint_cons : forall {T} (a: T) b c,
     sets_disjoint (a :: b) c <->
@@ -195,17 +195,6 @@ Lemma sets_disjoint_concat : forall {T} (a : list T) b c,
 Proof.
   intros. split; firstorder.
 Qed.
-
-(* intros. unfold sets_disjoint. split.
- *   { intros. eapply H. destruct a.
- *     { eapply in_or_app. tauto. }
- *     { eapply in_or_app. tauto. } }
- *   { destruct a.
- *     { simpl in H. unfold sets_disjoint in H. assumption. }
- *     { unfold sets_disjoint in H.
- *       intros. apply H. apply in_or_app. right. assumption. } }
- * Qed. *)
-
 
 Lemma And_synth_Par
 : forall {ins1 ins2 outs1 outs2}
@@ -418,7 +407,9 @@ Proof.
   { destruct (Term_to_ParTerm t1); try congruence.
     destruct (Term_to_ParTerm t2); try congruence.
     inversion 1; simpl.
-    eapply Plus_term_synth. eapply IHt1. reflexivity. eapply IHt2; reflexivity. }
+    eapply Plus_term_synth.
+    eapply IHt1. reflexivity.
+    eapply IHt2; reflexivity. }
 Admitted.
 
 Goal exists ins outs, exists prog : Parallel ins outs,
@@ -432,32 +423,41 @@ Defined.
 Print Unnamed_thm0.
 Print Unnamed_thm1.
 
-
-(* TODO TODO TODO *)
 Fixpoint Formula_to_Cond (F : Formula) :
-  { xs : list Var & Cond xs } :=
+  option { xs : list Var & Cond xs } :=
   match F with
-  | TRUE => existT _ _ TRUEP
-  | FALSE => existT _ _ FALSEP
+  | TRUE => Some (existT _ _ TRUEP)
+  | FALSE => Some (existT _ _ FALSEP)
   | Comp t1 t2 op =>
-    existT _ _
-           (CompP (projT2 (Term_to_ParTerm t1))
-                  (projT2 (Term_to_ParTerm t2)) op)
+    t1 <- Term_to_ParTerm t1 ;;
+    t2 <- Term_to_ParTerm t2 ;;
+    ret (existT _ _
+           (CompP (projT2 t1)
+                  (projT2 t2) op))
   | And F1 F2 =>
-    existT _ _
-           (AndP (projT2 (Formula_to_Cond F1))
-                 (projT2 (Formula_to_Cond F2)))
+    f1 <- Formula_to_Cond F1 ;;
+    f2 <- Formula_to_Cond F2 ;;
+    ret (existT _ _
+           (AndP (projT2 f1)
+                 (projT2 f2)))
   | Or F1 F2 =>
-    existT _ _
-           (OrP (projT2 (Formula_to_Cond F1))
-                 (projT2 (Formula_to_Cond F2)))
+    f1 <- Formula_to_Cond F1 ;;
+    f2 <- Formula_to_Cond F2 ;;
+    ret (existT _ _
+           (OrP (projT2 f1)
+                 (projT2 f2)))
   | Syntax.Imp F1 F2 =>
-    existT _ _
-           (OrP (NegP (projT2 (Formula_to_Cond F1)))
-                (projT2 (Formula_to_Cond F2)))
-  | _ => existT _ _ TRUEP
-  end.
+    f1 <- Formula_to_Cond F1 ;;
+    f2 <- Formula_to_Cond F2 ;;
+    ret (existT _ _
+           (OrP (NegP (projT2 f1))
+                (projT2 f2)))
+  | _ => None
+  end%monad.
 
+
+
+(* This is old
 Lemma Term_to_ParTerm_sound :
   forall t tr,
     is_st_term t = true ->
@@ -472,6 +472,8 @@ Proof.
               try tauto |
               intros; rewrite IHt; tauto ].
 Qed.
+ *)
+
 
 (* true if the formula can be decided on the current state. *)
 Fixpoint is_decidable_st_formula (F:Formula) : bool :=
@@ -498,6 +500,16 @@ Proof.
               intuition | discriminate ].
   destruct c; solve_linear.
 Qed.
+
+(*  ERRROR define Abstracts_formula *)
+
+Theorem Formula_to_Cond_sound
+  : forall f x,
+    is_decidable_st_formula F = true ->
+    (Formula_to_Cond f = Some x ->
+    Abstracts_formula f (projT2 x).
+Proof.
+Admitted.
 
 Lemma Formula_to_Cond_true :
   forall A tr,
