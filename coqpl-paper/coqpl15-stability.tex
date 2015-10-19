@@ -30,6 +30,9 @@
 % authoryear    To obtain author/year citation style instead of numeric.
 
 \usepackage{amsmath}
+\usepackage{latexsym}
+
+
 
 
 \begin{document}
@@ -94,13 +97,9 @@ As we grow increasingly reliant on software for control of critical infrastructu
 
 %\subsection{Veridrone}
 
-The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that ... obey formal specifications in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... In order to avoid formalizing the entirety of the existing control software, we simply guard the feedback loop by inserting verified shims between the existing software and the actuators.
-We have constructed shims for bounding velocity and height, and shown how to compose them in...
+The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that various formal specifications are obeyed in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... We have constructed shims for bounding velocity and height, and shown how to compose them in [cite]. In this paper, we present our experiences in formalizing and reasoning about stability properties of the quadcopter.
 
-% was P.v part of the memocode paper?
-% perhaps move last sentence of paragraph 1 here
-Here we report on new work done on strengthening our proof of the height shim.
-
+%In order to avoid formalizing the entirety of the existing control software, we simply guard the feedback loop by inserting verified shims between the existing software and the actuators.
 \section{Background}
 
 % start with the proof goal then introduce stability, or stability -> different proofs of stability?
@@ -109,24 +108,42 @@ Stability is a central property in the study of dynamical systems and control th
 
 % TODO: add formal defns. should they be in context of the controllers?
 \begin{enumerate}
-\item Lyapunov stability, which informally states that a dynamical system starting in the neighborhood of some point $\alpha > 0$ will always circle around that point (i.e. not ``lose stability'' over time),
+\item Lyapunov stability, which states that a dynamical system starting in the neighborhood of some point $\alpha > 0$ will always circle around that point (i.e. not ``lose stability'' over time),
 
-\item  Asymptotic stability, which informally states that a Lyapunov stable system will converge to the stable point over time, and
+\item  Asymptotic stability, which states that a Lyapunov stable system will converge to the stable point over time, and
 
-\item  Exponential stability, which states that an Asymptotically stable system will converge exponentially fast.
+\item  Exponential stability, which states that an asymptotically stable system will converge exponentially fast.
 \end{enumerate}
 
 
 We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
 
+% Lyapunov
+%$\forall a, \exists b, |x|\leq b \land \Box (|x|\leq a)$
+% inductive invariant
+%$|vt| \leq |x|$
+
 % Now for the proofs...
 
 % 1. Lyapunov stability
-Lyapunov stability lends itself to a simple definition in our embedding of TLA:
+%Lyapunov stability lends itself to a simple definition in our embedding of TLA:
 
 % 2. Exponential stability
 
-That the continuous dynamics of the system will force the quadcopter to land exponentially fast.
+Exponential stability states that the continuous dynamics of the system will force the quadcopter to land exponentially fast --- that is,
+
+starting at an initial state
+
+In the time interval between runs of the discrete controller, $t_0\leq t \leq t_0+\Delta$, the height of the system will decrease exponentially fast over multiple continuous transitions of the system, with its upper bound given by the function \[E(t)=x_0e^{-b(t-t_0)}\]
+
+but this leaves us with the unpleasant work of having to reason over fractionals. In order to simplify our proofs, we instead assert a stronger property --- that the height is bounded by the tangent to $E$ at $t_0$, selected at the start of the continuous transitions:
+\[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
+which we can then compose into a proof of exponential stability by showing that
+\[ \vdash \Box (T\leq E) \]
+
+% Exponential stability of height over time: $E(t)=x_0e^{-b(t-t_0)}$
+% tangent to Exp: \[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
+
 
  % Should this be folded into the narrative about the two stability proofs?
 \section {Experiences}
