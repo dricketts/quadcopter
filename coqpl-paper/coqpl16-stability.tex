@@ -20,7 +20,7 @@
 %-----------------------------------------------------------------------------
 
 
-\documentclass{sigplanconf}
+\documentclass[preprint]{sigplanconf}
 
 % The following \documentclass options may be useful:
 
@@ -31,8 +31,11 @@
 
 \usepackage{amsmath}
 \usepackage{latexsym}
+\usepackage{listings}
+\usepackage[usenames]{xcolor}
+\usepackage{lstcoq}
 
-
+\newcommand{\greg}[1]{\textcolor{blue}{\textsc{GREG}: #1}}
 
 
 \begin{document}
@@ -56,18 +59,18 @@
                                   % (paid open-access papers,
                                   % short abstracts)
 
-\titlebanner{banner above paper title}        % These are ignored unless
-\preprintfooter{short description of paper}   % 'preprint' option specified.
+\titlebanner{}        % These are ignored unless
+\preprintfooter{}   % 'preprint' option specified.
 
-\title{Title Text}
-\subtitle{Subtitle Text, if any}
+\title{Formal Verification of Stability Properties of Cyber-physical Systems}
+%% \subtitle{Subtitle Text, if any}
 
-\authorinfo{Name1}
-           {Affiliation1}
-           {Email1}
-\authorinfo{Name2\and Name3}
-           {Affiliation2/3}
-           {Email2/3}
+\authorinfo{}
+           {}
+           {}
+\authorinfo{}
+           {}
+           {}
 
 \maketitle
 
@@ -86,35 +89,84 @@
 % future work
 \section{Introduction}          % 1 col
 
-As we grow increasingly reliant on software for control of critical infrastructure, so does our need for guarantees that such software is free of errors. Complete formal verification with a proof assistant is the best way to obtain extremely strong guarantees that software systems satisfy a specification; however this technique has only recently been extended to the domain of cyber-physical systems [cite: ROScoq, MEMOCODE]. % is this true? Maybe a bit more here?
+We increasingly rely on computers to interact with the physical world for us.
+At the large end, software underlies the control systems of commercial aircraft and power plants, and at the small end it controlls medical devices and hobbiest UAVs.
+The failure of any of these systems can have severe consequences which are often measured in the loss of human lives.
+Formal verification has proven a promising approach to achieving very strong guarantees in more classic areas of computer science.
+In this work we present an overview of our experiences formalizing safety properties of cyber-physical systems using the Coq proof assistant.
+
+%% As we grow increasingly reliant on software for control of critical infrastructure, so does our need for guarantees that such software is free of errors. Complete formal verification with a proof assistant is the best way to obtain extremely strong guarantees that software systems satisfy a specification; however this technique has only recently been extended to the domain of cyber-physical systems [cite: ROScoq, MEMOCODE]. % is this true? Maybe a bit more here?
 % In this paper, we present an overview of and our experiences in formalizing and reasoning about the physical behavior of hybrid systems in Coq.
 
-The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that various formal specifications are obeyed in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... We have constructed shims for bounding velocity and height, and shown how to compose them in [cite]. In this paper, we present our experiences in formalizing and reasoning about stability properties of the quadcopter.
+\subsection{The VeriDrone Project}
+
+We build our development on top of the Veridrone project~\cite{ricketts2015veridrone}, a formalization of cyber-physical systems in the Coq proof assistant.
+Veridrone expresses cyber-physical systems and their properties uniformly in a temporal logic.
+Discrete transitions are specified using a relation on states, morally \coqe{State -> State -> Prop}, while continuous transitions are expressed by writing predicates over the time-derivative of variables in the state.
+For example, the following system expresses the saw-tooth system, one run of which is shown in Figure~\ref{fig:system-visualization}.
+\greg{Switch this to the system that we're going to reason about}
+\begin{coq}
+(x = 0 /\ v = 1) /\ $\Box$((v' = -v /\ x' = -x) \/ Cont (fun d => d x = v /\ d v = 0))
+\end{coq}
+The first conjunct (\coqe{x = 0 /\ v = 1}) is a predicate over the initial state.
+The second conjunct (\coqe{$\Box$(...)}) expresses the transitions of the system.
+... Say a bit more about this...
+
+\begin{figure}
+
+\greg{Draw a figure representing the system}
+
+\greg{Label discrete and continuous transitions}
+
+\greg{Label the axes}
+
+\caption{Visualization of a ??}
+\label{fig:system-visualization}
+\end{figure}
+
+
+%% The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that various formal specifications are obeyed in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... We have constructed shims for bounding velocity and height, and shown how to compose them in [cite]. In this paper, we present our experiences in formalizing and reasoning about stability properties of the quadcopter.
 
 %In order to avoid formalizing the entirety of the existing control software, we simply guard the feedback loop by inserting verified shims between the existing software and the actuators.
 
 
 
-
-\section{Background}            % perhaps a more descriptive title?
-
 % start with the proof goal then introduce stability, or stability -> different proofs of stability?
 
+\section{Formalizing \& Proving Stability}
 
-An important safety property we would like guarantees about is that of \emph{stability}. Given deceleration $d$, will our quadcopter eventually come to a stop? Or, given initial velocity $v$, will the quadcopter reach a target coordinate $c$? How quickly can it reach the target?
+In this work we use the Veridrone system to reason about ``stability'' in the control theory sense.
+Stability is a classic property from control theory that captures a temporal notion of boundedness in terms of distance from a goal point.
+There are three levels of stability which are shown graphically in Figure~\ref{fig:stability}:
+\begin{figure}[b]
 
-In control theory, stability formalizes these properties about a given system. Formally, it aims to show whether a set of differential equations will converge to a fixed point over time given some initial conditions. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about both discrete and continuous aspects
+\greg{Draw bounding functions for asymptotic and lyapunov stability, they might need to be in seprate graphs.}
 
-
-% TODO: add formal defns. should they be in context of the controllers?
+\caption{Visualzation for Lyapunov and asymptotic stability.}
+\label{fig:stability}
+\end{figure}
 \begin{enumerate}
-\item Lyapunov stability, which states that a dynamical system starting in the neighborhood of some point $\alpha > 0$ will always circle around that point (i.e. not ``lose stability'' over time),
+\item \textbf{Lyapunov stability} states that if the system starts within $\epsilon > 0$ from the goal, then it will stay within $\delta$ of the goal point for all time.
+Formally,
+\greg{Insert formal definition in temporal logic}
 
-\item  Asymptotic stability, which states that a Lyapunov stable system will converge to the stable point over time, and
+\item \textbf{Asymptotic stability} states that the distance from the goal is bounded by a decreasing function of time.
+Formally, this is expressed by the following definition:
 
-\item  Exponential stability, which states that an asymptotically stable system will converge exponentially fast.
+\item \textbf{Exponential stability} is a specialization of asymptotic stability that restricts the function to be an exponential of the form $\alpha e^{-\beta t}$.
+
 \end{enumerate}
 
+
+
+%% An important safety property we would like guarantees about is that of \emph{stability}. Given deceleration $d$, will our quadcopter eventually come to a stop? Or, given initial velocity $v$, will the quadcopter reach a target coordinate $c$? How quickly can it reach the target?
+
+%% In control theory, stability formalizes these properties about a given system. Formally, it aims to show whether a set of differential equations will converge to a fixed point over time given some initial conditions. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about both discrete and continuous aspects
+
+% Canonically, there are three tiers of stability ---
+
+
+We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
 
 % something about TLA, the Sys abstraction and differential induction
 
@@ -147,6 +199,15 @@ which we can then compose into a proof of exponential stability by showing that
 % Should this be folded into the narrative about the two stability proofs?
 % Or should this describe the interesting parts of the proofs while the above
 % describes the math? .... what really do I put here?
+
+\begin{figure}
+
+\greg{This should be like the graphical proof from the google slides.}
+
+\caption{Graphical ``proof'' of exponential stability.}
+\label{fig:graphical-proof}
+\end{figure}
+
 \section {Experiences}
 
 \emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
