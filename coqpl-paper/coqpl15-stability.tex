@@ -119,6 +119,8 @@ Stability is a central property in the study of dynamical systems and control th
 
 We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
 
+% Now for the proofs...
+
 % 1. Lyapunov stability
 Lyapunov stability lends itself to a simple definition in our embedding of TLA:
 
@@ -126,23 +128,25 @@ Lyapunov stability lends itself to a simple definition in our embedding of TLA:
 
 That the continuous dynamics of the system will force the quadcopter to land exponentially fast.
 
+ % Should this be folded into the narrative about the two stability proofs?
+\section {Experiences}
 
-%For example, in reasoning about the height of the quadcopter over a time interval, we have to consider simultaneously the impulse delivered by its motors and the effect of environmental factors such as wind and gravity. That is, [INSERT MATH].
-
-
-
-\section {Experiences}          % Should this be folded into the narrative about
-                                % the two stability proofs?
+\emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming
 
 
-% Coq as a reasoning aid
-In attempting to extend the proof of Lyapunov stability for exponential stability, we discovered that
+This uncovered an interesting property about the interactions between the discrete and continuous parts of hybrid systems --- that
+
+ Intuitively, Lyapunov stability is a property that holds true for \emph{all time}, while asymptotic and exponential stability converge, and can be thought of as a piecewise function that becomes constant after the stable point is reached. did not realize this
+
+forced us to reexamine our formalism
+... pointed out gaps in our reasoning.
 
 
-% Real arithmetic, powers and floating point
+\emph{Reasoning about real arithmetic, powers and floating point: }
 A significant challenge faced during our development of the proofs, especially the
 
 \section{Future work}
+
 % Have to figure out how our formalism maps to PID controller theory
 % ... PID (Proportional-Integral-Derivative) controllers.
 % - Proportional gain
