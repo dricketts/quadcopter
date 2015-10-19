@@ -1,0 +1,193 @@
+%-----------------------------------------------------------------------------
+%
+%               Template for sigplanconf LaTeX Class
+%
+% Name:         sigplanconf-template.tex
+%
+% Purpose:      A template for sigplanconf.cls, which is a LaTeX 2e class
+%               file for SIGPLAN conference proceedings.
+%
+% Guide:        Refer to "Author's Guide to the ACM SIGPLAN Class,"
+%               sigplanconf-guide.pdf
+%
+% Author:       Paul C. Anagnostopoulos
+%               Windfall Software
+%               978 371-2316
+%               paul@windfall.com
+%
+% Created:      15 February 2005
+%
+%-----------------------------------------------------------------------------
+
+
+\documentclass{sigplanconf}
+
+% The following \documentclass options may be useful:
+
+% preprint      Remove this option only once the paper is in final form.
+% 10pt          To set in 10-point type instead of 9-point.
+% 11pt          To set in 11-point type instead of 9-point.
+% authoryear    To obtain author/year citation style instead of numeric.
+
+\usepackage{amsmath}
+
+
+\begin{document}
+
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
+
+\conferenceinfo{CONF 'yy}{Month d--d, 20yy, City, ST, Country}
+\copyrightyear{20yy}
+\copyrightdata{978-1-nnnn-nnnn-n/yy/mm}
+\doi{nnnnnnn.nnnnnnn}
+
+% Uncomment one of the following two, if you are not going for the
+% traditional copyright transfer agreement.
+
+%\exclusivelicense                % ACM gets exclusive license to publish,
+                                  % you retain copyright
+
+%\permissiontopublish             % ACM gets nonexclusive license to publish
+                                  % (paid open-access papers,
+                                  % short abstracts)
+
+\titlebanner{banner above paper title}        % These are ignored unless
+\preprintfooter{short description of paper}   % 'preprint' option specified.
+
+\title{Title Text}
+\subtitle{Subtitle Text, if any}
+
+\authorinfo{Name1}
+           {Affiliation1}
+           {Email1}
+\authorinfo{Name2\and Name3}
+           {Affiliation2/3}
+           {Email2/3}
+
+\maketitle
+
+
+% \category{CR-number}{subcategory}{third-level}
+
+% % general terms are not compulsory anymore,
+% % you may leave them out
+% \terms
+% term1, term2
+
+% \keywords
+% keyword1, keyword2
+
+% intro, overview of project, overview of control theory, sketch of proof,
+% future work
+\section{Introduction}          % 1 col
+%\begin{abstract}
+% - cyber-physical systems
+% - guaranteed properties, ...
+
+As we grow increasingly reliant on software for control of critical infrastructure, so does our need for guarantees that such software is free of errors. Complete formal verification with a proof assistant is the best way to obtain extremely strong guarantees that software systems satisfy a specification; however this technique has only recently been extended to the domain of cyber-physical systems [cite: ROScoq, MEMOCODE]. % is this true? Maybe a bit more here?
+% In this paper, we present an overview of and our experiences in formalizing and reasoning about the physical behavior of hybrid systems in Coq.
+
+
+%\end{abstract}
+
+%\subsection{Veridrone}
+
+The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that ... obey formal specifications in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... In order to avoid formalizing the entirety of the existing control software, we simply guard the feedback loop by inserting verified shims between the existing software and the actuators.
+We have constructed shims for bounding velocity and height, and shown how to compose them in...
+
+% was P.v part of the memocode paper?
+% perhaps move last sentence of paragraph 1 here
+Here we report on new work done on strengthening our proof of the height shim.
+
+\section{Background}
+
+% start with the proof goal then introduce stability, or stability -> different proofs of stability?
+
+Stability is a central property in the study of dynamical systems and control theory, which aims to show whether a system will converge to a fixed point over time given some initial conditions. Canonically, there are three tiers of stability ---
+
+% TODO: add formal defns. should they be in context of the controllers?
+\begin{enumerate}
+\item Lyapunov stability, which informally states that a dynamical system starting in the neighborhood of some point $\alpha > 0$ will always circle around that point (i.e. not ``lose stability'' over time),
+
+\item  Asymptotic stability, which informally states that a Lyapunov stable system will converge to the stable point over time, and
+
+\item  Exponential stability, which states that an Asymptotically stable system will converge exponentially fast.
+\end{enumerate}
+
+
+We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
+
+% 1. Lyapunov stability
+Lyapunov stability lends itself to a simple definition in our embedding of TLA:
+
+% 2. Exponential stability
+
+That the continuous dynamics of the system will force the quadcopter to land exponentially fast.
+
+
+%For example, in reasoning about the height of the quadcopter over a time interval, we have to consider simultaneously the impulse delivered by its motors and the effect of environmental factors such as wind and gravity. That is, [INSERT MATH].
+
+
+
+\section {Experiences}          % Should this be folded into the narrative about
+                                % the two stability proofs?
+
+
+% Coq as a reasoning aid
+In attempting to extend the proof of Lyapunov stability for exponential stability, we discovered that
+
+
+% Real arithmetic, powers and floating point
+A significant challenge faced during our development of the proofs, especially the
+
+\section{Future work}
+% Have to figure out how our formalism maps to PID controller theory
+% ... PID (Proportional-Integral-Derivative) controllers.
+% - Proportional gain
+% - Integral - accelerates movement towards stable point. accounts for both positive and neg errors
+% - Derivative -
+
+% - use lyapunov functions - continuous, not hybrid. need a formalism for hybrid systems
+% - higher order PI and PID controllers
+% - composing controllers
+
+
+
+
+
+% \appendix
+% \section{Appendix Title}
+
+% This is the text of the appendix, if you need one.
+
+% \acks
+
+% Acknowledgments, if needed.
+
+% We recommend abbrvnat bibliography style.
+
+\bibliographystyle{abbrvnat}
+
+% The bibliography should be embedded for final submission.
+
+\begin{thebibliography}{}
+\softraggedright
+% ROScoq: http://www.cs.cornell.edu/~aa755/ROSCoq/
+% Stability defns: Murray et al, "A mathematical introduction to robotic manipulation, ch4"
+% http://www.cds.caltech.edu/~murray/courses/cds101/fa02/caltech/mls93-lyap.pdf
+\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
+P. Q. Smith, and X. Y. Jones. ...reference text...
+
+\end{thebibliography}
+
+
+\end{document}
+
+%                       Revision History
+%                       -------- -------
+%  Date         Person  Ver.    Change
+%  ----         ------  ----    ------
+
+%  2013.06.29   TU      0.1--4  comments on permission/copyright notices
