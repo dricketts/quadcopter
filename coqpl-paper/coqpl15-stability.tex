@@ -105,7 +105,7 @@ An important safety property we would like guarantees about is that of \emph{sta
 
 In control theory, stability formalizes these properties about a given system. Formally, it aims to show whether a set of differential equations will converge to a fixed point over time given some initial conditions. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about both discrete and continuous aspects
 
- Canonically, there are three tiers of stability ---
+% Canonically, there are three tiers of stability ---
 
 % TODO: add formal defns. should they be in context of the controllers?
 \begin{enumerate}
@@ -149,7 +149,7 @@ which we can then compose into a proof of exponential stability by showing that
 
 % Should this be folded into the narrative about the two stability proofs?
 % Or should this describe the interesting parts of the proofs while the above
-% describes the math?
+% describes the math? .... what really do I put here?
 \section {Experiences}
 
 \emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
