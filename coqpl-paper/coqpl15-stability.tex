@@ -20,7 +20,7 @@
 %-----------------------------------------------------------------------------
 
 
-\documentclass[10pt]{sigplanconf}
+\documentclass{sigplanconf}
 
 % The following \documentclass options may be useful:
 
@@ -96,7 +96,7 @@ The Veridrone project aims to build cyber-physical systems that adhere to variou
 
 
 
-\section{Background}
+\section{Background}            % perhaps a more descriptive title?
 
 % start with the proof goal then introduce stability, or stability -> different proofs of stability?
 
@@ -105,7 +105,6 @@ An important safety property we would like guarantees about is that of \emph{sta
 
 In control theory, stability formalizes these properties about a given system. Formally, it aims to show whether a set of differential equations will converge to a fixed point over time given some initial conditions. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about both discrete and continuous aspects
 
-% Canonically, there are three tiers of stability ---
 
 % TODO: add formal defns. should they be in context of the controllers?
 \begin{enumerate}
@@ -116,8 +115,6 @@ In control theory, stability formalizes these properties about a given system. F
 \item  Exponential stability, which states that an asymptotically stable system will converge exponentially fast.
 \end{enumerate}
 
-
-We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
 
 % something about TLA, the Sys abstraction and differential induction
 
