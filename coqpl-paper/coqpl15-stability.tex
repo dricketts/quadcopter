@@ -85,17 +85,9 @@
 % intro, overview of project, overview of control theory, sketch of proof,
 % future work
 \section{Introduction}          % 1 col
-%\begin{abstract}
-% - cyber-physical systems
-% - guaranteed properties, ...
 
 As we grow increasingly reliant on software for control of critical infrastructure, so does our need for guarantees that such software is free of errors. Complete formal verification with a proof assistant is the best way to obtain extremely strong guarantees that software systems satisfy a specification; however this technique has only recently been extended to the domain of cyber-physical systems [cite: ROScoq, MEMOCODE]. % is this true? Maybe a bit more here?
 % In this paper, we present an overview of and our experiences in formalizing and reasoning about the physical behavior of hybrid systems in Coq.
-
-
-%\end{abstract}
-
-%\subsection{Veridrone}
 
 The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that various formal specifications are obeyed in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... We have constructed shims for bounding velocity and height, and shown how to compose them in [cite]. In this paper, we present our experiences in formalizing and reasoning about stability properties of the quadcopter.
 
@@ -122,15 +114,9 @@ Stability is a central property in the study of dynamical systems and control th
 
 We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
 
-% Lyapunov
-%$\forall a, \exists b, |x|\leq b \land \Box (|x|\leq a)$
-% inductive invariant
-%$|vt| \leq |x|$
-
-% Now for the proofs...
+% something about the Sys abstraction and differential induction
 
 % 1. Lyapunov stability
-%Lyapunov stability lends itself to a simple definition in our embedding of TLA:
 
 % 2. Exponential stability
 
@@ -156,18 +142,20 @@ which we can then compose into a proof of exponential stability by showing that
 % tangent to Exp: \[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
 
 
- % Should this be folded into the narrative about the two stability proofs?
+% Should this be folded into the narrative about the two stability proofs?
+% Or should this describe the interesting parts of the proofs while the above
+% describes the math?
 \section {Experiences}
 
 \emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
 
 
-This uncovered an interesting property about the interactions between the discrete and continuous parts of hybrid systems --- that
+% This uncovered an interesting property about the interactions between the discrete and continuous parts of hybrid systems --- that
 
- Intuitively, Lyapunov stability is a property that holds true for \emph{all time}, while asymptotic and exponential stability converge, and can be thought of as a piecewise function that becomes constant after the stable point is reached. did not realize this
+%  Intuitively, Lyapunov stability is a property that holds true for \emph{all time}, while asymptotic and exponential stability converge, and can be thought of as a piecewise function that becomes constant after the stable point is reached. did not realize this
 
-forced us to reexamine our formalism
-... pointed out gaps in our reasoning.
+% forced us to reexamine our formalism
+% ... pointed out gaps in our reasoning.
 
 
 \emph{Reasoning about real arithmetic, powers and floating point: }
