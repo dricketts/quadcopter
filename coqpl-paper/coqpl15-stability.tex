@@ -20,7 +20,7 @@
 %-----------------------------------------------------------------------------
 
 
-\documentclass{sigplanconf}
+\documentclass[10pt]{sigplanconf}
 
 % The following \documentclass options may be useful:
 
@@ -100,6 +100,10 @@ As we grow increasingly reliant on software for control of critical infrastructu
 The Veridrone project aims to build cyber-physical systems that adhere to various safety policies, by proving that various formal specifications are obeyed in Coq. Our work is implemented in the domain of hobbyist unmanned aerial vehicles (drones), described in .... We have constructed shims for bounding velocity and height, and shown how to compose them in [cite]. In this paper, we present our experiences in formalizing and reasoning about stability properties of the quadcopter.
 
 %In order to avoid formalizing the entirety of the existing control software, we simply guard the feedback loop by inserting verified shims between the existing software and the actuators.
+
+
+
+
 \section{Background}
 
 % start with the proof goal then introduce stability, or stability -> different proofs of stability?
@@ -134,12 +138,19 @@ Exponential stability states that the continuous dynamics of the system will for
 
 starting at an initial state
 
-In the time interval between runs of the discrete controller, $t_0\leq t \leq t_0+\Delta$, the height of the system will decrease exponentially fast over multiple continuous transitions of the system, with its upper bound given by the function \[E(t)=x_0e^{-b(t-t_0)}\]
-
+In the time interval between runs of the discrete controller, $t_0\leq t \leq t_0+\Delta$, the height of the system will decrease exponentially fast over multiple continuous transitions of the system, with its upper bound given by the function
+ \[E(t)=x_0e^{-b(t-t_0)}\]
 but this leaves us with the unpleasant work of having to reason over fractionals. In order to simplify our proofs, we instead assert a stronger property --- that the height is bounded by the tangent to $E$ at $t_0$, selected at the start of the continuous transitions:
 \[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
 which we can then compose into a proof of exponential stability by showing that
-\[ \vdash \Box (T\leq E) \]
+\[
+  \frac
+  {\begin{aligned}
+      & \vdash \emph{Init} \land \Box \emph{World} \rightarrow \Box \emph{Safe} \\
+      & \vdash \Box (T\leq E)
+    \end{aligned}}
+  {\vdash \emph{Init} \land \Box \emph{World} \rightarrow \Box \emph{ExpSafe}}
+\]
 
 % Exponential stability of height over time: $E(t)=x_0e^{-b(t-t_0)}$
 % tangent to Exp: \[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
@@ -148,7 +159,7 @@ which we can then compose into a proof of exponential stability by showing that
  % Should this be folded into the narrative about the two stability proofs?
 \section {Experiences}
 
-\emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming
+\emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
 
 
 This uncovered an interesting property about the interactions between the discrete and continuous parts of hybrid systems --- that
@@ -163,6 +174,14 @@ forced us to reexamine our formalism
 A significant challenge faced during our development of the proofs, especially the
 
 \section{Future work}
+
+Our initial work on stability has focused on a one-dimensional P (Proportional) controller. By extending the model to the full generality of a PID (Proportional-Integral-Derivative) controller, which will allow for the expression of more exciting behaviors such as oscillatory convergence to a goal, rather than limiting behavior to be monotonically increasing or decreasing towards the goal as it is in the current formulation.
+
+Ideally, the construction of a verified PID controller would follow from a layered composition, allowing for the separate construction of the I and D controllers. It might prove helpful to reformulate our mathematics using the standard method of Lyapunov functions from control theory, which in principle would allow for the different types of stability to be expressed in a uniform way. In the context of hybrid systems, however, Lyapunov's method might need to be extended to incorporate the discrete component.
+
+
+% Logical extensions to this work would be to show the convergence of the system in the remaining two dimensions, so as to guarantee that we can accurately reach any point in three dimensional space. To this end, . Further refinements on the
+
 
 % Have to figure out how our formalism maps to PID controller theory
 % ... PID (Proportional-Integral-Derivative) controllers.
