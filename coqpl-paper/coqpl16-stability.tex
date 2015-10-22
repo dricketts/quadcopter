@@ -140,15 +140,19 @@ The second conjunct (\coqe{$\Box$(...)}) expresses the transitions of the system
 In this work we use the Veridrone system to reason about ``stability'' in the control theory sense.
 Stability is a classic property from control theory that captures a temporal notion of boundedness in terms of distance from a goal point.
 There are three levels of stability which are shown graphically in Figure~\ref{fig:stability}:
-\begin{figure}[b]
 
-\greg{Draw bounding functions for asymptotic and lyapunov stability, they might need to be in seprate graphs.}
-%\input{asymp_viz.tex}
-\input{exp_viz.tex}
 
-\caption{Visualzation for Lyapunov and asymptotic stability.}
-\label{fig:stability}
+\begin{figure}[!h]
+
+  \greg{Draw bounding functions for asymptotic and lyapunov stability, they might need to be in seprate graphs.}
+  \input{asymp_viz.tex}
+  %\input{exp_viz.tex}
+
+  \caption{Visualzation for Lyapunov and asymptotic stability.}
+  \label{fig:stability}
 \end{figure}
+
+
 \begin{enumerate}
 \item \textbf{Lyapunov stability} states that if the system starts within $\epsilon > 0$ from the goal, then it will stay within $\delta$ of the goal point for all time.
 Formally,

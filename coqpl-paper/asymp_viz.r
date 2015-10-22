@@ -1,7 +1,8 @@
 library(functional)
-require(tikzDevice)
+library(ggplot2)
+library(tikzDevice)
 
-tikz('asymp_viz.tex', standAlone = FALSE, width = 5,height = 5)
+#tikz('asymp_viz.tex', standAlone = FALSE, width = 5,height = 5)
 
 
 xrang <- c(0,4)
@@ -9,18 +10,19 @@ yrang <- c(-5,5)
 
 plot.new()
 
-plot.window(xlim=xrang, ylim=yrang,
-            xlab="", ylab="",                 # axis labels
-            )
+plot.window(xlim=xrang, ylim=yrang, )
+
+title(xlab="time", ylab="",                 # axis labels
+      )
 #frame()
 
 
-axis(1,                                 # x axis
-     pos=0,                             # at y=0
-     ## at=xrang,                          # where to put labels (+ extend the line)
-     ## labels=F,                          # don't show x axis
-     ## tck=0,
-     )
+## axis(1,                                 # x axis
+##      pos=0,                             # at y=0
+##      ## at=xrang,                          # where to put labels (+ extend the line)
+##      ## labels=F,                          # don't show x axis
+##      ## tck=0,
+##      )
 
 axis(2,                                 # y axis
      pos=0,                             # at x=0
@@ -40,19 +42,19 @@ abline(h=-3,                                # the func
        )
 
 ## ## Draw some random points
-set.seed(114)
+set.seed(467)
 
-startT <- 0.1
-startX <- 2.5
+startT <- 0
+startX <- 1
 
 # vals of e and ne at time t
 getBounds <- function(t) { list(u = 3, l = -3) }
 
-ctrlRuns <- runif(8, 0, 4)
+ctrlRuns <- runif(10, 0, 4)
 #ctrlRuns <- c(1.260825, 0.587869, 3.509754, 2.328480)
 ctrlBounds <- lapply(ctrlRuns, getBounds)
 
-set.seed(123)
+#set.seed(239)
 pickRand <- function(ls) { runif(1,ls$l,ls$u) }
 ctrlRunVals <- lapply(ctrlBounds, pickRand)
 
@@ -66,7 +68,8 @@ data <- data[order(data$x), ]
 
 # draw lines
 lines(data)
+points(xs,ys,pch=4)
 
 
 # close tikz generation
-dev.off()
+#dev.off()

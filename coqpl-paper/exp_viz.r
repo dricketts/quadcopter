@@ -66,6 +66,7 @@ data <- data[order(data$x), ]
 
 # draw lines
 lines(data)
+points(xs,ys,pch=4)
 
 
 # close tikz generation
