@@ -99,11 +99,12 @@ In this work we present an overview of our experiences formalizing safety proper
 % In this paper, we present an overview of and our experiences in formalizing and reasoning about the physical behavior of hybrid systems in Coq.
 
 \subsection{The VeriDrone Project}
+\label{sec:veridrone}
 
 We build our development on top of the Veridrone project~\cite{ricketts2015veridrone}, a formalization of cyber-physical systems in the Coq proof assistant.
 Veridrone expresses cyber-physical systems and their properties uniformly in a temporal logic.
 Discrete transitions are specified using a relation on states, morally \coqe{State -> State -> Prop}, while continuous transitions are expressed by writing predicates over the time-derivative of variables in the state.
-For example, the following system expresses the saw-tooth system, one run of which is shown in Figure~\ref{fig:system-visualization}.
+For example, the following system expresses the saw-tooth system, one run of which is illustrated in Figure~\ref{fig:system-visualization}.
 \greg{Switch this to the system that we're going to reason about}
 \begin{coq}
 (x = 0 /\ v = 1) /\ $\Box$((v' = -v /\ x' = -x) \/ Cont (fun d => d x = v /\ d v = 0))
@@ -157,13 +158,17 @@ Formally, this is expressed by the following definition:
 
 \end{enumerate}
 
+These definitions form a heirarchy of stability.
+All Asymptotically stable systems are Lyapunov stable, and all exponentially stable systems are asymptotically stable.
 
+In our work, we began by formalizing Lyapunov stability and then proved exponential stability of velocity controller described in Section~\ref{sec:veridrone}.
 
 %% An important safety property we would like guarantees about is that of \emph{stability}. Given deceleration $d$, will our quadcopter eventually come to a stop? Or, given initial velocity $v$, will the quadcopter reach a target coordinate $c$? How quickly can it reach the target?
 
 %% In control theory, stability formalizes these properties about a given system. Formally, it aims to show whether a set of differential equations will converge to a fixed point over time given some initial conditions. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about both discrete and continuous aspects
 
 % Canonically, there are three tiers of stability ---
+
 
 
 We have proven Lyapunov and Exponential stability for our height controller, which bounds the deceleration behavior of the quadcopter. The challenge with applying the standard techniques from control theory to the domain of hybrid systems is in reasoning about discrete and continuous time simultaneously.
