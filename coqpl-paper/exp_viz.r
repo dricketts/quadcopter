@@ -1,5 +1,6 @@
 library(functional)
-require(tikzDevice)
+library(ggplot2)
+library(tikzDevice)
 
 tikz('exp_viz.tex', standAlone = FALSE, width = 5,height = 5)
 

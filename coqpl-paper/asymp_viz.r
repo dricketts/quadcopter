@@ -14,7 +14,6 @@ plot.window(xlim=xrang, ylim=yrang, )
 
 title(xlab="time", ylab="",                 # axis labels
       )
-#frame()
 
 
 ## axis(1,                                 # x axis
@@ -31,15 +30,8 @@ axis(2,                                 # y axis
      ## tck=0,
      )
 
-abline(h=3,                                # the func
-       untf = FALSE,
-       col = "red"
-       )
-
-abline(h=-3,                                # the func
-       untf = FALSE,
-       col = "red"
-       )
+abline(h=3, col = "red")
+abline(h=-3, col = "red")
 
 ## ## Draw some random points
 set.seed(467)
@@ -47,17 +39,11 @@ set.seed(467)
 startT <- 0
 startX <- 1
 
-# vals of e and ne at time t
-getBounds <- function(t) { list(u = 3, l = -3) }
-
 ctrlRuns <- runif(10, 0, 4)
-#ctrlRuns <- c(1.260825, 0.587869, 3.509754, 2.328480)
-ctrlBounds <- lapply(ctrlRuns, getBounds)
-
+x
 #set.seed(239)
-pickRand <- function(ls) { runif(1,ls$l,ls$u) }
-ctrlRunVals <- lapply(ctrlBounds, pickRand)
-
+pickRand <- function(t) { runif(1,-3,3) }
+ctrlRunVals <- lapply(ctrlRuns, pickRand)
 
 xs <- append(ctrlRuns, startT)
 ys <- unlist(append(ctrlRunVals,startX))
@@ -68,7 +54,9 @@ data <- data[order(data$x), ]
 
 # draw lines
 lines(data)
-points(xs,ys,pch=4)
+points(xs,ys,
+       pch=4,                            # point char 4 is 'x'
+       )
 
 
 # close tikz generation
