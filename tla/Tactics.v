@@ -7,12 +7,100 @@ Require Import TLA.Semantics.
 Require Import TLA.Lib.
 Require Import TLA.ProofRules.
 Require Import TLA.Automation.
-
+Require Import Coq.Lists.List.
+Require Import Coq.Strings.String.
 
 (* Some useful tactics for our examples. *)
 
-Ltac enable_ex :=
-  eapply Enabled_action; auto; simpl; intros;
+Ltac destruct_ite :=
+  match goal with
+  | [ |- context [ if ?e then _ else _ ] ]
+    => destruct e
+  end.
+
+Fixpoint get_vars_term (t : Term) : list Var :=
+  match t with
+  | VarNextT t | VarNowT t => t :: nil
+  | NatT _ | RealT _ => nil
+  | PlusT a b | MinusT a b | MultT a b | MaxT a b =>
+                             get_vars_term a ++
+                                           get_vars_term b
+  | InvT a | CosT a | SinT a | SqrtT a | ArctanT a | ExpT a =>
+                                         get_vars_term a
+  end.
+
+Definition get_image_vars (m:list (Var*Term)) :=
+  List.flat_map (fun p => get_vars_term (snd p)) m.
+
+Fixpoint get_witness (m : list (Var*Term)) : state -> state :=
+  match m with
+  | nil => fun st => st
+  | (x,VarNowT y) :: m =>
+    fun st z =>
+      if String.string_dec z y
+      then st x else get_witness m st z
+  | _ => fun st => st
+  end.
+
+Fixpoint get_next_vars_term (t : Term) : list Var :=
+  match t with
+  | VarNextT t => t :: nil
+  | VarNowT _ | NatT _ | RealT _ => nil
+  | PlusT a b | MinusT a b | MultT a b | MaxT a b =>
+                             get_next_vars_term a ++
+                             get_next_vars_term b
+  | InvT a | CosT a | SinT a | SqrtT a | ArctanT a | ExpT a
+      => get_next_vars_term a
+  end.
+
+Fixpoint get_next_vars_formula (f : Formula) : list Var :=
+  match f with
+  | Always a | Eventually a | Enabled a =>
+                              get_next_vars_formula a
+  | And a b | Or a b | Imp a b =>
+                       get_next_vars_formula a ++
+                       get_next_vars_formula b
+  | Rename _ a => get_next_vars_formula a
+  | Comp l r _ => get_next_vars_term l ++
+                                     get_next_vars_term r
+  | _ => nil
+  end.
+
+Fixpoint remove_dup (ls : list Var) : list Var :=
+  match ls with
+  | nil => nil
+  | l :: ls => let ls' := remove_dup ls in
+               if in_dec string_dec l ls'
+               then ls' else l :: ls'
+  end.
+
+Ltac enable_ex_st :=
+  match goal with
+  | |- lentails _ (Enabled ?X) =>
+    let vars := eval compute in
+    (remove_dup (get_next_vars_formula X)) in
+        let rec foreach ls :=
+            match ls with
+            | @cons _ ?l ?ls => eapply (ex_state l); simpl;
+                                foreach ls
+            | _ => idtac
+            end
+        in
+        eapply Enabled_action; simpl; intros;
+        foreach vars
+  end; try (eapply ex_state_any; (let st := fresh in
+                                  intro st; clear st)).
+
+Ltac smart_repeat_eexists :=
+  repeat match goal with
+           |- exists x, _ => eexists
+         end.
+
+(* The old tactic, very slow. *)
+(*
+Ltac enable_ex_st :=
+  eapply Enabled_action; intros; eapply ex_state_flow_any;
+  auto; simpl; intros;
   repeat match goal with
          | |- context [ ?X ] =>
            match type of X with
@@ -30,6 +118,14 @@ Ltac enable_ex :=
          end;
   try (eapply ex_state_any ;
        let st := fresh in intro st ; clear st).
+*)
+
+Ltac is_st_term_list :=
+  simpl; intros;
+  repeat match goal with
+           |- context [ String.string_dec ?e1 ?e2 ] =>
+           destruct (String.string_dec e1 e2)
+         end; try reflexivity; try tauto.
 
 Lemma reason_action : forall P Q,
     (forall a b tr,
@@ -66,6 +162,35 @@ Ltac solve_linear :=
 Ltac solve_nonlinear :=
   breakAbstraction; intros; unfold eval_comp in *;
   simpl in *; intuition; try psatz R.
+
+Ltac zero_deriv_tac v :=
+  eapply ContinuousProofRules.zero_deriv
+  with (x:=v); [ charge_tauto | solve_linear | ].
+
+Ltac always_imp_tac :=
+  match goal with
+  | [ |- ?H |-- _ ]
+    => match H with
+       | context[ Always ?HH ] =>
+         tlaAssert (Always HH);
+           [ charge_tauto |
+             apply Lemmas.forget_prem; apply always_imp ]
+       end
+  end.
+
+Ltac specialize_arith_hyp H :=
+  repeat match type of H with
+         | ?G -> _ =>
+           let HH := fresh "H" in
+           assert G as HH by solve_linear;
+             specialize (H HH); clear HH
+         end.
+
+Ltac specialize_arith :=
+  repeat match goal with
+         | [ H : ?G -> _ |- _ ] =>
+           specialize_arith_hyp H
+         end.
 
 (* This simplifies real arithmetic goals.
    It sometimes is useful to run this before
@@ -116,6 +241,7 @@ Open Scope HP_scope.
 
 (* I'm not sure what the following three
    tactics do *)
+(*
 Ltac find_zeros eqs :=
   match eqs with
     | nil => constr:(@nil Var)
@@ -126,7 +252,9 @@ Ltac find_zeros eqs :=
       let rest := find_zeros eqs in
       rest
   end.
+*)
 
+(*
 Ltac extract_unchanged eqs :=
   let xs := find_zeros eqs in
   let rec aux l :=
@@ -137,6 +265,7 @@ Ltac extract_unchanged eqs :=
                         try (aux l)
       end in
   aux xs.
+*)
 
 Ltac get_var_inv F x :=
   match F with
@@ -180,6 +309,7 @@ Fixpoint unnext_term (t:Term) : Term :=
     | SqrtT t => SqrtT (unnext_term t)
     | ArctanT t => ArctanT (unnext_term t)
     | ExpT t => ExpT (unnext_term t)
+    | MaxT t1 t2 => MaxT (unnext_term t1) (unnext_term t2)
   end.
 
 (* Removes ! from variables in a Formula *)
@@ -203,17 +333,17 @@ Ltac prove_inductive :=
   match goal with
     | [ |- context [Continuous ?deqs] ] =>
       match goal with
-        | [ |- (|-- _ -->> (?HH -->> ?GG))] =>
+(*        | [ |- (|-- _ -->> (?HH -->> ?GG))] =>
           abstract (apply diff_ind_imp
                     with (eqs:=deqs) (H:=unnext HH)
                                      (G:=unnext GG);
                     solve [reflexivity |
                            simpl; intuition;
-                           solve_linear])
-        | [ |- _ ] =>
+                           solve_linear])*)
+(*        | [ |- _ ] =>
           abstract
             (apply unchanged_continuous with (eqs:=deqs);
-             solve_linear)
+             solve_linear)*)
         | [ |- (|-- _ -->> ?GG) ] =>
           abstract (eapply diff_ind
                     with (cp:=deqs) (G:=unnext GG)

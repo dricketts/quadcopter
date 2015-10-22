@@ -19,12 +19,13 @@ Inductive Term :=
 | PlusT : Term -> Term -> Term
 | MinusT : Term -> Term -> Term
 | MultT : Term -> Term -> Term
-| InvT : Term -> Term
+| InvT : Term -> Term 
 | CosT : Term -> Term
 | SinT : Term -> Term
-| SqrtT : Term -> Term
+| SqrtT : Term -> Term 
 | ArctanT : Term -> Term
 | ExpT : Term -> Term
+| MaxT : Term -> Term -> Term
 .
 
 (* Comparison operations *)
@@ -34,6 +35,10 @@ Inductive CompOp :=
 | Lt : CompOp
 | Le : CompOp
 | Eq : CompOp.
+
+(* Map from variable to term. Essentially
+   a refinement mapping from TLA. *)
+Definition RenameMap := Var->Term.
 
 (* Temporal formulas *)
 Inductive Formula :=
@@ -50,7 +55,7 @@ Inductive Formula :=
 | Always : Formula -> Formula
 | Eventually : Formula -> Formula
 | Embed : (state -> state -> Prop) -> Formula
-| Rename : list (Var * Term) -> Formula -> Formula.
+| Rename : RenameMap -> Formula -> Formula.
 
 (************************************************)
 (* Some notation for the logic.                 *)
@@ -85,7 +90,7 @@ Notation "x / y" := (MultT x (InvT y)) : HP_scope.
 Notation "cos( x )" := (CosT x).
 Notation "sin( x )" := (SinT x).
 Notation "exp( x )" := (ExpT x).
-
+Notation "MAX( x1 , x2 )" := (MaxT x1 x2).
 
 (* Comparisons *)
 Notation "t1 > t2" := (Comp t1 t2 Gt) : HP_scope.

@@ -1,6 +1,5 @@
 Require Import Coq.Reals.Rdefinitions.
 Require Import TLA.TLA.
-Import LibNotations.
 Require Import TLA.DifferentialInduction.
 Require Import TLA.ContinuousProofRules.
 Require Import TLA.BasicProofRules.
@@ -32,15 +31,17 @@ Section SensorWithDelay.
 
   Variable WC : Formula.
 
-  Definition w : list DiffEq := ["x"' ::= "v"].
+  Definition w : state->Formula :=
+    fun st' => st' "x" = "v" //\\
+               AllConstant ("v"::"Xmin_post"::"Xmax_post"::nil)%list st'.
 
   Definition SpecR : SysRec :=
-    {| dvars := ("Xmax_post"::"Xmin_post"::"v"::nil)%list;
-       cvars := ("x"::nil)%list;
-       Init := I;
-       Prog := Sense;
+    {| Init := I;
+       Prog := Sense //\\ Unchanged ("x"::nil)%list;
        world := w;
-       WConstraint := WC;
+       unch := (("Xmax_post":Term)::("Xmin_post":Term)::
+                ("v":Term)::("x":Term)::
+                ("Xmin":Term)::("Xmax":Term)::nil)%list;
        maxTime := d |}.
 
   Definition Spec := SysD SpecR.
@@ -49,7 +50,7 @@ Section SensorWithDelay.
   Proof.
     intros.
     apply SysSafe_rule; apply always_tauto.
-    enable_ex; repeat eexists; solve_linear.
+    enable_ex_st; repeat eexists; solve_linear.
   Qed.
 
   Theorem sense_safe :
@@ -59,17 +60,27 @@ Section SensorWithDelay.
     eapply Sys_by_induction with (IndInv := SenseSafeInd).
     - tlaIntuition.
     - unfold Spec, SpecR. tlaAssume.
+    - tlaIntuition.
     - apply SysSafe_sense.
     - tlaAssume.
     - charge_assumption.
     - solve_nonlinear.
     - red. solve_nonlinear.
     - unfold World. eapply diff_ind with (Hyps:=ltrue);
-        try solve [tlaIntuition | tlaAssume ];
-        repeat tlaSplit;
-        try solve [ solve_linear |
-                    tlaIntro; eapply unchanged_continuous;
-                      [ tlaAssume | solve_linear ] ].
+        try solve [tlaIntuition | tlaAssume ].
+      simpl deriv_formula. restoreAbstraction.
+      charge_intros; repeat charge_split;
+      charge_intros.
+      { eapply zero_deriv with (x:="v").
+        - charge_tauto.
+        - tlaIntuition.
+        - solve_linear. }
+      { solve_nonlinear. }
+      { eapply zero_deriv with (x:="v").
+        - charge_tauto.
+        - tlaIntuition.
+        - solve_linear. }
+      { solve_nonlinear. }
     - solve_linear; solve_nonlinear.
   Qed.
 

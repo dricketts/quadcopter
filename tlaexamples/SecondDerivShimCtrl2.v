@@ -34,16 +34,76 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
   Definition w : state->Formula :=
     fun st' =>
       st' "y" = "v" //\\ st' "v" = "a" //\\
-      AllConstant ("a"::"Y"::"V"::"T"::nil)%list st'.
+      AllConstant ("a"::"Y"::"V"::nil)%list st'.
+
+  Definition SafeAcc (a:Term) : Formula :=
+    Max a 0
+        (fun mxa =>
+           "y" + tdist "v" mxa d + sdist ("v" + mxa*d)
+           <= ub).
 
   Definition Ctrl : Formula :=
-         (Max "A" 0 (fun mx => "Ymax" + tdist "Vmax" mx d +
-                               sdist ("Vmax" + mx*d)
-          <= ub) //\\ "a"! = "A")
-    \\// ("a"! <= amin).
+    SafeAcc "a"! \\// "a"! <= amin.
+(*
+Definition SafeRegion (ubv:R) : Formula :=
+  "y" + tdist ubv 0 d + sdist ubv <= ub.
+
+Lemma vel_bound_acc : forall ubv,
+  []"v" <= ubv //\\
+  [](World w \\// Unchanged ("v"::"y"::nil)%list)
+  |-- []("v" + "a"!*d <= ubv).
+Admitted.
+
+Lemma safe_region_ok : forall (ubv:R),
+  (0 <= ubv)%R ->
+  []"v" <= ubv //\\
+  [](World w \\// Unchanged ("v"::"y"::nil)%list)
+  |-- [](SafeRegion ubv -->> SafeAcc "a"!).
+Proof.
+  intros. pose proof d_gt_0. pose proof amin_lt_0.
+  tlaAssert ([]"v" + "a"!*d <= ubv);
+    [ charge_apply (vel_bound_acc ubv); charge_tauto |
+      charge_intros ].
+  repeat rewrite Always_and. tlaRevert.
+  apply always_imp. charge_intros. repeat decompose_hyps.
+  - unfold SafeRegion, SafeAcc, Max.
+    repeat (charge_split; charge_intros).
+    + reason_action_tac. revert H2. rewrite_real_zeros.
+      intuition. clear H8.
+      eapply Rle_trans; eauto.
+      assert (/amin < 0)%R by solve_linear.
+      assert (0 - / 2 < 0)%R by solve_linear.
+      generalize dependent (/amin)%R.
+      generalize dependent (0 - / 2)%R.
+      intros. clear H3.
+Abort.
+*)
+(*
+If safe regions of two shims are disjoint
+then they compose, i.e. their conjunction
+is always enabled.
+
+If safe regions are not disjoint, then you
+must show that their default actions are
+consistent.
+
+These are two domain specific composition
+theorems. The idea is that you have to
+prove the above theorem for a shims safe
+region and safey check and then you can
+use the above domain specific composition
+theorems.
+
+We may be able to state a theorem how much
+the monitor must know about the state and
+then relate this to sensor error. In particular,
+the monitor must know that he is not in
+two safe regions with inconsistent default
+actions.
+ *)
 
   Definition History : Formula :=
-    "Y"! = "y" //\\ "V"! = "v" //\\ "T"! = "t"!.
+    "Y"! = "y" //\\ "V"! = "v".
 
   Definition Safe : Formula :=
     "y" <= ub.
@@ -68,7 +128,7 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
        Prog := Ctrl //\\ History //\\ Unchanged ("v"::"y"::nil)%list;
        world := w;
        unch := (("a":Term)::("Y":Term)::("V":Term)::
-                ("T":Term)::("v":Term)::("y":Term)::nil)%list;
+                ("v":Term)::("y":Term)::nil)%list;
        maxTime := d |}.
 
   Definition Spec := SysD SpecR.
@@ -82,8 +142,7 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
                     "Y" + (tdist "V" "a" t) +
                     (sdist ("V" + "a"*t)) <= ub) //\\
               ((0 <= t <= d //\\ "V" + "a"*t < 0) -->>
-                     "Y" + (tdist "V" "a" t) <= ub)) //\\
-   "t" <= "T" <= d.
+                     "Y" + (tdist "V" "a" t) <= ub)).
 
   Lemma ind_inv_init :
     I |-- IndInv.
@@ -143,13 +202,13 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
   Qed.
 
   Theorem ctrl_safe :
-    []"Vmax" >= "v" //\\ []"Ymax" >= "y" |-- Spec -->> []Safe.
+    |-- Spec -->> []Safe.
   Proof.
     pose proof amin_lt_0 as amin_lt_0.
     pose proof d_gt_0 as d_gt_0.
     tlaIntro.
     eapply Sys_by_induction
-    with (IndInv:=IndInv) (A:="Vmax" >= "v" //\\ "Ymax" >= "y").
+    with (IndInv:=IndInv) (A:=ltrue).
     - tlaIntuition.
     - unfold Spec, SpecR. tlaAssume.
     - tlaIntuition.
@@ -193,7 +252,7 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
         - unfold IndInv;
           simpl; restoreAbstraction; unfold tdist, sdist;
           solve_linear; rewrite_next_st; solve_linear;
-          specialize (H5 x); solve_linear.
+          specialize (H4 x); solve_linear.
         - simpl deriv_formula. restoreAbstraction.
           charge_intros; repeat charge_split;
           charge_intros.
@@ -228,7 +287,7 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
       { solve_linear; rewrite_next_st; R_simplify; solve_linear. }
       { fold BasicProofRules.next. unfold Discr, Ctrl, Max.
         decompose_hyps.
-        { tlaAssert ("A" <= 0 \\// "A" >= 0);
+        { tlaAssert ("a"! <= 0 \\// "a"! >= 0);
           [ solve_linear | tlaIntro ].
           repeat decompose_hyps.
           apply lforallR. intro x.
@@ -236,18 +295,19 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
           - simpl. restoreAbstraction. charge_intros.
             tlaAssert (tdist "V"! "a"! x +
                        (sdist ("V"! + "a"!*x)) <=
-                       tdist "Vmax" 0 d + sdist ("Vmax" + 0 * d)).
-            + pose proof (tdist_sdist_incr "V"! "Vmax" "a"! 0 x d).
+                       tdist "v" 0 d + sdist ("v" + 0 * d)).
+            + pose proof (tdist_sdist_incr "V"! "v" "a"! 0 x d).
               charge_apply H. solve_linear.
             + solve_linear.
           - simpl. restoreAbstraction. charge_intros.
-            tlaAssert ("Vmax" >= 0 \\// "Vmax" <= 0);
+            tlaAssert ("v" >= 0 \\// "v" <= 0);
               [ solve_linear | tlaIntro ].
             decompose_hyps.
             + simpl. restoreAbstraction.
-              tlaAssert (tdist "v" "A" x <= tdist "Vmax" 0 d).
-              * pose proof (tdist_incr "v" "Vmax" "A" 0 x d).
-                charge_apply H. solve_linear. rewrite_real_zeros.
+              tlaAssert (tdist "v" "a"! x <= tdist "v" 0 d).
+              * pose proof (tdist_incr "v" "v" "a"! 0 x d).
+                charge_apply H. solve_linear.
+                rewrite_real_zeros.
                 apply Rmult_0_le; solve_linear.
               * tlaIntro. solve_linear.
                 eapply Rle_trans; eauto.
@@ -264,19 +324,18 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
                   solve_linear. }
             + tlaAssert ("y" <= ub).
               { rewrite <- inv_safe. charge_tauto. }
-              { tlaAssert (tdist "v" "A" x <= 0).
-                - pose proof (tdist_vel_neg "v" "A" x).
+              { tlaAssert (tdist "v" "a"! x <= 0).
+                - pose proof (tdist_vel_neg "v" "a"! x).
                   charge_apply H. solve_linear.
-                  solve_nonlinear.
                 - solve_linear. rewrite_next_st. solve_linear. }
           - tlaIntro. charge_split.
             + simpl; restoreAbstraction. tlaIntro.
               tlaAssert (tdist "V"! "a"! x +
                          (sdist ("V"! + "a"!*x)) <=
-                         tdist "Vmax" "A" d +
-                         sdist ("Vmax" + "A" * d)).
-              *  pose proof (tdist_sdist_incr "V"! "Vmax"
-                                              "a"! "A" x d).
+                         tdist "v" "a"! d +
+                         sdist ("v" + "a"! * d)).
+              *  pose proof (tdist_sdist_incr "V"! "v"
+                                              "a"! "a"! x d).
                  charge_apply H. solve_linear.
               * solve_linear.
             + tlaAssert ("y" <= ub).
@@ -298,7 +357,7 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
               * tlaAssert (0 <= tdiff <= d);
                 [ solve_linear | charge_intros ].
                 reason_action_tac. intuition.
-                specialize (H11 (pre "T" - pre "t"))%R.
+                specialize (H10 (pre "T" - pre "t"))%R.
                 intuition.
                 eapply Rle_trans; eauto.
                 repeat match goal with
@@ -311,18 +370,18 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
                 { pose proof (sdist_tdist_tdist "v" x).
                   breakAbstraction. unfold eval_comp in *;
                                     simpl in *.
-                  specialize (H15 (Stream.Cons pre
+                  specialize (H14 (Stream.Cons pre
                                                (Stream.Cons
                                                   post tr))).
                   intuition. simpl in *.
                   pose proof (sdist_incr "v" ("V" + "a"*tdiff)).
                   breakAbstraction. unfold eval_comp in *;
                                     simpl in *.
-                  specialize (H15 (Stream.Cons pre
+                  specialize (H14 (Stream.Cons pre
                                                (Stream.Cons
                                                   post tr))).
                   intuition. simpl in *.
-                  eapply Rle_trans; [ | apply H15 ].
+                  eapply Rle_trans; [ | apply H14 ].
                   { eapply Rle_trans; eauto.
                     apply Rplus_le_compat.
                     { apply Rplus_le_compat_l.
@@ -343,17 +402,17 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
               decompose_hyps.
               { reason_action_tac. intuition.
                 intuition.
-                specialize (H9 (pre "T" - pre "t"))%R.
+                specialize (H8 (pre "T" - pre "t"))%R.
                 intuition.
                 repeat match goal with
                        | [ H : eq (post _) _ |- _ ]
                          => rewrite H in *; clear H
                        end.
-                repeat match type of H23 with
+                repeat match type of H22 with
                        | ?H -> _ =>
                          let HH := fresh "H" in
                          assert H as HH by solve_linear;
-                           specialize (H23 HH); clear HH
+                           specialize (H22 HH); clear HH
                        end.
                 eapply Rle_trans; eauto.
                 apply Rplus_le_compat.
@@ -361,17 +420,17 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
                 { pose proof (sdist_tdist "v" x).
                   breakAbstraction. unfold eval_comp in *;
                                     simpl in *.
-                  specialize (H13 (Stream.Cons pre
+                  specialize (H12 (Stream.Cons pre
                                                (Stream.Cons
                                                   post tr))).
                   intuition. simpl in *.
                   pose proof (sdist_incr "v" ("V" + "a"*tdiff)).
                   breakAbstraction.
-                  specialize (H13 (Stream.Cons pre
+                  specialize (H12 (Stream.Cons pre
                                                (Stream.Cons
                                                   post tr))).
                   intuition. simpl in *.
-                  eapply Rle_trans; [ | apply H13 ].
+                  eapply Rle_trans; [ | apply H12 ].
                   { eapply Rle_trans; eauto.
                     apply Rplus_le_compat; solve_linear.
                     repeat rewrite Rmult_assoc.
@@ -390,7 +449,7 @@ Module SecondDerivShimCtrl (Import Params : SecondDerivShimParams).
                        => rewrite H in *; clear H
                      end.
                 eapply Rle_trans; eauto.
-                clear - H3 amin_lt_0 H2 H6 H18.
+                clear - H3 amin_lt_0 H2 H6 H17.
                 solve_nonlinear. } }
       { solve_linear. }
       { solve_linear. }

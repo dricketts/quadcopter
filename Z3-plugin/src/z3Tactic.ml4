@@ -187,28 +187,21 @@ end
 module Z3Tactic =
 struct
 
-  let read_process command =
-    let buffer_size = 2048 in
-    let buffer = Buffer.create buffer_size in
-    let string = String.create buffer_size in
-    let in_channel = Unix.open_process_in command in
-    let chars_read = ref 1 in
-    while !chars_read <> 0 do
-      chars_read := input in_channel string 0 buffer_size;
-      Buffer.add_substring buffer string 0 !chars_read
-    done;
-    ignore (Unix.close_process_in in_channel);
-    Buffer.contents buffer
-
   let contrib_name = "z3-check"
 
   let debug = ref false
 
   let with_debugging f g =
+    let copy = !debug in
     let _ = debug := true in
-    let result = f g in
-    let _ = debug := false in
-    result
+    try
+      let result = f g in
+      let _ = debug := copy in
+      result
+    with
+      f ->
+	let _ = debug := copy in
+	raise f
 
   let debug f = if !debug then f () else ()
 
@@ -238,6 +231,7 @@ struct
   let c_or = resolve_symbol logic_pkg "or"
   let c_True = resolve_symbol logic_pkg "True"
   let c_False = resolve_symbol logic_pkg "False"
+  let c_Not = resolve_symbol logic_pkg "not"
   let c_eq = resolve_symbol logic_pkg "eq"
   let c_Prop = Term.mkProp
 
@@ -329,11 +323,11 @@ struct
 		   pr_decls tbl
 		   (pr_list sep print_r_assert) stmts
 
-  let ptrn_success = Str.regexp "^unsat\n(\([^)]*\))"
-  let ptrn_failure = Str.regexp "^sat\n\([^)]*\)\n\(model(.+)^\)"
+  let ptrn_success = Str.regexp "^unsat (\\([^)]*\\))"
+  let ptrn_failure = Str.regexp "^sat ([^)]*) (model\\(.+\\)) ?$"
   let ptrn_split = Str.regexp " "
 
-  let ptrn_def = Str.regexp "(define-fun x\([0-9]+\) () Real[ \n\r\t]+\([0-9\.]+\))"
+  let ptrn_def = Str.regexp "(define-fun x\\([0-9]+\\) () Real[ \n\r\t]+(?\\(-? [0-9]*.[0-9]*\\))?)"
 
   type z3_result =
       Sat of (int * float) list
@@ -345,7 +339,15 @@ struct
     try
       let _ = Str.search_forward ptrn_def result start in
       let num = int_of_string (Str.matched_group 1 result) in
-      let value = float_of_string (Str.matched_group 2 result) in
+      let value = Str.matched_group 2 result in
+      let value =
+	try
+	  let _ = String.index value '-' in
+	  "-" ^ String.sub value 2 (String.length value - 2)
+	with
+	  Not_found -> value
+      in
+      let value = float_of_string value in
       (num, value) :: extract_model (Str.match_end ()) result
     with
       Not_found -> []
@@ -355,32 +357,44 @@ struct
       debug (fun _ ->
 	     Pp.msg_debug (Pp.str ("Z3 output\n" ^ result)))
     in
+    let result = Str.global_replace (Str.regexp (Str.quote "\n")) " " result in
+    let result = Str.global_replace (Str.regexp (Str.quote "\r")) "" result in
     if Str.string_partial_match ptrn_success result 0 then
       let lst = Str.matched_group 1 result in
       Unsat (List.map Names.id_of_string (Str.split ptrn_split lst))
     else
       if Str.string_match ptrn_failure result 0 then
-	let start = 1 + Str.group_end 1 in
-	Sat (extract_model start result)
+	let result = Str.matched_group 1 result in
+	Sat (extract_model 0 result)
       else
 	let _ = Format.eprintf "Bad Z3 output:\n%s" result in
 	assert false
 
   let runZ3 tbl stmts =
-    let file = Filename.temp_file "z3-" ".smt2" in
-    let out = open_out file in
+    let (in_channel,out_channel) = Unix.open_process "z3 -in -smt2" in
     let _ =
       begin
-	let fmt = Format.formatter_of_out_channel out in
+	let fmt = Format.formatter_of_out_channel out_channel in
 	Format.fprintf fmt "(set-option :produce-unsat-cores true)\n" ;
 	Format.fprintf fmt "(set-option :produce-models true)\n" ;
 	Format.fprintf fmt "%a" (pr_smt2 "") (tbl, stmts) ;
 	Format.fprintf fmt "(check-sat)\n(get-unsat-core)\n(get-model)" ;
-	close_out out
+	Format.pp_print_flush fmt () ;
+	flush out_channel ;
+	close_out out_channel
       end
     in
-    let command = Format.sprintf "z3 -smt2 -- %s" file  in
-    parse_Z3_result (read_process command)
+    let buffer_size = 2048 in
+    let buffer = Buffer.create buffer_size in
+    let string = String.create buffer_size in
+    let chars_read = ref 1 in
+    while !chars_read <> 0 do
+      chars_read := input in_channel string 0 buffer_size;
+      Buffer.add_substring buffer string 0 !chars_read
+    done;
+    ignore (Unix.close_process (in_channel, out_channel));
+    let result = Buffer.contents buffer in
+    parse_Z3_result result
 
   let parse_uop recur constr op =
     (Term_match.apps (Term_match.EGlob constr)
@@ -434,6 +448,10 @@ struct
 	 (Req (l, r), tbl))
       ; parse_bop parse_prop c_and (fun a b -> Rand (a,b))
       ; parse_bop parse_prop c_or  (fun a b -> Ror (a,b))
+      ; (Term_match.apps (Term_match.EGlob c_Not)
+	   [Term_match.get 0], fun tbl bindings ->
+	     let (l,tbl) = parse_prop tbl (Hashtbl.find bindings 0) in
+	     (Rnot l, tbl))
       ; (Term_match.EGlob c_True, fun tbl _ -> (Rtrue, tbl))
       ; (Term_match.EGlob c_False, fun tbl _ -> (Rfalse, tbl))
       ; (Term_match.get 0,
@@ -468,9 +486,17 @@ struct
       | Some x -> x
     in
     let pp_assign (x,v) =
-      Pp.(++) (Printer.pr_constr (find x)) (str (Printf.sprintf " = %f" v))
+      let vv : float = v in
+      Pp.(   (Printer.pr_constr (find x))
+	  ++ (str (Printf.sprintf " = %f" vv)))
     in
-    pp_list pp_assign (fun _ -> Pp.str "\n")
+    begin
+    fun x ->
+      match x with
+      | [] -> assert false
+      | _ -> 
+	pp_list pp_assign Pp.fnl x
+    end
 
   let maybe_parse check tbl (name, decl, trm) =
     if check trm then
@@ -513,10 +539,10 @@ struct
        in
        match runZ3 tbl hyps with
          Sat model ->
-	 Printf.eprintf "%d" (List.length model) ;
 	 let msg =
-	   Pp.(++) (Pp.str "z3 failed to solve the goal.\n")
-		   (pr_model tbl model)
+	   Pp.(   (str "z3 failed to solve the goal.")
+               ++ (fnl ())
+	       ++ (pr_model tbl model))
 	 in
 	 Tacticals.tclFAIL 0 msg gl
        | Unsat core ->

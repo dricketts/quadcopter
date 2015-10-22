@@ -1,7 +1,6 @@
 Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.Reals.RIneq.
 Require Import TLA.TLA.
-Import LibNotations.
 Require Import TLA.DifferentialInduction.
 Require Import TLA.ContinuousProofRules.
 Require Import TLA.BasicProofRules.
@@ -62,15 +61,16 @@ Module SensorWithDelayRangeSndOrder
     "x" <= "Xmax_post".
 
   Definition w :=
-    ["x"'  ::= "v", "v"' ::= "a" ].
+    fun st' : state =>
+      st' "x" = "v" //\\ st' "v" = "a" //\\
+      AllConstant ("Xmax_post"::"a"::"X"::"V"::"T"::nil)%list st'.
 
   Definition SpecR : SysRec :=
-    {| dvars := ("Xmax_post"::"a"::"X"::"V"::"T"::nil)%list;
-       cvars := ("x"::"v"::nil)%list;
-       Init := I;
-       Prog := Sense //\\ History;
+    {| Init := I;
+       Prog := Sense //\\ History //\\ Unchanged ("x"::"v"::nil)%list;
        world := w;
-       WConstraint := WC;
+       unch := (("Xmax_post":Term)::("a":Term)::("X":Term)::
+                ("V":Term)::("T":Term)::("x":Term)::("v":Term)::nil)%list;
        maxTime := d |}.
 
   Definition Spec := SysD SpecR.
@@ -79,10 +79,11 @@ Module SensorWithDelayRangeSndOrder
   Proof.
     intros.
     apply SysSafe_rule; apply always_tauto.
-    enable_ex. exists d. exists d. exists (st "v").
-    exists (st "v"). exists (st "x").
+    enable_ex_st. simpl.
+    exists d. exists (st "v"). exists (st "x").
+    exists d. exists (st "v"). exists (st "x").
     exists (st "Xmax" + Rbasic_fun.Rmax (st "Vmax" * d) 0)%R.
-    exists (st "x"). exists R0. solve_linear. left.
+    exists R0. solve_linear. left.
     rewrite_real_zeros. solve_linear.
     { unfold Rbasic_fun.Rmax.
       match goal with
@@ -118,6 +119,7 @@ Module SensorWithDelayRangeSndOrder
            (A:="v" <= "Vmax" //\\ "x" <= "Xmax").
     - tlaIntuition.
     - unfold Spec, SpecR. tlaAssume.
+    - tlaIntuition.
     - apply SysSafe_sense.
     - tlaAssume.
     - charge_tauto.
@@ -159,12 +161,14 @@ Module SensorWithDelayRangeSndOrder
                                  (G:=unnext GG)
         end; try solve_diff_ind_goals.
         eapply diff_ind with (Hyps:=TRUE);
-          try solve_diff_ind_goals. }
+          try solve_diff_ind_goals; solve_nonlinear.
+        solve_nonlinear. }
       { match goal with
           |- _ |-- ?GG => eapply diff_ind
                           with (Hyps:=TRUE) (G:=unnext GG)
         end;
-        try solve_diff_ind_goals. }
+        try solve_diff_ind_goals.
+        solve_nonlinear. }
       { tlaIntro. eapply diff_ind with (Hyps:=ltrue);
                   try solve_diff_ind_goals.
         - unfold SenseSafeInd;
@@ -173,42 +177,77 @@ Module SensorWithDelayRangeSndOrder
           specialize (H7 x); solve_linear.
         - simpl deriv_formula. restoreAbstraction.
           simpl. restoreAbstraction.
-          repeat charge_split.
-          + tlaIntro; eapply unchanged_continuous;
-            [ tlaAssume | 
-            solve_linear; rewrite_next_st; solve_linear ].
-          + charge_intros. repeat charge_split.
-            * charge_intros; eapply unchanged_continuous;
-              [ tlaAssume |
-                solve_linear; rewrite_next_st; solve_linear ].
-            * charge_intros.
-              repeat charge_split;
-                try solve [ charge_intros;
-                            eapply unchanged_continuous;
-                            [ tlaAssume |
-                              solve_linear; rewrite_next_st;
-                              solve_linear ] |
-                            solve_linear ].
-            * charge_intros;
-              eapply unchanged_continuous;
-              [ tlaAssume |
+          charge_intros; repeat charge_split;
+          charge_intros.
+          + solve_linear.
+          + repeat charge_split.
+            * charge_intros. eapply zero_deriv with (x:="a").
+              { charge_tauto. }
+              { tlaIntuition. }
+              { solve_linear. }
+            * charge_intros; repeat charge_split;
+              charge_intros.
+              { eapply zero_deriv with (x:="a");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="X");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="V");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="T");
+                [ charge_tauto | tlaIntuition | ].
                 solve_linear; rewrite_next_st;
-                solve_linear ].
-            * charge_intros.
-              repeat charge_split;
-                try solve [ charge_intros;
-                            eapply unchanged_continuous;
-                            [ tlaAssume |
-                              solve_linear; rewrite_next_st;
-                              solve_linear ] |
-                            solve_linear ]. }
+                solve_linear. }
+              { solve_nonlinear. }
+              { eapply zero_deriv with (x:="a");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="X");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="V");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="T");
+                [ charge_tauto | tlaIntuition | ].
+                solve_linear; rewrite_next_st;
+                solve_linear. }
+              { solve_nonlinear. }
+            * charge_intros; repeat charge_split;
+              charge_intros.
+              { eapply zero_deriv with (x:="a");
+                [ charge_tauto | tlaIntuition | ].
+                solve_linear. }
+              { eapply zero_deriv with (x:="a");
+                [ charge_tauto | tlaIntuition | ].
+                solve_linear. }
+            * charge_intros; repeat charge_split;
+              charge_intros.
+              { eapply zero_deriv with (x:="a");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="X");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="V");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="T");
+                [ charge_tauto | tlaIntuition | ].
+                solve_linear; rewrite_next_st;
+                solve_linear. }
+              { solve_nonlinear. }
+              { eapply zero_deriv with (x:="a");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="X");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="V");
+                [ charge_tauto | tlaIntuition | ].
+                eapply zero_deriv with (x:="T");
+                [ charge_tauto | tlaIntuition | ].
+                solve_linear; rewrite_next_st;
+                solve_linear. }
+              { solve_nonlinear. } }
       { match goal with
           |- _ |-- ?GG => eapply diff_ind
                           with (Hyps:=TRUE)
                                  (G:=unnext GG)
         end; try solve_diff_ind_goals. }
-      { eapply unchanged_continuous;
-        [ unfold World; charge_assumption | ].
+      { eapply zero_deriv with (x:="T");
+        [ charge_tauto | tlaIntuition | ].
         solve_linear. }
     - repeat charge_split.
       { solve_linear; rewrite_next_st; R_simplify; solve_linear. }
@@ -217,7 +256,8 @@ Module SensorWithDelayRangeSndOrder
         decompose_hyps; repeat tlaIntro;
         charge_split; fold BasicProofRules.next;
         try solve [solve_linear].
-        - reason_action_tac. intuition; try solve [solve_linear].
+        - reason_action_tac. simpl in *.
+          intuition; try solve [solve_linear].
           repeat match goal with
                  | [ H : eq (post _) _ |- _ ]
                    => try rewrite H in *; clear H
@@ -230,27 +270,28 @@ Module SensorWithDelayRangeSndOrder
                      => try rewrite H in *; clear H
                    end.
             apply Rplus_le_compat; solve_linear.
-            clear - r H H1 H4 H2. 
+            clear - r H0 H1 H4 H2. 
             destruct H1.
             { repeat rewrite <- Rmult_assoc in *.
               rewrite Rmult_1_r in *.
               rewrite <- Rmult_plus_distr_r in *.
               assert (0 < d)%R by solve_linear.
               solve_nonlinear. }
-            { rewrite <- H0. solve_linear. }
+            { rewrite <- H. solve_linear. }
           * assert (pre "Vmax" * d +
                     / 2 * post "a" * (d * (d * 1)) >= 0)%R
               by solve_linear. intuition.
             rewrite H16. apply Rplus_le_compat; solve_linear.
-            clear - H H14 H1 H4 H2.
+            clear - H H0 H14 H1 H4 H2.
             destruct H1.
             { repeat rewrite <- Rmult_assoc in *.
               rewrite Rmult_1_r in *.
               rewrite <- Rmult_plus_distr_r in *.
               assert (0 < d)%R by solve_linear.
               solve_nonlinear. }
-            { rewrite <- H0. solve_linear. }
-        - reason_action_tac. intuition; try solve [solve_linear].
+            { rewrite <- H1. solve_linear. }
+        - reason_action_tac. simpl in *.
+          intuition; try solve [solve_linear].
           repeat match goal with
                  | [ H : eq (post _) _ |- _ ]
                    => try rewrite H in *; clear H

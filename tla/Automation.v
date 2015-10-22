@@ -7,6 +7,11 @@ Require Import TLA.Semantics.
 Ltac breakAbstraction :=
   simpl in *; unfold tlaEntails in *; simpl in *.
 
+Ltac restoreCoercions :=
+  change NatT with NatC in *;
+  change RealT with ConstC in *;
+  change VarNowT with VarC in *.
+
 Ltac restoreAbstraction :=
   change And    with (@land Formula _) in *;
   change Imp    with (@limpl Formula _) in *;
@@ -16,7 +21,7 @@ Ltac restoreAbstraction :=
   change Syntax.Forall with (@lforall Formula _) in *;
   change Syntax.Exists with (@lexists Formula _) in *;
   change tlaEntails with (@lentails Formula _) in *;
-  fold eval_formula.
+  fold eval_formula; restoreCoercions.
 
 Lemma tlaRefl
 : forall G l o,
@@ -54,6 +59,12 @@ Ltac tlaAssert H :=
   apply Lemmas.lcut with (R:=H).
 
 Ltac tlaRevert := first [ apply landAdj | apply Lemmas.lrevert ].
+
+Ltac tlaCutByHyp H :=
+  match type of H with
+  | _ |-- _ -->> ?C => tlaAssert C
+  | _ |-- ?C => tlaAssert C
+  end.
 
 (** Rewriting **)
 Section RW_Impl.
@@ -149,6 +160,7 @@ Section RW_Impl.
 
 End RW_Impl.
 
+(* TODO: This automation is way too expensive!
 Class SimpleEntail (A B : Formula) : Prop :=
   slentails : lentails A B.
 
@@ -179,6 +191,7 @@ Proof.
   unfold RW_Impl, Basics.impl. intros.
   red in H. charge_tauto.
 Qed.
+*)
 
 Arguments rw_impl {P A B} _ _ _ _.
 
