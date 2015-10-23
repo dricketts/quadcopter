@@ -2,7 +2,8 @@ library(functional)
 library(ggplot2)
 library(tikzDevice)
 
-#tikz('asymp_viz.tex', standAlone = FALSE, width = 5,height = 5)
+tikz('asymp_viz.tex', standAlone = FALSE, width = 5,height = 5)
+par(mar = c(1,2,1,1))
 
 
 xrang <- c(0,4)
@@ -10,7 +11,11 @@ yrang <- c(-5,5)
 
 plot.new()
 
-plot.window(xlim=xrang, ylim=yrang, )
+plot.window(xlim=xrang, ylim=yrang,
+            xaxs="i", yaxs="i",
+                                        #            width=3,height=3
+            )
+par(mar=c(0,0,0,0))
 
 title(xlab="time", ylab="",                 # axis labels
       )
@@ -28,6 +33,7 @@ axis(2,                                 # y axis
      ## at=c(-4,0,4),
      ## lab=c("",0,""),
      ## tck=0,
+     xaxs="i", yaxs="i"
      )
 
 abline(h=3, col = "red")
@@ -40,24 +46,24 @@ startT <- 0
 startX <- 1
 
 ctrlRuns <- runif(10, 0, 4)
-x
-#set.seed(239)
+
+                                        #set.seed(239)
 pickRand <- function(t) { runif(1,-3,3) }
 ctrlRunVals <- lapply(ctrlRuns, pickRand)
 
 xs <- append(ctrlRuns, startT)
 ys <- unlist(append(ctrlRunVals,startX))
 
-# "zip" and sort so the lines connect properly
+                                        # "zip" and sort so the lines connect properly
 data <- data.frame(x = xs, y = ys)
 data <- data[order(data$x), ]
 
-# draw lines
+                                        # draw lines
 lines(data)
 points(xs,ys,
        pch=4,                            # point char 4 is 'x'
        )
 
 
-# close tikz generation
-#dev.off()
+                                        # close tikz generation
+dev.off()

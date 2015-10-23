@@ -3,6 +3,8 @@ library(ggplot2)
 library(tikzDevice)
 
 tikz('exp_viz.tex', standAlone = FALSE, width = 5,height = 5)
+## bottom, left, top, and right.
+par(mar = c(1,2,1,1))
 
 xrang <- c(0,4)
 yrang <- c(-5,5)
@@ -16,8 +18,10 @@ curve(e,                                # the func
       n=30,                             # no of points eval'ed
       xlim=xrang, ylim=yrang,
       bty='l',                          # what does this do???
-      xlab="", ylab="",                 # axis labels
+      xlab="time", ylab="",                 # axis labels
       axes=F,                           # draw axes separately
+      xaxs="i", yaxs="i",
+      col="red",
       )
 
 axis(1,                                 # x axis
@@ -25,6 +29,7 @@ axis(1,                                 # x axis
      at=xrang,                          # where to put labels (+ extend the line)
      labels=F,                          # don't show x axis
      tck=0,
+     xaxs="i", yaxs="i",
      )
 
 axis(2,                                 # y axis
@@ -34,9 +39,12 @@ axis(2,                                 # y axis
      tck=0,
      )
 
+
+
 ## neg
 curve(ne,
       add=TRUE,
+      col="red",
       )
 
 
@@ -66,8 +74,8 @@ data <- data.frame(x = xs, y = ys)
 data <- data[order(data$x), ]
 
 # draw lines
-lines(data)
-points(xs,ys,pch=4)
+lines(data, bty="n")
+points(xs,ys,pch=4, bty="n")
 
 
 # close tikz generation
