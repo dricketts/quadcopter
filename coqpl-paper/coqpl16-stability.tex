@@ -39,9 +39,6 @@
 
 \usetikzlibrary{calc,positioning,decorations.markings,backgrounds}
 
-\newcommand{\greg}[1]{\textcolor{blue}{\textsc{GREG}: #1}}
-
-
 \begin{document}
 
 \special{papersize=8.5in,11in}
@@ -69,12 +66,9 @@
 \title{Formal Verification of Stability Properties of Cyber-physical Systems}
 %% \subtitle{Subtitle Text, if any}
 
-\authorinfo{}
-           {}
-           {}
-\authorinfo{}
-           {}
-           {}
+\authorinfo{Matthew Chan, Daniel Ricketts, Sorin Lerner, Gregory Malecha}
+           {University of California, San Diego}
+           {mattchan@ucsd.edu, daricket@cs.ucsd.edu, lerner@cs.ucsd.edu, gmalecha@eng.ucsd.edu}
 
 \maketitle
 
@@ -102,10 +96,10 @@ In this work we present an overview of our experiences formalizing stability pro
 %% As we grow increasingly reliant on software for control of critical infrastructure, so does our need for guarantees that such software is free of errors. Complete formal verification with a proof assistant is the best way to obtain extremely strong guarantees that software systems satisfy a specification; however this technique has only recently been extended to the domain of cyber-physical systems [cite: ROScoq, MEMOCODE]. % is this true? Maybe a bit more here?
 % In this paper, we present an overview of and our experiences in formalizing and reasoning about the physical behavior of hybrid systems in Coq.
 
-In particular, we describe and contrast two approaches for proving the stability of a controller for a linear, one-dimensional hybrid system, depicted in Figure~\ref{fig:system-visualization}.
-This system essentially runs in a loop in which the controller directly sets the velocity $v$ of the system and then the position $x$ evolves according to the differential equation $\dot{x} = v$ for at most $\Delta$ time while $v$ remains constant.
-The goal of the controller is to move the system to a desired position, which, without loss of generality,  we assume to be 0.
-The controller is a P controller, so-named because it sets the velocity to a value proportional to the difference between the current position and the desired position.
+In particular, we describe and contrast two approaches for proving the stability of a controller for the linear, one-dimensional hybrid system depicted in Figure~\ref{fig:system-visualization}.
+This system runs in a loop where the controller sets the velocity ($v$) of the system and then the position ($x$) evolves according to the differential equation $\dot{x} = v$ for at most $\Delta$ time while $v$ remains constant.
+The goal of the controller is to move the system to a desired position, which, without loss of generality, we assume to be 0.
+The controller is a P-controller, so-named because it sets the velocity to a value \emph{proportional} to the difference between the current position and the desired position.
 
 \section{System Specification}
 \label{sec:veridrone}
@@ -118,31 +112,53 @@ Init /\ $\Box$ (Discr \/ World)
 \end{coq}
 The first conjunct \coqe{Init} is a predicate over the initial state of the system.
 The second conjunct (\coqe{$\Box$(...)}) expresses the transitions of the system.
-In particular, it specifies that all temporally adjacent states are related by either \coqe{Discr}, a discrete transition that is morally of type \coqe{State -> State -> Prop}, or \coqe{World}, a continuous transition of the physical world expressed with predicates over the state and the time-derivative of variables in the state.
-For our system depicted in Figure~\ref{fig:system-visualization}, these two types of transitions can be specified with
+It specifies that all temporally adjacent states are related by either \coqe{Discr}, a discrete transition that is morally of type \coqe{State -> State -> Prop}, or \coqe{World}, a continuous transition of the physical world expressed with predicates over the state and the time-derivative of variables in the state.
+We focus on a \emph{proportional controller} which is described by the following instantiation of \coqe{Discr} and \coqe{World} and visualized in Figure~\ref{fig:system-visualization}. %% , these two types of transitions can be specified with
 \begin{coq}
-Discr := v' = -x/$\Delta$ /\ T' = t /\ t' = t /\ x' = x
+Def Discr := v' = -x / $\Delta$ /\ T' $\leq$ $\Delta$ /\ t' = t /\ x' = x
 
-World :=
- Cont (fun d => d x = v /\ d v = 0 /\ d t = 1 /\ d T = 0 /\ t - T < $\Delta$)
+Def World :=
+ Cont (fun $\partial$ => $\partial$ x = v /\ $\partial$ v = 0 /\ $\partial$ t = 1 /\ $\partial$ T = -1 /\ T' > 0)
 \end{coq}
 
-In addition to the variables \coqe{x} and \coqe{v}, we need two additional variables to fully specify our system: \coqe{t}, tracking the current time of the system, and \coqe{T}, a stopwatch that is reset every time the P controller runs.
-In the definition of \coqe{Discr}, \coqe{v' = -x/$\Delta$} specifies the P controller, \coqe{T' = t} specifies the resetting of the stopwatch, and \coqe{t' = t /\ x' = x} specify that the continuous variables do not change during the discrete transition.
-In the definition of \coqe{World}, \coqe{d x = v} specifies the differential equation $\dot{x} = v$, \coqe{d v = 0} specifies that the velocity remains constant during continuous transitions, \coqe{d t = 1} specifies that \coqe{t} tracks the current time, \coqe{d T = 0} specifies that the stopwatch remains constant during continuous transitions, and \coqe{t - T < $\Delta$} specifies that less than $\Delta$ time elapses between executions of the controller.
+In addition to the variables \coqe{x} and \coqe{v}, we need two additional variables to fully specify our system: \coqe{t}, tracks the current time of the system, and \coqe{T}, a stopwatch that is reset every time the P-controller runs.
+In the definition of \coqe{Discr}, \coqe{v' = -x/$\Delta$} specifies the P controller, \coqe{T' $\leq$ $\Delta$} specifies the resetting of the stopwatch, and \coqe{t' = t /\ x' = x} specify that the continuous variables are unchanged.
+In the definition of \coqe{World}, \coqe{$\partial$ x = v} specifies the differential equation $\dot{x} = v$, \coqe{$\partial$ v = 0} specifies that the velocity remains constant during continuous transitions, \coqe{$\partial$ t = 1} specifies that \coqe{t} tracks the current time, \coqe{$\partial$ T = 0} specifies that the stopwatch remains constant during continuous transitions, and \coqe{T' $\geq$ 0} specifies that the stop watch is not past expired.
 
 \begin{figure}
+\centering
 
-\greg{Draw a figure representing the system}
+\begin{tikzpicture}
+\begin{axis}[height=0.6\linewidth,width=0.8\linewidth,
+          xmin=-0.1,xmax=3,ymax=3,ymin=-0.5,
+          axis lines=middle,
+          xlabel=$t$,
+          ylabel=$x$]
+%% \addplot[red,thick]  {pow(e,-1*x)} ; %% node[above]{$x=e^{-\beta t}$};
+%% \addplot[black,dotted,thick] {-0.5 * (x + ln(0.5)) + 0.5} ; %% node[pos=0.75,right]{\tiny$x=\ln 0.5 + 0.5$};
+%% \addplot[black,dashed,thick] {-0.5 * (x - 0.2) + 0.5} ; %% node[below]{$x=\ln 0.5 + 0.5$};
+%% \addplot[black,dotted] {0.5} node[above,pos=0.75] {\small $x=0.5$};
+\addplot[mark=x,blue] coordinates {(0.1,2.5) (0.7,1) (1.2,0.5) (1.8,0.3) (2.8,0)} ;
+\node[anchor=west] at (axis cs:0.65,2) {\small discrete transitions} ;
+\draw[opacity=0.2,-latex] (axis cs:0.65,2) to (axis cs:0.15,2.5) ;
+\draw[opacity=0.2,-latex] (axis cs:0.65,2) to (axis cs:0.7,1.05) ;
 
-\greg{Label discrete and continuous transitions}
+\node[anchor=south] at (axis cs:2,0.9) {\small continuous transitions} ;
+\draw[opacity=0.2,-latex] (axis cs:2,0.9) to (axis cs:1.5,0.5) ;
+\draw[opacity=0.2,-latex] (axis cs:2,0.9) to (axis cs:2.3,0.2) ;
+\end{axis}
+\end{tikzpicture}
 
-\greg{Label the axes}
+%% \greg{Draw a figure representing the system}
+
+%% \greg{Label discrete and continuous transitions}
+
+%% \greg{Label the axes}
 
 
-\scalebox{0.6}{\input{p_viz.tex}}
+%% \scalebox{0.6}{\input{p_viz.tex}}
 
-\caption{Visualization of a P-controller}
+\caption{Visualizing the proportional controller.}
 \label{fig:system-visualization}
 \end{figure}
 
@@ -157,24 +173,9 @@ In the definition of \coqe{World}, \coqe{d x = v} specifies the differential equ
 
 \section{Stability}
 
-In this work we use the Veridrone system to reason about ``stability'' in the control theory sense.
-Stability is a classic property from control theory that captures a temporal notion of boundedness in terms of distance from a goal point.
-There are three levels of stability which are shown graphically in Figure~\ref{fig:stability}:
-
-
-\begin{figure}[!h]
-  \centering
-  \resizebox{\linewidth}{0.8\linewidth}{\input{asymp_viz.tex}}
-
-  (a) Lyapunov stability
-
-  \resizebox{\linewidth}{0.8\linewidth}{\input{exp_viz.tex}}
-
-  (a) Exponential stability
-
-  \caption{Visualzation for (a) Lyapunov and (b) exponential stability.}
-  \label{fig:stability}
-\end{figure}
+In this work we use the VeriDrone system to reason about ``stability'' in the control theory sense.
+Stability is a classic property that captures a temporal notion of boundedness in terms of distance from a goal point.
+We will focus on two notions of stability which are shown graphically in Figure~\ref{fig:stability}:
 
 
 \begin{enumerate}
@@ -209,6 +210,27 @@ In this definition $\tau$ is the global time which increases monotonically, i.e.
 %% These definitions form a heirarchy of stability.
 %% All asymptotically stable systems are Lyapunov stable, and all exponentially stable systems are asymptotically stable.
 
+\begin{figure}
+  \begin{minipage}{0.49\linewidth}
+    \centering
+  \resizebox{\linewidth}{!}{\input{asymp_viz.tex}}
+
+  \vspace{-0.5cm}
+  Lyapunov stability
+  \end{minipage}
+  \begin{minipage}{0.49\linewidth}
+  \centering
+  \resizebox{\linewidth}{!}{\input{exp_viz.tex}}
+
+  \vspace{-0.5cm}
+  Exponential stability
+  \end{minipage}
+
+  \caption{Visualzation for Lyapunov and exponential stability.}
+  \label{fig:stability}
+\end{figure}
+
+\vspace{-0.4cm}
 \section{Proving Stability Directly}
 \label{sec:graphical}
 
@@ -216,11 +238,11 @@ We began by proving that our system is Lyapunov stable using basic temporal logi
 While cumbersome due to the heavy use of arithmetic, the proof is quite similar to those performed when verifying safety properties of monitors in the VeriDrone~\cite{ricketts2015veridrone} work.
 The proof proceeds in two steps.
 First, we assume that $x$ is positive and we prove that the value of $x$ does not increase over time and further, never becomes negative.
-Then, by symmetry we can reuse this proof to justify the lower-bound by ``flipping the proof'' over the time axis.
+Then, by symmetry we can reuse this proof to justify the negative case by ``reflecting the proof over'' the time axis.
 
 \paragraph{Exponential Stability}
-We are currently in the process of proving the same controller exponentially stabile.
-The proof is more subtle because we need to justify that the rate at which the sytem approaches the goal is greater than the rate at which the exponential function approaches the goal, which itself is a function of the time since the start.
+We are currently in the process of proving the same controller exponentially stable.
+The proof is more subtle because we need to justify that the rate at which the system approaches the goal is greater than the rate at which the exponential function approaches the goal, which itself is a function of the time since the start.
 However, the controller is time-invariant, i.e. its output does not depend directly on time.
 This requires us to relate the slope of the exponential directly to the current value of $x$.
 
@@ -229,7 +251,7 @@ As with the Lyapunov stability proof, we can just consider positive values of $x
 We will pick $\alpha = 1$ and $\beta = \frac{1}{\beta}$.
 The choice of $\beta$ here is essential for this particular controller.
 In particular, note that the velocity chosen by the controller $-\frac{x}{\delta}$ is exactly the slope of the exponential \emph{where it crosses the horizontal line through $x$}.
-Therefore, the tragectory of the system is parallel to the tangent line.
+Therefore, the trajectory of the system is parallel to the tangent line.
 Since the exponential is concave up it is always greater than its tangent line (a fact we proved in Coq).
 Therefore, by transitivity our location is always below the exponential during continuous transitions.
 We have completed this proof in Coq.
@@ -255,14 +277,14 @@ In order to extend the proof to the hybrid system, we must extend the proof to a
           axis lines=middle,
           xlabel=$t$,
           ylabel=$x$]
-\addplot[red,very thick]  {pow(e,-1*x)} ; %% node[above]{$x=e^{-\beta t}$};
+\addplot[red,thick]  {pow(e,-1*x)} ; %% node[above]{$x=e^{-\beta t}$};
 \addplot[black,dotted,thick] {-0.5 * (x + ln(0.5)) + 0.5} ; %% node[pos=0.75,right]{\tiny$x=\ln 0.5 + 0.5$};
 \addplot[black,dashed,thick] {-0.5 * (x - 0.2) + 0.5} ; %% node[below]{$x=\ln 0.5 + 0.5$};
 \addplot[black,dotted] {0.5} node[above,pos=0.75] {\small $x=0.5$};
 \end{axis}
 \node[anchor=west] at (1,3) {\small $x=e^{-\beta t}$} ;
 \node[anchor=west] at (4.5,0.3) {\small tangent} ;
-\node[anchor=east] at (3,0.3) {\small tragectory} ;
+\node[anchor=east] at (3,0.3) {\small trajectory} ;
 \end{tikzpicture}
 
 \caption{Graphical ``proof'' of exponential stability.}
@@ -316,27 +338,28 @@ In order to extend the proof to the hybrid system, we must extend the proof to a
 \section{Stability Proofs using Lyapunov Functions}
 \label{sec:lyapunov-functions}
 
-In addition to the visually appealing approach described in Section~\ref{sec:graphical}, we have also begun exploring the potential of proving stability using a standard approach from control theory: Lyapunov functions.
-Very roughly speaking, Lyapunov functions allow one to prove stability of a system using some notion of the energy of the system in which the energy is 0 at the equilibrium, positive elsewhere, and decreases over time.
+In addition to the visually appealing approach described in Section~\ref{sec:graphical}, we have also begun exploring the use of Lyapunov functions to prove stability. %% potential of proving stability using a standard approach from control theory: 
+Lyapunov functions allow one to prove stability of a system using a notion of the energy of the system which decreases over time until it reaches an equilibrium.
 More precisely, a Lyapunov function for a one-dimensional system with an equilibrium at 0 is a function $V : \mathcal{R} \rightarrow \mathcal{R}$ such that $V(0) = 0$, $V(x) > 0$ for $x \neq 0$, and satisfying some condition on the time-derivative $\dot{V(x)}$.
+This condition on $\dot{V}(x)$ depends on the particular notion of stability one would like to prove.
+For Lyapunov stability and exponential stability, the conditions are $\dot{V}(x) \leq 0$ and $\dot{V}(x) \leq \alpha V(x)$ for $\alpha < 0$, respectively.
 
-This condition on $\dot{V(x)}$ depends on the particular notion of stability one would like to prove.
-For Lyapunov stability, asymptotic stability, and exponential stability, the conditions are $\dot{V(x)} \leq 0$, $\dot{V(x)} < 0$, and $\dot{V(x)} \leq \alpha V(x)$ for $\alpha < 0$, respectively.
-
-For a purely continuous P controller, specified by the differential equation $\dot{x} = -x$, the function $V(x) = \frac{1}{2}x^2$ serves as a Lyapunov function satisfying all three conditions on the time-derivative and thus estabilishes all three notions of stability.
+For a purely continuous P controller, specified by the differential equation $\dot{x} = -x$, the function $V(x) = \frac{1}{2}x^2$ serves as a Lyapunov function satisfying all three conditions on the time-derivative and thus establishes both notions of stability.
 To see this, note that $\dot{V(x)} = x\dot{x} = -x^2$.
-Unfortunately, for our hybrid P controller, the same computation gives us $\dot{V(x)} = x\dot{x} = x*v$.
-However, we can prove that our P controller is a refinement of the system in which $\dot{x} = \frac{-x}{\Delta - (t - T)}$.
+Unfortunately, for our hybrid P-controller, the same computation gives us $\dot{V(x)} = x\dot{x} = x*v$.
+However, we can prove that our P-controller is a refinement of the system in which $\dot{x} = \frac{-x}{\Delta - (t - T)}$.
 In other words, the velocity is proportional to the distance from the equilibrium and inversely proportional to the time remaining before the controller must run again.
-Using this abstraction, it is possible to establish all three conditions on the time derivative of $V$ and hence all three notions of stability.
-Thus far, we have only fully formalized in Coq the proof of Lyapunov stability of our P controller using a Lyapunov function.
+Using this abstraction, it is possible to establish all three conditions on the time derivative of $V$ and hence both notions of stability.
+Thus far, we have only completed the Coq proof of Lyapunov stability of our P-controller using a Lyapunov function.
 
-\section {Experiences}
-
+\vspace{-0.2cm}
+\section {Discussion}
 It is interesting to contrast the process of formalizing the graphically-inspired proofs with the proofs based on Lyapunov functions.
-Though the graphically-inspired proofs appear to be simpler and more intuitive on paper, our initial experience suggests that they are more challenging to formalize due to a lack of abstraction of time.
-Lyapunov functions provide such an abstraction and hence seem to provide an cleaner path to a fully formal proof.
-However, the time-abstraction seems to break slightly when one uses Lyapunov functions for a hybrid system rather than a purely continuous system.
+Though the graphically-inspired proofs appear to be more intuitive on paper, our current experience suggests that they are more challenging to formalize due to a lack of abstraction of time.
+Lyapunov functions provide this abstraction and hence seem to provide an cleaner path to a fully formal proof.
+However, the time-abstraction seems a bit tenuous when using Lyapunov functions for a hybrid system rather than a purely continuous one.
+For example, our approach above implicitly relies on being able to completely solve the differential equations, something that is often best to avoid.
+This is especially the case since differential equations are often not equations at all, but rather inequalities.
 More investigation is necessary to determine how both of these approaches scale to more complex hybrid systems.
 
 % \emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
@@ -353,11 +376,14 @@ More investigation is necessary to determine how both of these approaches scale 
 % \emph{Reasoning about real arithmetic, powers and floating point: }
 % A significant challenge faced during our development of the proofs, especially the
 
-\section{Future work}
+%% \section{Future work}
 
-Our initial work on stability has focused on a one-dimensional P (Proportional) controller. By extending the model to the full generality of a PID (Proportional-Integral-Derivative) controller, which will allow for the expression of more exciting behaviors such as oscillatory convergence to a goal, rather than limiting behavior to be monotonically increasing or decreasing towards the goal as it is in the current formulation.
-
-Ideally, the construction of a verified PID controller would follow from a layered composition, allowing for the separate construction of the I and D controllers. It might prove helpful to reformulate our mathematics using the standard method of Lyapunov functions from control theory, which in principle would allow for the different types of stability to be expressed in a uniform way. In the context of hybrid systems, however, Lyapunov's method might need to be extended to incorporate the discrete component.
+Our initial work on stability has focused on a one-dimensional P-controller.
+P-controllers are the first step on the path to PID (Proportional-Integral-Derivative) controllers, which will allow expressing more exciting behaviors such as oscillatory convergence to a goal.
+While still relatively simple, PID controllers form the vast majority of controllers in practice.
+%% , rather than limiting behavior to be monotonically increasing or decreasing towards the goal as it is in the current formulation.
+Ideally, the construction of a verified PID controller would follow from a layered composition, allowing for the separate construction of the I and D controllers.
+%% It might prove helpful to reformulate our mathematics using the standard method of Lyapunov functions from control theory, which in principle would allow for the different types of stability to be expressed in a uniform way. In the context of hybrid systems, however, Lyapunov's method might need to be extended to incorporate the discrete component.
 
 
 % Logical extensions to this work would be to show the convergence of the system in the remaining two dimensions, so as to guarantee that we can accurately reach any point in three dimensional space. To this end, . Further refinements on the
@@ -388,7 +414,7 @@ Ideally, the construction of a verified PID controller would follow from a layer
 
 % We recommend abbrvnat bibliography style.
 
-\bibliographystyle{abbrvnat}
+\bibliographystyle{plain}
 
 % The bibliography should be embedded for final submission.
 
@@ -397,9 +423,10 @@ Ideally, the construction of a verified PID controller would follow from a layer
 % ROScoq: http://www.cs.cornell.edu/~aa755/ROSCoq/
 % Stability defns: Murray et al, "A mathematical introduction to robotic manipulation, ch4"
 % http://www.cds.caltech.edu/~murray/courses/cds101/fa02/caltech/mls93-lyap.pdf
-\bibitem[Smith et~al.(2009)Smith, Jones]{smith02}
-P. Q. Smith, and X. Y. Jones. ...reference text...
-
+\bibitem{ricketts2015veridrone}
+D. Ricketts, G. Malecha, M. Alvarez, V. Gowda, S. Lerner.
+\newblock ``Towards Verification of Hybrid Systems in a Foundational Proof Assistant''.
+\newblock In \emph{MEMOCODE '15} 2015.
 \end{thebibliography}
 
 
@@ -411,3 +438,5 @@ P. Q. Smith, and X. Y. Jones. ...reference text...
 %  ----         ------  ----    ------
 
 %  2013.06.29   TU      0.1--4  comments on permission/copyright notices
+
+%%  LocalWords:  VeriDrone Lyapunov Coq PID
