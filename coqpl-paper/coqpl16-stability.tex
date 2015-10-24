@@ -136,7 +136,10 @@ In the definition of \coqe{World}, \coqe{d x = v} specifies the differential equ
 
 \greg{Label the axes}
 
-\caption{Visualization of a ??}
+
+\scalebox{0.6}{\input{p_viz.tex}}
+
+\caption{Visualization of a P-controller}
 \label{fig:system-visualization}
 \end{figure}
 
@@ -266,7 +269,7 @@ Lyapunov functions provide such an abstraction and hence seem to provide an clea
 However, the time-abstraction seems to break slightly when one uses Lyapunov functions for a hybrid system rather than a purely continuous system.
 More investigation is necessary to determine how both of these approaches scale to more complex hybrid systems.
 
-\emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
+% \emph{Coq as a reasoning tool: } Following several unsuccessful attempts to extend the proof of Lyapunov stability for exponential stability, we discovered that contrary to the hierarchy of mathematical definitions, the context that the two proofs needed are different. Because of the weakness of Lyapunov stability, we were able to correctly formulate it assuming that the
 
 
 % This uncovered an interesting property about the interactions between the discrete and continuous parts of hybrid systems --- that
@@ -277,8 +280,8 @@ More investigation is necessary to determine how both of these approaches scale 
 % ... pointed out gaps in our reasoning.
 
 
-\emph{Reasoning about real arithmetic, powers and floating point: }
-A significant challenge faced during our development of the proofs, especially the
+% \emph{Reasoning about real arithmetic, powers and floating point: }
+% A significant challenge faced during our development of the proofs, especially the
 
 \section{Future work}
 
