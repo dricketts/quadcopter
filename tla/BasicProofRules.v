@@ -535,6 +535,18 @@ Proof.
   apply (H tr HP 0).
 Qed.
 
+Lemma Always_next : forall F,
+    is_st_formula F ->
+    []F |-- [] next F.
+Proof.
+  intros.
+  rewrite always_st.
+  rewrite <- Always_and.
+  charge_intros.
+  charge_tauto.
+  tlaIntuition.
+Qed.
+
 (** Existential quantification **)
 Lemma exists_entails : forall T F1 F2,
   (forall x, F1 x |-- F2 x) ->
