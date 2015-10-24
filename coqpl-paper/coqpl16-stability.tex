@@ -35,6 +35,9 @@
 \usepackage[usenames]{xcolor}
 \usepackage{lstcoq}
 \usepackage{tikz}
+\usepackage{pgfplots}
+
+\usetikzlibrary{calc,positioning,decorations.markings,backgrounds}
 
 \newcommand{\greg}[1]{\textcolor{blue}{\textsc{GREG}: #1}}
 
@@ -160,40 +163,107 @@ There are three levels of stability which are shown graphically in Figure~\ref{f
 
 
 \begin{figure}[!h]
+  \centering
+  \resizebox{\linewidth}{0.8\linewidth}{\input{asymp_viz.tex}}
 
-  \greg{Draw bounding functions for asymptotic and lyapunov stability, they might need to be in seprate graphs.}
-  \scalebox{0.6}{\input{asymp_viz.tex}}
-  \scalebox{0.6}{\input{exp_viz.tex}}
+  (a) Lyapunov stability
 
-  \caption{Visualzation for Lyapunov and asymptotic stability.}
+  \resizebox{\linewidth}{0.8\linewidth}{\input{exp_viz.tex}}
+
+  (a) Exponential stability
+
+  \caption{Visualzation for (a) Lyapunov and (b) exponential stability.}
   \label{fig:stability}
 \end{figure}
 
 
 \begin{enumerate}
-\item \textbf{Lyapunov stability} states that if the system starts within $\epsilon > 0$ from the goal, then it will stay within $\delta$ of the goal point for all time.
-Formally,
-\greg{Insert formal definition in temporal logic}
+\item \textbf{Lyapunov stability} states that if the system starts within $\beta > 0$ from the goal, then it will stay within $\alpha$ of the goal point for all time.
+In our temporal logic, \coqe{x} is Lyapunov stable if
+\begin{coq}
+Definition LyapunovStable ($x$ : Term) : Formula :=
+  Forall $\alpha$ : R, $\alpha$ > 0 -> (* boundary *)
+    Exists $\beta$ : R, $\beta$ > 0 /\ (* start *)
+      (|$x$| < $\beta$) -> $\Box$(|$x$| < $\alpha$).
+\end{coq}
+Note that the universal quantification of the boundary implies that if the system starts arbitrarily close, then it will remain arbitrarily close.
+However, the definition does not imply that the system converges.
+For example, the system that stays a constant distance from the goal is Lyapunov stable.
 
-\item \textbf{Asymptotic stability} states that the distance from the goal is bounded by a decreasing function of time.
-Formally, this is expressed by the following definition:
+%%\item \textbf{Asymptotic stability} states that the distance from the goal is bounded by a decreasing function of time.
+%% Formally, this is expressed by the following definition:
 
-\item \textbf{Exponential stability} is a specialization of asymptotic stability that restricts the function to be an exponential of the form $\alpha e^{-\beta t}$.
+\item \textbf{Exponential stability} is a refinement of stability that guarantees that the system converges to the goal exponentially fast.
+The formal definition is the following:
+\begin{coq}
+Definition ExpStable (x : Term) : Formula :=
+  Exists $\alpha$ : R, $\alpha$ > 0 /\ Exists $\beta$ : R, $\beta$ > 0 /\
+  Exists $x_0$: R, $x$ = $x_0$ /\ Exists $t_0$ : R, $t_0$ = $\tau$ /\
+     $\Box$(|$x$| $\leq$ ($\alpha$ * |$x_0$| * e^{-$\beta$ * ($\tau$ - $t_0$)}).
+\end{coq}
+The first line existentially quantifies both $\alpha$ and $\beta$, and the second line captures the initial configuration (time in $t_0$ and the value of $x$ in $x_0$).
+In this definition $\tau$ is the global time which increases monotonically, i.e. we must prove that our system is confined by a single exponential regardless of the number of discrete and continuous transitions it takes.
 
 \end{enumerate}
 
-These definitions form a heirarchy of stability.
-All asymptotically stable systems are Lyapunov stable, and all exponentially stable systems are asymptotically stable.
+%% These definitions form a heirarchy of stability.
+%% All asymptotically stable systems are Lyapunov stable, and all exponentially stable systems are asymptotically stable.
 
-\section{Graphical stability proofs}
+\section{Proving Stability Directly}
 \label{sec:graphical}
-Since this domain is naturally a visual one, our first approach to proving stability is inspired by informal graphical proofs of Lyapunov stability and exponential stability of the controller described in Section~\ref{sec:veridrone}.
-Here, we focus on the proof of exponential stability.
-The graphical proof of exponential stability is depicted in Figure~\ref{fig:graphical-proof}.
+
+We began by proving that our system is Lyapunov stable using basic temporal logic induction.
+While cumbersome due to the heavy use of arithmetic, the proof is quite similar to those performed when verifying safety properties of monitors in the VeriDrone~\cite{ricketts2015veridrone} work.
+The proof proceeds in two steps.
+First, we assume that $x$ is positive and we prove that the value of $x$ does not increase over time and further, never becomes negative.
+Then, by symmetry we can reuse this proof to justify the lower-bound by ``flipping the proof'' over the time axis.
+
+\paragraph{Exponential Stability}
+We are currently in the process of proving the same controller exponentially stabile.
+The proof is more subtle because we need to justify that the rate at which the sytem approaches the goal is greater than the rate at which the exponential function approaches the goal, which itself is a function of the time since the start.
+However, the controller is time-invariant, i.e. its output does not depend directly on time.
+This requires us to relate the slope of the exponential directly to the current value of $x$.
+
+Figure~\ref{fig:graphical-proof} provides a graphical sketch of the reasoning.
+As with the Lyapunov stability proof, we can just consider positive values of $x$.
+We will pick $\alpha = 1$ and $\beta = \frac{1}{\beta}$.
+The choice of $\beta$ here is essential for this particular controller.
+In particular, note that the velocity chosen by the controller $-\frac{x}{\delta}$ is exactly the slope of the exponential \emph{where it crosses the horizontal line through $x$}.
+Therefore, the tragectory of the system is parallel to the tangent line.
+Since the exponential is concave up it is always greater than its tangent line (a fact we proved in Coq).
+Therefore, by transitivity our location is always below the exponential during continuous transitions.
+We have completed this proof in Coq.
+
+While this appears to be the crux of the proof, it is not complete.
+In particular, it only handles the continuous transition.
+In order to extend the proof to the hybrid system, we must extend the proof to address the discrete transitions which has been more difficult than we anticipated.
+%% The central difficulty, as with many verification efforts, lies in the inductive hypothesis.
+%% While a similar proof methodology to the Lyapunov stability proof should work, we have been focused on a separation of parameters.
+
+
+
+
+%% Since this domain is naturally a visual one, our first approach to proving stability is inspired by informal graphical proofs of Lyapunov stability and exponential stability of the controller described in Section~\ref{sec:veridrone}.
+%% Here, we focus on the proof of exponential stability.
+%% The graphical proof of exponential stability is depicted in Figure~\ref{fig:graphical-proof}.
 
 \begin{figure}
-
-\greg{This should be like the graphical proof from the google slides.}
+\centering
+\begin{tikzpicture}
+\begin{axis}[height=0.6\linewidth,width=0.8\linewidth,
+          xmin=-0.5,xmax=3,ymax=1.5,ymin=-0.5,
+          axis lines=middle,
+          xlabel=$t$,
+          ylabel=$x$]
+\addplot[red,very thick]  {pow(e,-1*x)} ; %% node[above]{$x=e^{-\beta t}$};
+\addplot[black,dotted,thick] {-0.5 * (x + ln(0.5)) + 0.5} ; %% node[pos=0.75,right]{\tiny$x=\ln 0.5 + 0.5$};
+\addplot[black,dashed,thick] {-0.5 * (x - 0.2) + 0.5} ; %% node[below]{$x=\ln 0.5 + 0.5$};
+\addplot[black,dotted] {0.5} node[above,pos=0.75] {\small $x=0.5$};
+\end{axis}
+\node[anchor=west] at (1,3) {\small $x=e^{-\beta t}$} ;
+\node[anchor=west] at (4.5,0.3) {\small tangent} ;
+\node[anchor=east] at (3,0.3) {\small tragectory} ;
+\end{tikzpicture}
 
 \caption{Graphical ``proof'' of exponential stability.}
 \label{fig:graphical-proof}
@@ -219,21 +289,21 @@ The graphical proof of exponential stability is depicted in Figure~\ref{fig:grap
 
 % starting at an initial state
 
-In order to formalize this graphical proof in Coq, we ...
+%% In order to formalize this graphical proof in Coq, we ...
 
-In the time interval between runs of the discrete controller, $t_0\leq t \leq t_0+\Delta$, the height of the system will decrease exponentially fast over multiple continuous transitions of the system, with its upper bound given by the function
- \[E(t)=x_0e^{-b(t-t_0)}\]
-but this leaves us with the unpleasant work of having to reason over fractionals. In order to simplify our proofs, we instead assert a stronger property --- that the height is bounded by the tangent to $E$ at $t_0$, selected at the start of the continuous transitions:
-\[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
-which we can then compose into a proof of exponential stability by showing that
-\[
-  \frac
-  {\begin{aligned}
-      & \vdash \emph{Init} \land \Box \emph{World} \rightarrow \Box \emph{Safe} \\
-      & \vdash \Box (T\leq E)
-    \end{aligned}}
-  {\vdash \emph{Init} \land \Box \emph{World} \rightarrow \Box \emph{ExpSafe}}
-\]
+%% In the time interval between runs of the discrete controller, $t_0\leq t \leq t_0+\Delta$, the height of the system will decrease exponentially fast over multiple continuous transitions of the system, with its upper bound given by the function
+%%  \[E(t)=x_0e^{-b(t-t_0)}\]
+%% but this leaves us with the unpleasant work of having to reason over fractionals. In order to simplify our proofs, we instead assert a stronger property --- that the height is bounded by the tangent to $E$ at $t_0$, selected at the start of the continuous transitions:
+%% \[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
+%% which we can then compose into a proof of exponential stability by showing that
+%% \[
+%%   \frac
+%%   {\begin{aligned}
+%%       & \vdash \emph{Init} \land \Box \emph{World} \rightarrow \Box \emph{Safe} \\
+%%       & \vdash \Box (T\leq E)
+%%     \end{aligned}}
+%%   {\vdash \emph{Init} \land \Box \emph{World} \rightarrow \Box \emph{ExpSafe}}
+%% \]
 
 % Exponential stability of height over time: $E(t)=x_0e^{-b(t-t_0)}$
 % tangent to Exp: \[T(t) = E'(t_0)(t-t_0)+x_0 = -bx_0(t-t_0)+x_0\]
