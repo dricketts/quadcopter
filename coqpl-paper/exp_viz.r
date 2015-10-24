@@ -2,8 +2,9 @@ library(functional)
 library(ggplot2)
 library(tikzDevice)
 
-tikz('exp_viz.tex', standAlone = FALSE, width = 5,height = 5)
+tikz('exp_viz.tex', standAlone = FALSE)
 ## bottom, left, top, and right.
+dev.new(height=5,width=8)
 par(mar = c(1,2,1,1))
 
 xrang <- c(0,4)

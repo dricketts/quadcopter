@@ -2,7 +2,8 @@ library(functional)
 library(ggplot2)
 library(tikzDevice)
 
-tikz('asymp_viz.tex', standAlone = FALSE, width = 5,height = 5)
+tikz('asymp_viz.tex', standAlone = FALSE)
+dev.new(height=5,width=8)
 par(mar = c(1,2,1,1))
 
 

@@ -2,8 +2,9 @@ library(functional)
 library(ggplot2)
 library(tikzDevice)
 
-tikz('p_viz.tex', standAlone = FALSE, width = 5,height = 5)
+tikz('p_viz.tex', standAlone = FALSE)
 ## bottom, left, top, and right.
+dev.new(height=5,width=8)              #aspect ratio
 par(mar = c(4,2,1,1))
 par(family="serif")
 
@@ -22,7 +23,7 @@ curve(e,                                # the func
       xlab="time", ylab="x",                 # axis labels
 #      axes=F,                           # draw axes separately
       xaxs="i", yaxs="i",
-      yaxt='n',
+      ## yaxt='n',
       col="red",
       )
 
@@ -34,15 +35,15 @@ axis(1,                                 # x axis
      labels=F,                          # don't show x axis
      tck=0,
      xaxs="i", yaxs="i",
+
 #           labels=c("0"),
      )
-
-## axis(2,                                 # y axis
-##      pos=0,                             # at x=0
-##      at=c(-4,0,4),
-##      lab=c("",0,""),
-##      tck=0,
-##      )
+axis(2,                                 # y axis
+     pos=0,                             # at x=0
+     at=c(-4,0,4),
+     lab=c("",0,""),
+     tck=0,
+     )
 
 
 ## Draw some random points
@@ -70,7 +71,6 @@ text(c(startT+0.1),c(startX+0.1),
      cex=0.9)
 
 points(xs,ys,pch=4, bty="n")      #unlabelled
-
 
 # close tikz generation
 dev.off()
