@@ -5,6 +5,7 @@ library(tikzDevice)
 tikz('p_viz.tex', standAlone = FALSE, width = 5,height = 5)
 ## bottom, left, top, and right.
 par(mar = c(4,2,1,1))
+par(family="serif")
 
 xrang <- c(0,4)
 yrang <- c(0,5)
@@ -18,11 +19,14 @@ curve(e,                                # the func
       n=30,                             # no of points eval'ed
       xlim=xrang, ylim=yrang,
       bty='l',                          # what does this do???
-      xlab="time", ylab="",                 # axis labels
+      xlab="time", ylab="x",                 # axis labels
 #      axes=F,                           # draw axes separately
       xaxs="i", yaxs="i",
+      yaxt='n',
       col="red",
       )
+
+text(1,3, expression( italic(x == - alpha * e^{t - t[0]})), cex=1.3)
 
 axis(1,                                 # x axis
      pos=0,                             # at y=0
@@ -30,6 +34,7 @@ axis(1,                                 # x axis
      labels=F,                          # don't show x axis
      tck=0,
      xaxs="i", yaxs="i",
+#           labels=c("0"),
      )
 
 ## axis(2,                                 # y axis
@@ -56,7 +61,15 @@ ys <- unlist(append(runXs,startX))
 
 # draw lines
 lines(data, bty="n")
-points(xs,ys,pch=4, bty="n")
+
+## draw points
+text(c(startT+0.1),c(startX+0.1),
+     expression(
+         group("(",list(italic(t[0]), italic(x[0])), ")")
+     ),
+     cex=0.9)
+
+points(xs,ys,pch=4, bty="n")      #unlabelled
 
 
 # close tikz generation
