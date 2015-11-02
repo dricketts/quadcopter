@@ -93,6 +93,8 @@ Notation "/ x" := (InvT x) : HP_scope.
 Notation "x / y" := (MultT x (InvT y)) : HP_scope.
 Notation "cos( x )" := (CosT x).
 Notation "sin( x )" := (SinT x).
+Notation "atan( x )" := (ArctanT x).
+Notation "sqrt( x )" := (SqrtT x).
 Notation "exp( x )" := (ExpT x).
 Notation "MAX( x1 , x2 )" := (MaxT x1 x2).
 

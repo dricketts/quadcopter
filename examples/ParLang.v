@@ -273,6 +273,10 @@ Theorem Real_term_synth
     Abstracts_term r (RealPT r).
 Proof. compute. reflexivity. Qed.
 
+Theorem Nat_term_synth : forall (n : nat),
+    Abstracts_term n (NatPT n).
+Proof. compute. reflexivity. Qed.
+
 Theorem Var_term_synth
   : forall (v : Var),
     Abstracts_term v (VarPT v).
@@ -287,8 +291,104 @@ Theorem Plus_term_synth
     Abstracts_term (A + B) (PlusPT A' B').
 Proof.
   unfold Abstracts_term. simpl. intros.
-  rewrite H. rewrite H0.
-  reflexivity.
+  rewrite H. rewrite H0. auto.
+Qed.
+
+Theorem Sub_term_synth
+  : forall {ins1 ins2}
+           A (A' : ParTerm ins1)
+           B (B' : ParTerm ins2),
+    Abstracts_term A A' ->
+    Abstracts_term B B' ->
+    Abstracts_term (A - B) (MinusPT A' B').
+Proof.
+  unfold Abstracts_term. simpl. intros.
+  rewrite H. rewrite H0. auto.
+Qed.
+
+Theorem Mult_term_synth
+  : forall {ins1 ins2}
+           A (A' : ParTerm ins1)
+           B (B' : ParTerm ins2),
+    Abstracts_term A A' ->
+    Abstracts_term B B' ->
+    Abstracts_term (A * B) (MultPT A' B').
+Proof.
+  unfold Abstracts_term. simpl. intros.
+  rewrite H. rewrite H0. auto.
+Qed.
+
+Theorem Inv_term_synth
+  : forall {ins1}
+           A (A' : ParTerm ins1),
+    Abstracts_term A A' ->
+    Abstracts_term (/ A) (InvPT A').
+Proof.
+  unfold Abstracts_term. simpl; intros.
+  rewrite H. auto.
+Qed.
+
+Print eval_term.
+Theorem Sin_term_synth
+ : forall {ins1}
+           A (A' : ParTerm ins1),
+    Abstracts_term A A' ->
+    Abstracts_term (sin(A)) (SinPT A').
+Proof.
+  unfold Abstracts_term. simpl; intros.
+  rewrite H. auto.
+Qed.
+
+Theorem Cos_term_synth
+ : forall {ins1}
+           A (A' : ParTerm ins1),
+    Abstracts_term A A' ->
+    Abstracts_term (cos(A)) (CosPT A').
+Proof.
+  unfold Abstracts_term. simpl; intros.
+  rewrite H. auto.
+Qed.
+
+Theorem Arctan_term_synth
+ : forall {ins1}
+           A (A' : ParTerm ins1),
+    Abstracts_term A A' ->
+    Abstracts_term (atan(A)) (ArctanPT A').
+Proof.
+  unfold Abstracts_term. simpl; intros.
+  rewrite H. auto.
+Qed.
+
+Theorem Sqrt_term_synth
+ : forall {ins1}
+           A (A' : ParTerm ins1),
+    Abstracts_term A A' ->
+    Abstracts_term (sqrt(A)) (SqrtPT A').
+Proof.
+  unfold Abstracts_term. simpl; intros.
+  rewrite H. auto.
+Qed.
+
+Theorem Exp_term_synth
+ : forall {ins1}
+           A (A' : ParTerm ins1),
+    Abstracts_term A A' ->
+    Abstracts_term (exp(A)) (ExpPT A').
+Proof.
+  unfold Abstracts_term. simpl; intros.
+  rewrite H. auto.
+Qed.
+
+Theorem Max_term_synth
+  : forall {ins1 ins2}
+           A (A' : ParTerm ins1)
+           B (B' : ParTerm ins2),
+    Abstracts_term A A' ->
+    Abstracts_term B B' ->
+    Abstracts_term (MAX(A,B)) (MaxPT A' B').
+Proof.
+  unfold Abstracts_term. simpl. intros.
+  rewrite H. rewrite H0. auto.
 Qed.
 
 (* Theorem Next_assign_synth_real
@@ -306,9 +406,20 @@ Qed.
 Ltac synthTerm :=
   repeat first [ eapply And_synth_Par
                | eapply Next_assign_synth
-               | eapply Plus_term_synth
                | eapply Var_term_synth
-               | eapply Real_term_synth ].
+               | eapply Real_term_synth
+               | eapply Nat_term_synth
+               | eapply Plus_term_synth
+               | eapply Sub_term_synth
+               | eapply Mult_term_synth
+               | eapply Inv_term_synth
+               | eapply Sin_term_synth
+               | eapply Cos_term_synth
+               | eapply Arctan_term_synth
+               | eapply Sqrt_term_synth
+               | eapply Exp_term_synth
+               | eapply Max_term_synth
+               ].
 
 Local Open Scope string_scope.
 Goal exists ins outs, exists prog : Parallel ins outs,
@@ -394,23 +505,95 @@ Fixpoint Term_to_ParTerm (t : Syntax.Term) :
   | _ => None
   end%monad.
 
+(*
+   forall x : {xs : list Var & ParTerm xs},
+   match Term_to_ParTerm t1 with
+   | Some v =>
+       match Term_to_ParTerm t2 with
+       | Some v0 =>
+           Some
+             (existT (fun xs : list Var => ParTerm xs)
+                (projT1 v ++ projT1 v0) (PlusPT (projT2 v) (projT2 v0)))
+       | None => None
+       end
+   | None => None
+   end = Some x -> Abstracts_term (t1 + t2) (projT2 x)
+
+ *)
+
+(* Ltac synth_compose :=
+  *  repeat match goal with
+  *         | [ |- _ = _ -> Abstracts_term (_ _ _) (ProjT2 _)]
+  *           =>  [ destruct (Term_to_ParTerm t1); try congruence
+  *               | destruct (Term_to_ParTerm t2); try congruence
+  *               | inversion 1; simpl
+  *               | synthTerm
+  *               | eapply IHt1; auto
+  *               | eapply IHt2; auto ].
+  *         end. *)
+
 Theorem Term_to_ParTerm_sound
   : forall t x,
     Term_to_ParTerm t = Some x ->
     Abstracts_term t (projT2 x).
 Proof.
   induction t; simpl.
-  { inversion 1. subst. simpl. eapply Var_term_synth. }
-  { inversion 1. }
-  { admit. }
-  { admit. }
+  { inversion 1. synthTerm. }
+  { try congruence. }
+  { inversion 1. synthTerm. }
+  { inversion 1. synthTerm. }
   { destruct (Term_to_ParTerm t1); try congruence.
     destruct (Term_to_ParTerm t2); try congruence.
     inversion 1; simpl.
-    eapply Plus_term_synth.
-    eapply IHt1. reflexivity.
-    eapply IHt2; reflexivity. }
-Admitted.
+    synthTerm.
+    eapply IHt1. auto.
+    eapply IHt2. auto. }
+  { destruct (Term_to_ParTerm t1); try congruence.
+    destruct (Term_to_ParTerm t2); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt1. auto.
+    eapply IHt2. auto. }
+  { destruct (Term_to_ParTerm t1); try congruence.
+    destruct (Term_to_ParTerm t2); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt1. auto.
+    eapply IHt2. auto. }
+  { destruct (Term_to_ParTerm t); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt. auto. }
+  { destruct (Term_to_ParTerm t); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt. auto. }
+  { destruct (Term_to_ParTerm t); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt. auto. }
+  { destruct (Term_to_ParTerm t); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt. auto. }
+  { destruct (Term_to_ParTerm t); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt. auto. }
+  { destruct (Term_to_ParTerm t); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt. auto. }
+  { destruct (Term_to_ParTerm t1); try congruence.
+    destruct (Term_to_ParTerm t2); try congruence.
+    inversion 1; simpl.
+    synthTerm.
+    eapply IHt1. auto.
+    eapply IHt2. auto. }
+Qed.
+
+
+
 
 Goal exists ins outs, exists prog : Parallel ins outs,
       Abstracts ("x"! = "y" + 2 + 1 + 1 + 1 + 1 + 1)%HP prog.
