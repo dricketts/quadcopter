@@ -159,7 +159,9 @@ Definition Abstracts' {ins outs} (f : Formula) (p : Parallel ins outs) : Prop :=
                               eq (eval_Parallel p st1) st2) st1 st3 ->
   (fun st1 st3 => eval_formula f (Stream.Cons st1 (Stream.Cons st3 sts))) st1 st3.
 
-Theorem Abstracts_Abstracts' : forall i j a b, @Abstracts i j a b <-> Abstracts' a b.
+(* TODO Try this *)
+Theorem Abstracts_Abstracts' : forall i j a b,
+    @Abstracts i j a b <-> Abstracts' a b.
 Proof.
   unfold Abstracts, Abstracts'.
   intros.
@@ -170,7 +172,7 @@ Abort.
 Definition Abstracts_term {ins} (t: TLA.Syntax.Term) (p: ParTerm ins) : Prop :=
   forall st1 st2, eq (eval_term t st1 st2) (eval_ParTerm p st1).
 
-Definition isTrue (b : bool) : Prop := 
+Definition isTrue (b : bool) : Prop :=
   match b with
   | true => True
   | false => False
@@ -228,8 +230,7 @@ Proof.
       intros.
       rewrite <- H2; [ | eapply in_app_iff; tauto ].
       clear H2.
-      unfold merge_states.      (* rewrite for in_dec *)
-Check in_dec.
+      unfold merge_states.      (* TODO rewrite using in_dec *)
       cutrewrite (eq (existsb
                     (fun y : String.string =>
                        if String.string_dec x y then true else false) outs1) true).
@@ -278,6 +279,72 @@ Proof.
   auto.
   congruence.
 Qed.
+
+(* TODO:
+examples: velocity, height shims and stability ctrl. Box?
+small examples in TLA
+ *)
+Theorem ITE_synth
+  : forall {insc ins1 ins2 outs1 outs2}
+           B (B' : Cond insc)
+           C (C' : Parallel ins1 outs1)
+           D (D' : Parallel ins2 outs2),
+    Abstracts_cond B B' ->
+    Abstracts C C' ->
+    Abstracts D D' ->
+    Abstracts ((B //\\ C) \\// ((B -->> lfalse) //\\ D))
+              (Ite B' C' D').
+Proof.
+  intros.
+  unfold Abstracts in *.
+  unfold Abstracts_cond in *.
+  simpl. intros.
+  specialize (H st1). destruct (eval_Cond B' st1).
+  { left. split.
+    { apply H. reflexivity. }
+    { eapply H0. apply H2.
+      intros. apply H3.
+      rewrite in_app_iff.
+      tauto. } }
+  { right. split.
+    { intro. apply H in H4. auto. }
+    { eapply H1. apply H2.
+      intros. apply H3.
+      rewrite in_app_iff.
+      tauto. } }
+Qed.
+
+Theorem ITE_default_synth
+  : forall {insc ins1 ins2 outs1 outs2}
+           B (B' : Cond insc)
+           C (C' : Parallel ins1 outs1)
+           D (D' : Parallel ins2 outs2),
+    Abstracts_cond B B' ->
+    Abstracts C C' ->
+    Abstracts D D' ->
+    Abstracts ((B //\\ C) \\// D)
+              (Ite B' C' D').
+Proof.
+  intros.
+  unfold Abstracts in *.
+  unfold Abstracts_cond in *.
+  simpl; intros.
+  specialize (H st1). specialize (H1 st1).
+  destruct (eval_Cond B' st1).
+  { left. split.
+    { apply H. reflexivity. }
+    { eapply H0. apply H2.
+      intros. apply H3.
+      rewrite in_app_iff.
+      tauto. } }
+  { right. eapply H1.
+    { apply H2. }
+    { intros. apply H3.
+      rewrite in_app_iff.
+      tauto. } }
+Qed.
+
+
 
 Theorem Real_term_synth
   : forall (r : R),
@@ -414,9 +481,10 @@ Qed.
  *   { tauto. }
  * Qed. *)
 
-Ltac synthTerm :=
+Ltac Synth_Term :=
   repeat first [ eapply And_synth_Par
                | eapply Next_assign_synth
+               | eapply ITE_synth
                | eapply Var_term_synth
                | eapply Real_term_synth
                | eapply Nat_term_synth
@@ -437,7 +505,7 @@ Goal exists ins outs, exists prog : Parallel ins outs,
       Abstracts ("x"! = "y" + 2 + 1 + 1+ 1+ 1+ 1+ 1+ 1)%HP prog.
 Proof.
   do 3 eexists.
-  synthTerm.
+  Synth_Term.
 Qed.
 Print Unnamed_thm.
 
@@ -446,7 +514,7 @@ Goal exists ins outs, exists prog : Parallel ins outs,
       Abstracts ("x"! = 2 //\\ "y"! = 3)%HP prog.
 Proof.
   do 3 eexists.
-  synthTerm.
+  Synth_Term.
   (* eapply And_synth_Par; apply Next_assign_synth_real. *)
   Grab Existential Variables.
   unfold sets_disjoint. intros. intro. red in H. destruct H.
@@ -512,37 +580,21 @@ Fixpoint Term_to_ParTerm (t : Syntax.Term) :
   | _ => None
   end%monad.
 
-(*
-   forall x : {xs : list Var & ParTerm xs},
-   match Term_to_ParTerm t1 with
-   | Some v =>
-       match Term_to_ParTerm t2 with
-       | Some v0 =>
-           Some
-             (existT (fun xs : list Var => ParTerm xs)
-                (projT1 v ++ projT1 v0) (PlusPT (projT2 v) (projT2 v0)))
-       | None => None
-       end
-   | None => None
-   end = Some x -> Abstracts_term (t1 + t2) (projT2 x)
-
- *)
-
 Theorem Term_to_ParTerm_sound
   : forall t x,
     Term_to_ParTerm t = Some x ->
     Abstracts_term t (projT2 x).
 Proof.
   induction t; simpl;
-  try solve [ destruct (Term_to_ParTerm t1); try congruence;
-              destruct (Term_to_ParTerm t2); try congruence;
-              inversion 1; simpl;
-              synthTerm; eauto
+  try solve [ congruence
+            | inversion 1; Synth_Term
             | destruct (Term_to_ParTerm t); try congruence;
               inversion 1; simpl;
-              synthTerm; eauto
-            | congruence
-            | inversion 1; synthTerm ].
+              Synth_Term; eauto
+            | destruct (Term_to_ParTerm t1); try congruence;
+              destruct (Term_to_ParTerm t2); try congruence;
+              inversion 1; simpl;
+              Synth_Term; eauto ].
 Qed.
 
 Record ParResult (f : Formula) : Type :=
@@ -569,7 +621,7 @@ Eval compute in test1.(par_result).
 Fixpoint Formula_to_Cond (F : Formula) :
   option { xs : list Var & Cond xs } :=
   match F with
-  | TRUE => Some (existT _ _ TRUEP)
+  | TRUE  => Some (existT _ _ TRUEP)
   | FALSE => Some (existT _ _ FALSEP)
   | Comp t1 t2 op =>
     t1 <- Term_to_ParTerm t1 ;;
@@ -577,21 +629,21 @@ Fixpoint Formula_to_Cond (F : Formula) :
     ret (existT _ _
            (CompP (projT2 t1)
                   (projT2 t2) op))
-  | And F1 F2 =>
-    f1 <- Formula_to_Cond F1 ;;
-    f2 <- Formula_to_Cond F2 ;;
+  | And f1 f2 =>
+    f1 <- Formula_to_Cond f1 ;;
+    f2 <- Formula_to_Cond f2 ;;
     ret (existT _ _
            (AndP (projT2 f1)
                  (projT2 f2)))
-  | Or F1 F2 =>
-    f1 <- Formula_to_Cond F1 ;;
-    f2 <- Formula_to_Cond F2 ;;
+  | Or f1 f2 =>
+    f1 <- Formula_to_Cond f1 ;;
+    f2 <- Formula_to_Cond f2 ;;
     ret (existT _ _
            (OrP (projT2 f1)
                  (projT2 f2)))
-  | Syntax.Imp F1 F2 =>
-    f1 <- Formula_to_Cond F1 ;;
-    f2 <- Formula_to_Cond F2 ;;
+  | Syntax.Imp f1 f2 =>
+    f1 <- Formula_to_Cond f1 ;;
+    f2 <- Formula_to_Cond f2 ;;
     ret (existT _ _
            (OrP (NegP (projT2 f1))
                 (projT2 f2)))
@@ -601,36 +653,80 @@ Fixpoint Formula_to_Cond (F : Formula) :
 Lemma isTrue_is_eq_true : forall x, isTrue x <-> x = true.
 Proof. destruct x; simpl; split; try congruence; tauto. Qed.
 
-  Theorem And_cond_synth
+Theorem And_cond_synth
   : forall {ins1 ins2}
            A (A' : Cond ins1)
            B (B' : Cond ins2),
     Abstracts_cond A A' ->
     Abstracts_cond B B' ->
     Abstracts_cond (And A B) (AndP A' B').
-  Proof.
-    unfold Abstracts_cond. intros.
-    simpl. rewrite H. rewrite H0.
-    repeat rewrite isTrue_is_eq_true.
-    rewrite Bool.andb_true_iff. reflexivity.
-  Qed.
-  Hint Resolve And_cond_synth : synth_lemmas.
+Proof.
+  unfold Abstracts_cond. intros.
+  simpl. rewrite H. rewrite H0.
+  repeat rewrite isTrue_is_eq_true.
+  rewrite Bool.andb_true_iff. reflexivity.
+Qed.
+Hint Resolve And_cond_synth : synth_lemmas.
 
-  Theorem Or_cond_synth
+Theorem Or_cond_synth
   : forall {ins1 ins2}
            A (A' : Cond ins1)
            B (B' : Cond ins2),
     Abstracts_cond A A' ->
     Abstracts_cond B B' ->
     Abstracts_cond (Or A B) (OrP A' B').
-  Proof.
-    unfold Abstracts_cond. intros.
-    simpl. rewrite H. rewrite H0.
-    repeat rewrite isTrue_is_eq_true.
-    rewrite Bool.orb_true_iff. reflexivity.
-  Qed.
-  Hint Resolve Or_cond_synth : synth_lemmas.
+Proof.
+  unfold Abstracts_cond. intros.
+  simpl. rewrite H. rewrite H0.
+  repeat rewrite isTrue_is_eq_true.
+  rewrite Bool.orb_true_iff. reflexivity.
+Qed.
+Hint Resolve Or_cond_synth : synth_lemmas.
 
+(* TODO TODO *)
+Theorem Comp_cond_synth
+  : forall {ins1 ins2}
+           A (A' : ParTerm ins1)
+           B (B' : ParTerm ins2)
+           (O : CompOp),
+    Abstracts_term A A' ->
+    Abstracts_term B B' ->
+    Abstracts_cond (Comp A B O) (CompP A' B' O).
+Proof.
+  unfold Abstracts_cond, Abstracts_term. intros.
+  simpl. unfold eval_comp. rewrite H, H0. unfold eval_ParComp.
+  destruct O.
+  { destruct RIneq.Rgt_dec.
+    { rewrite isTrue_is_eq_true.
+      split. reflexivity.
+      intros; assumption. }
+    { rewrite isTrue_is_eq_true.
+      split.
+      { intros; exfalso; auto. }
+      { inversion 1. } } }
+Admitted.
+Hint Resolve Comp_cond_synth : synth_lemmas.
+
+Print Imp.
+
+Theorem Imp_cond_synth
+  : forall {ins1 ins2}
+           A (A' : Cond ins1)
+           B (B' : Cond ins2),
+    Abstracts_cond A A' ->
+    Abstracts_cond B B' ->
+    Abstracts_cond (Imp A B) (OrP (NegP A') B').
+Proof.
+  unfold Abstracts_cond. intros.
+  simpl. rewrite H. rewrite H0.
+  repeat rewrite isTrue_is_eq_true.
+  rewrite Bool.orb_true_iff.
+  generalize (eval_Cond A' st).
+  generalize (eval_Cond B' st). clear.
+  intros.
+  destruct b; destruct b0; tauto.
+Qed.
+Hint Resolve Imp_cond_synth : synth_lemmas.
 
 Theorem Formula_to_Cond_sound
   : forall t x,
@@ -642,26 +738,16 @@ Proof.
             | intros;
               repeat match goal with
                      | _ : context [ match ?X with _ => _ end ] |- _ =>
-                       (destruct X; try congruence); [ ]
+                       (destruct X eqn:?; try congruence); [ ]
                      | H : forall x, Some _ = Some _ -> _ |- _ =>
                        specialize (H _ eq_refl)
                      | H : eq (Some _) (Some _) |- _ =>
                        inversion H; clear H; subst
+                     | H : ?G |- _ => eapply Term_to_ParTerm_sound in H
                      end; simpl in *; eauto with synth_lemmas ].
-  Focus.
-  intros;
-    repeat match goal with
-           | _ : context [ match ?X with _ => _ end ] |- _ =>
-             (destruct X eqn:?; try congruence); [ ]
-           | H : forall x, Some _ = Some _ -> _ |- _ =>
-             specialize (H _ eq_refl)
-           | H : eq (Some _) (Some _) |- _ =>
-             inversion H; clear H; subst
-           | H : ?G |- _ => idtac "trying to apply to " H ":" G;
-             eapply Term_to_ParTerm_sound in H
-           end; simpl in *; eauto with synth_lemmas.
-Abort.
+Qed.
 
+(* ================================================== *)
 (* This is old
 Lemma Term_to_ParTerm_sound :
   forall t tr,
