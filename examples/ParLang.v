@@ -344,8 +344,6 @@ Proof.
       tauto. } }
 Qed.
 
-
-
 Theorem Real_term_synth
   : forall (r : R),
     Abstracts_term r (RealPT r).
@@ -683,7 +681,6 @@ Proof.
 Qed.
 Hint Resolve Or_cond_synth : synth_lemmas.
 
-(* TODO TODO *)
 Theorem Comp_cond_synth
   : forall {ins1 ins2}
            A (A' : ParTerm ins1)
@@ -695,16 +692,28 @@ Theorem Comp_cond_synth
 Proof.
   unfold Abstracts_cond, Abstracts_term. intros.
   simpl. unfold eval_comp. rewrite H, H0. unfold eval_ParComp.
-  destruct O.
+  destruct O; repeat rewrite isTrue_is_eq_true.
+
   { destruct RIneq.Rgt_dec.
-    { rewrite isTrue_is_eq_true.
-      split. reflexivity.
-      intros; assumption. }
-    { rewrite isTrue_is_eq_true.
-      split.
-      { intros; exfalso; auto. }
+    { intros; tauto. }
+    { split.
+      { intros; tauto. }
       { inversion 1. } } }
-Admitted.
+
+  Ltac go :=
+    split;
+    try solve [ intros; tauto
+              | intros; assumption
+              | inversion 1].
+
+  destruct RIneq.Rge_dec; go.
+  destruct RIneq.Rlt_dec; go.
+  destruct RIneq.Rle_dec; go.
+  destruct RiemannInt.Req_EM_T; go.
+Qed.
+
+
+
 Hint Resolve Comp_cond_synth : synth_lemmas.
 
 Print Imp.
@@ -734,17 +743,18 @@ Theorem Formula_to_Cond_sound
     Abstracts_cond t (projT2 x).
 Proof.
   induction t; simpl;
-  try solve [ inversion 1; simpl; red; reflexivity
-            | intros;
-              repeat match goal with
-                     | _ : context [ match ?X with _ => _ end ] |- _ =>
-                       (destruct X eqn:?; try congruence); [ ]
-                     | H : forall x, Some _ = Some _ -> _ |- _ =>
-                       specialize (H _ eq_refl)
-                     | H : eq (Some _) (Some _) |- _ =>
-                       inversion H; clear H; subst
-                     | H : ?G |- _ => eapply Term_to_ParTerm_sound in H
-                     end; simpl in *; eauto with synth_lemmas ].
+  try solve
+      [ inversion 1; simpl; red; reflexivity
+      | intros;
+        repeat match goal with
+               | _ : context [ match ?X with _ => _ end ] |- _ =>
+                 (destruct X eqn:?; try congruence); [ ]
+               | H : forall x, Some _ = Some _ -> _ |- _ =>
+                 specialize (H _ eq_refl)
+               | H : eq (Some _) (Some _) |- _ =>
+                 inversion H; clear H; subst
+               | H : ?G |- _ => eapply Term_to_ParTerm_sound in H
+               end; simpl in *; eauto with synth_lemmas ].
 Qed.
 
 (* ================================================== *)
