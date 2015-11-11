@@ -775,7 +775,7 @@ Proof.
 Qed.
  *)
 
-
+(*
 (* true if the formula can be decided on the current state. *)
 Fixpoint is_decidable_st_formula (F:Formula) : bool :=
   match F with
@@ -955,4 +955,5 @@ Proof.
       contradict Heqb1. exists x.
       destruct (String.string_dec x x); auto. } }
 Qed.
+*)
 *)
