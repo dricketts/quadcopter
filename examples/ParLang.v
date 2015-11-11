@@ -117,12 +117,11 @@ Fixpoint eval_Cond {xs} (c : Cond xs) (st : state) : bool :=
 
 Definition merge_states (xs1 xs2 : list Var)
            (st1 st2 : state) : state :=
-  fun x =>
-    if (* List.in_dec String.string_dec x xs1 *)
-    List.existsb (fun y => if String.string_dec x y
-                              then true else false) xs1
-    then st1 x
-    else st2 x.
+  fun x => if List.in_dec String.string_dec x xs1 then st1 x else st2 x.
+    (* if List.existsb (fun y => if String.string_dec x y
+     *                           then true else false) xs1
+     * then st1 x
+     * else st2 x. *)
 
 Fixpoint eval_Parallel {ins outs} (p : Parallel ins outs)
          (st : state) : state :=
@@ -230,18 +229,14 @@ Proof.
       intros.
       rewrite <- H2; [ | eapply in_app_iff; tauto ].
       clear H2.
-      unfold merge_states.      (* TODO rewrite using in_dec *)
-      cutrewrite (eq (existsb
-                    (fun y : String.string =>
-                       if String.string_dec x y then true else false) outs1) true).
+      unfold merge_states.
+      destruct (in_dec String.string_dec x outs1).
       { reflexivity. }
-      { clear - H.
-        induction outs1; simpl.
-        { red in H. destruct H. }
-        { destruct (String.string_dec x a).
-          { simpl. reflexivity. }
-          { simpl. eapply IHouts1.
-            destruct H. congruence. assumption. } } } } }
+      { induction outs1.
+        { tauto. }
+        { apply n in H.
+          clear - H.
+          exfalso; tauto. } } } }
   { eapply H0.
     { reflexivity. }
     { clear H H0.
@@ -249,21 +244,15 @@ Proof.
       intros.
       rewrite <- H2 ; [ | eapply in_app_iff; tauto ].
       clear H2.
-      unfold merge_states.  (* rewrite for in_dec *)
-      cutrewrite (eq (existsb
-         (fun y : String.string =>
-            if String.string_dec x y then true else false) outs1) false).
-      { reflexivity. }
-      { clear - sd H.
-        induction outs1.
-        { simpl. reflexivity. }
-        { simpl. rewrite IHouts1.
-          { destruct (String.string_dec x a).
-            2: reflexivity.
-            simpl. subst.
-            apply sets_disjoint_cons in sd.
-            exfalso; tauto. }
-          { apply sets_disjoint_cons in sd. tauto. } } } } }
+      unfold merge_states.
+      destruct (in_dec String.string_dec x outs1).
+      2: reflexivity.
+      { induction outs2.
+        { tauto. }
+        { clear - sd H i.
+          apply sd in H.
+          apply sd in i.
+          tauto. tauto. } } } }
 Qed.
 
 Arguments Assign v {_} t : rename.
@@ -284,7 +273,7 @@ Qed.
 examples: velocity, height shims and stability ctrl. Box?
 small examples in TLA
  *)
-Theorem ITE_synth
+Theorem Ite_synth
   : forall {insc ins1 ins2 outs1 outs2}
            B (B' : Cond insc)
            C (C' : Parallel ins1 outs1)
@@ -404,7 +393,6 @@ Proof.
   rewrite H. auto.
 Qed.
 
-Print eval_term.
 Theorem Sin_term_synth
  : forall {ins1}
            A (A' : ParTerm ins1),
@@ -467,22 +455,11 @@ Proof.
   rewrite H. rewrite H0. auto.
 Qed.
 
-(* Theorem Next_assign_synth_real
- *   : forall (v : Var) (e : R),
- *     Abstracts (v! = e) (Assign v (RealPT e)).
- * Proof.
- *   intros.
- *   unfold Abstracts. simpl. intros. subst. specialize (H0 v). rewrite <- H0.
- *   { destruct String.string_dec.
- *     { reflexivity. }
- *     { congruence. } }
- *   { tauto. }
- * Qed. *)
 
 Ltac Synth_Term :=
   repeat first [ eapply And_synth_Par
                | eapply Next_assign_synth
-               | eapply ITE_synth
+               | eapply Ite_synth
                | eapply Var_term_synth
                | eapply Real_term_synth
                | eapply Nat_term_synth
@@ -498,6 +475,7 @@ Ltac Synth_Term :=
                | eapply Max_term_synth
                ].
 
+(* Test *)
 Local Open Scope string_scope.
 Goal exists ins outs, exists prog : Parallel ins outs,
       Abstracts ("x"! = "y" + 2 + 1 + 1+ 1+ 1+ 1+ 1+ 1)%HP prog.
@@ -521,6 +499,7 @@ Proof.
   assumption.
 Qed.
 
+(* End Test *)
 
 Require Import ExtLib.Structures.Monad.
 Require Import ExtLib.Data.Monads.OptionMonad.
@@ -711,12 +690,7 @@ Proof.
   destruct RIneq.Rle_dec; go.
   destruct RiemannInt.Req_EM_T; go.
 Qed.
-
-
-
 Hint Resolve Comp_cond_synth : synth_lemmas.
-
-Print Imp.
 
 Theorem Imp_cond_synth
   : forall {ins1 ins2}
