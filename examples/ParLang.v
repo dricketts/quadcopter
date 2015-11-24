@@ -115,7 +115,8 @@ Fixpoint eval_Cond {xs} (c : Cond xs) (st : state) : bool :=
   | NegP _ c => negb (eval_Cond c st)
   end.
 
-Definition merge_states (xs1 xs2 : list Var)
+Definition merge_states
+           (xs1 xs2 : list Var)
            (st1 st2 : state) : state :=
   fun x => if List.in_dec String.string_dec x xs1 then st1 x else st2 x.
     (* if List.existsb (fun y => if String.string_dec x y
@@ -138,6 +139,8 @@ Fixpoint eval_Parallel {ins outs} (p : Parallel ins outs)
     then eval_Parallel p1 st
     else eval_Parallel p2 st
   end.
+
+
 
 Definition tlaParD {ins outs} (p : Parallel ins outs) :=
   Embed (fun st1 st2 =>
@@ -269,10 +272,6 @@ Proof.
   congruence.
 Qed.
 
-(* TODO:
-examples: velocity, height shims and stability ctrl. Box?
-small examples in TLA
- *)
 Theorem Ite_synth
   : forall {insc ins1 ins2 outs1 outs2}
            B (B' : Cond insc)
@@ -303,7 +302,7 @@ Proof.
       tauto. } }
 Qed.
 
-Theorem ITE_default_synth
+Theorem Ite_default_synth
   : forall {insc ins1 ins2 outs1 outs2}
            B (B' : Cond insc)
            C (C' : Parallel ins1 outs1)
@@ -332,6 +331,9 @@ Proof.
       rewrite in_app_iff.
       tauto. } }
 Qed.
+
+(* Theorem Ite_synth_equiv *)
+
 
 Theorem Real_term_synth
   : forall (r : R),
@@ -460,6 +462,7 @@ Ltac Synth_Term :=
   repeat first [ eapply And_synth_Par
                | eapply Next_assign_synth
                | eapply Ite_synth
+               | eapply Ite_default_synth
                | eapply Var_term_synth
                | eapply Real_term_synth
                | eapply Nat_term_synth
@@ -483,7 +486,7 @@ Proof.
   do 3 eexists.
   Synth_Term.
 Qed.
-Print Unnamed_thm.
+(* Print Unnamed_thm. *)
 
 
 Goal exists ins outs, exists prog : Parallel ins outs,
@@ -730,6 +733,14 @@ Proof.
                | H : ?G |- _ => eapply Term_to_ParTerm_sound in H
                end; simpl in *; eauto with synth_lemmas ].
 Qed.
+
+(* Examples... to be moved to ParLangExamples.v *)
+Goal exists ins outs, exists prog : Parallel ins outs,
+      Abstracts ("x"! = "x" //\\ "x" = 3)%HP prog.
+Proof.
+  do 3 eexists.
+  Synth_Term.
+Abort.
 
 (* ================================================== *)
 (* This is old
