@@ -27,7 +27,7 @@ Proof.
   assumption.
 Qed.
 
-
+(*
 Ltac Synth_Term :=
   repeat first [ eapply And_synth_Par
                | eapply Next_assign_synth
@@ -46,11 +46,10 @@ Ltac Synth_Term :=
                | eapply Sqrt_term_synth
                | eapply Exp_term_synth
                | eapply Max_term_synth
-               | solve [eauto with synth_lemmas]
                ].
 
 Hint Extern 0 (Abstracts_cond _ _) => solve [ apply Formula_to_Cond_sound; reflexivity ] : synth_lemmas.
-
+*)
 Goal
   exists ins outs, exists prog : Parallel ins outs,
       (* Abstracts ("x"! = "x" //\\ "x" = 3) prog. *)
@@ -70,17 +69,30 @@ End MyParams.
 
 Module MyVelShim := FirstDerivShim MyParams.
 
-(*    Abstracts (("a") ! * MyParams.d + "v" <= MyParams.ub \\// ("a") ! <= 0)
-     ?271
+(*
+
+Abstracts (("a") ! * MyParams.d + "v" <= MyParams.ub \\// ("a") ! <= 0) ?271
 
 if ("a") * MyParams.d + "v" <= MyParams.u
 then ("a") ! = "a"
 else synth ("a") ! <= 0
 
- *)
+*)
 
 Definition copy_next (vs : list Var) : Formula :=
-  List.fold_left (fun f v => f //\\ v! = v) vs TRUE.
+  List.fold_left (fun f v => v! = v //\\ f) vs TRUE.
+SearchAbout Formula Eq.
+
+Lemma copy_next_concat :
+  forall (xs ys : list Var),
+  |-- copy_next (xs ++ ys) -->> copy_next ys //\\ copy_next xs.
+Proof.
+  intros. charge_intros. unfold copy_next.
+  rewrite fold_left_app.
+  charge_split.
+  {
+
+
 
 Theorem synth_monitor
 : forall {insc ins1 outs1 ins2 outs2}
@@ -94,19 +106,50 @@ Theorem synth_monitor
   Abstracts B B' ->
   Abstracts (A \\// B) (Ite Pred N B').
 Proof.
-Admitted.
+  intros.
+  unfold Abstracts; intros.
+  breakAbstraction.
+  subst.
+  destruct (eval_Cond Pred st1) eqn:?.
+  { left.
+    clear - H Heqb H4 H1.
+    red in H. specialize (H st1 (Stream.Cons st3 sts)).
+    rewrite Heqb in H. simpl in H.
+    destruct H. clear H. specialize (H0 I). rename H0 into H.
+    clear - H H4 H1.
 
-Goal
-  ParResult (MyVelShim.Ctrl).
+    induction A; try solve [ simpl in *; auto ].
+    { simpl in *. admit. }
+    { simpl in *.
+      split.
+      { apply IHA1. tauto.
+        clear - H1.
+        admit.
+      }
+      admit.
+    }
+    admit.
+    admit.
+    admit.
+    admit.
+  }
+  { right.
+    clear - H2 H4.
+    red in H2. eapply H2.
+    reflexivity.
+    intros. apply H4.
+    apply in_app_iff. tauto. }
+Qed.
+
+Definition ParVelShim :
+  ParResult MyVelShim.Ctrl.
 Proof.
   econstructor.
   unfold MyVelShim.Ctrl.
   unfold MyVelShim.SafeAcc.
   unfold MyVelShim.Default.
-  Synth_Term.
-  eapply synth_monitor.
-  Synth_Term.
-  Synth_Term.
-  Synth_Term.
-
-Qed.
+  eapply synth_monitor; Synth_Term.
+  eapply Le_choice; Synth_Term.
+  Grab Existential Variables.
+  compute. auto.
+Defined.

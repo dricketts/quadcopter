@@ -49,6 +49,7 @@ Definition sets_disjoint {T} (a b : list T) : Prop :=
    An instance of (Parallel in out) is a program
    with input variables in and output variables out. *)
 Inductive Parallel : list Var -> list Var -> Type :=
+| Nop : Parallel nil nil
 | Assign : forall x ins, ParTerm ins ->
                          Parallel ins (x::nil)
 | Par : forall {ins1 ins2 outs1 outs2},
@@ -127,6 +128,7 @@ Definition merge_states
 Fixpoint eval_Parallel {ins outs} (p : Parallel ins outs)
          (st : state) : state :=
   match p with
+  | Nop => st
   | Assign x _ t => fun y => if String.string_dec x y
                            then eval_ParTerm t st
                            else st y
@@ -212,6 +214,12 @@ Lemma sets_disjoint_concat : forall {T} (a : list T) b c,
 Proof.
   intros. split; firstorder.
 Qed.
+
+Lemma Nop_synth :
+  Abstracts TRUE Nop.
+Proof.
+  unfold Abstracts. simpl. auto.
+ Qed.
 
 Lemma And_synth_Par
 : forall {ins1 ins2 outs1 outs2}
@@ -461,6 +469,7 @@ Qed.
 Ltac Synth_Term :=
   repeat first [ eapply And_synth_Par
                | eapply Next_assign_synth
+               | eapply Nop_synth
                | eapply Ite_synth
                | eapply Ite_default_synth
                | eapply Var_term_synth
@@ -476,6 +485,7 @@ Ltac Synth_Term :=
                | eapply Sqrt_term_synth
                | eapply Exp_term_synth
                | eapply Max_term_synth
+               | solve [eauto with synth_lemmas]
                ].
 
 (* Test *)
@@ -734,6 +744,9 @@ Proof.
                end; simpl in *; eauto with synth_lemmas ].
 Qed.
 
+Hint Extern 0 (Abstracts_cond _ _)
+ => solve [ apply Formula_to_Cond_sound; reflexivity ] : synth_lemmas.
+
 (* Examples... to be moved to ParLangExamples.v *)
 Goal exists ins outs, exists prog : Parallel ins outs,
       Abstracts ("x"! = "x" //\\ "x" = 3)%HP prog.
@@ -741,6 +754,38 @@ Proof.
   do 3 eexists.
   Synth_Term.
 Abort.
+
+Require Import TLA.ArithFacts.
+Lemma Le_choice :
+  forall {ins} (x : Var)
+         v (v' : ParTerm ins),
+    Abstracts_term v v' ->
+    Abstracts (x! <= v) (Assign x v').
+Proof.
+ unfold Abstracts. unfold Abstracts_term. intros.
+  simpl in *. subst.
+  rewrite <- H1.
+  destruct (String.string_dec x x).
+  { rewrite H. reflexivity. }
+  { congruence. }
+  { left. reflexivity. }
+Qed.
+
+(* Lemma Ge_choice :
+ *   forall {ins} (x : Var)
+ *          v (v' : ParTerm ins),
+ *     Abstracts_term v v' ->
+ *     Abstracts (x! >= v) (Assign x v').
+ * Proof.
+ *   unfold Abstracts. unfold Abstracts_term. intros.
+ *   simpl in *. subst.
+ *   rewrite <- H1.
+ *   destruct (String.string_dec x x).
+ *   { rewrite H. reflexivity. }
+ *   { congruence. }
+ *   { left. reflexivity. }
+ * Qed. *)
+
 
 (* ================================================== *)
 (* This is old
