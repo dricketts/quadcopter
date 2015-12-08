@@ -129,62 +129,83 @@ Proof.
               intros; apply H; apply in_app_iff; auto ].
 Qed.
 
+Definition lift2 {A B C} (f : A -> B -> C) (a : option A) (b : option B) : option C :=
+  match a , b with
+  | Some a , Some b => Some (f a b)
+  | _ , _ => None
+  end.
+
+Fixpoint unnext_o (F : Formula) : option Formula :=
+  match F with
+  | TRUE | FALSE => Some F
+  | Comp t1 t2 op => Some (Comp (unnext_term t1) (unnext_term t2) op)
+  | And f1 f2 => lift2 And (unnext_o f1) (unnext_o f2)
+  | Or f1 f2 => lift2 Or (unnext_o f1) (unnext_o f2)
+  | Imp f1 f2 => lift2 Imp (unnext_o f1) (unnext_o f2)
+  | PropF _ => Some F
+  | Enabled _ => Some F
+  | _ => None
+  end.
+
+
 Lemma unnext_eq_next :
-  forall st1 st3 sts A,
-    eval_formula (unnext A) (Stream.Cons st1 (Stream.Cons st3 sts)) ->
+  forall st1 st3 sts A A',
+    unnext_o A = Some A' ->
     (forall x : Var, In x (get_next_vars_formula A) -> st1 x = st3 x) ->
-    eval_formula A (Stream.Cons st1 (Stream.Cons st3 sts)).
+    (eval_formula A' (Stream.Cons st1 (Stream.Cons st3 sts)) <->
+     eval_formula A (Stream.Cons st1 (Stream.Cons st3 sts))).
 Proof.
   induction A; simpl;
-  try solve [ auto ].
-  { unfold eval_comp.
-    intros;
-      do 2 rewrite <- unnext_term_eq_next in H;
-      try solve [ auto
-                | intros; apply H0; apply in_app_iff; auto ]. }
-  { intros; split;
-    [ eapply IHA1 | eapply IHA2 ];
-    try tauto; intros; eapply H0; eapply in_app_iff; tauto. }
-  { intros; destruct H;
-    [ left; eapply IHA1 | right; eapply IHA2 ];
-    auto; intros; eapply H0; eapply in_app_iff; auto. }
-  { intros. apply IHA2.
-    { admit.
-    }
-    { intros. apply H0. apply in_app_iff. auto. } }
-  { admit. (* change get_next_vars_formula *) }
-  { admit. (* change get_next_vars_formula *) }
+  try solve [ inversion 1; tauto
+            | intros
+              ; destruct (unnext_o A1); simpl in *; try congruence
+              ; destruct (unnext_o A2); simpl in *; try congruence
+              ; inversion H
+              ; clear H; subst
+              ; simpl
+              ; setoid_rewrite in_app_iff in H0
+              ; rewrite <- IHA1 by (clear - H0; firstorder)
+              ; rewrite <- IHA2 by (clear - H0; firstorder)
+              ; tauto ].
+  { inversion 1; subst; clear H.
+    simpl; unfold eval_comp.
+    intros.
+    setoid_rewrite in_app_iff in H.
+    do 2 rewrite <- unnext_term_eq_next by firstorder.
+    tauto. }
 Qed.
 
 Theorem synth_monitor
   : forall {insc ins1 outs1 ins2 outs2}
-           A (Pred : Cond insc) (N : Parallel ins1 outs1)
+           A A' (Pred : Cond insc) (N : Parallel ins1 outs1)
            B (B' : Parallel ins2 outs2)
            (vars : list Var),
-    Abstracts_cond (unnext A) Pred ->
+    unnext_o A = Some A' ->
+    Abstracts_cond A' Pred ->
     get_next_vars_formula A = vars ->
     (forall x, In x vars -> In x outs1) ->
     Abstracts (copy_next vars) N ->
     Abstracts B B' ->
     Abstracts (A \\// B) (Ite Pred N B').
 Proof.
-  do 13 intro.
+  do 12 intro.
+  intro Hunnext.
+  do 2 intro.
   intro Hsub. intros.
   unfold Abstracts; intros.
   breakAbstraction.
   subst.
   destruct (eval_Cond Pred st1) eqn:?.
   { left.
-    clear - H Heqb Hsub H4 H1.
     red in H. specialize (H st1 (Stream.Cons st3 sts)).
     rewrite Heqb in H. simpl in H.
     destruct H. clear H. specialize (H0 I). rename H0 into H.
-    clear - H H4 H1 Hsub.
+    clear - H H4 H1 Hsub Hunnext.
     assert (forall x : Var, In x outs1 -> eval_Parallel N st1 x = st3 x).
     { intros. apply H4. apply in_app_iff. auto. }
     specialize (Abstracts_copy_next_same _ _ _ _ H1 Hsub H0).
-    clear - H. intros.
-    eapply unnext_eq_next; eauto. }
+    clear - H Hunnext. intros.
+    eapply unnext_eq_next with (A' := A'); eauto. }
   { right.
     clear - H2 H4.
     red in H2. eapply H2.
@@ -200,7 +221,7 @@ Proof.
   unfold MyVelShim.Ctrl.
   unfold MyVelShim.SafeAcc.
   unfold MyVelShim.Default.
-  eapply synth_monitor; Synth_Term.
+  eapply synth_monitor; try solve [ reflexivity | Synth_Term ].
   eapply Le_choice; Synth_Term.
   Grab Existential Variables.
   compute. auto.
