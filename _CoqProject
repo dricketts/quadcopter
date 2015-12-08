@@ -46,3 +46,5 @@ examples/Interval.v
 examples/Rectangle.v
 examples/Cuboid.v
 examples/FirstOrderStability.v
+
+examples/ParLang/ParLang.v
