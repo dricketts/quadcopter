@@ -1,8 +1,9 @@
-Require Import TLA.TLA.
-Require Import TLA.BasicProofRules.
+Require Import Logic.Logic.
+Require Import Logic.BasicProofRules.
 Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.Lists.List.
 Require Import ChargeTactics.Lemmas.
+Open Scope HP_scope.
 
 (* Terms in the parallel language. The type parameter
    that is a list of vars captures the variables
@@ -42,8 +43,7 @@ Inductive Cond : list Var -> Type :=
 | NegP   : forall {xs}, Cond xs -> Cond xs.
 
 Definition sets_disjoint {T} (a b : list T) : Prop :=
-    forall x,
-      List.In x b -> ~List.In x a.
+  forall x, List.In x b -> ~List.In x a.
 
 (* A language with parallel semantics.
    An instance of (Parallel in out) is a program
@@ -173,7 +173,7 @@ Proof.
 Abort.
 
 
-Definition Abstracts_term {ins} (t: TLA.Syntax.Term) (p: ParTerm ins) : Prop :=
+Definition Abstracts_term {ins} (t: Logic.Syntax.Term) (p: ParTerm ins) : Prop :=
   forall st1 st2, eq (eval_term t st1 st2) (eval_ParTerm p st1).
 
 Definition isTrue (b : bool) : Prop :=
@@ -268,7 +268,7 @@ Qed.
 
 Arguments Assign v {_} t : rename.
 Theorem Next_assign_synth
-  : forall {ins} (v : Var) (t : TLA.Syntax.Term) (t' : ParTerm ins),
+  : forall {ins} (v : Var) (t : Logic.Syntax.Term) (t' : ParTerm ins),
     Abstracts_term t t' ->
     Abstracts (v! = t) (Assign v t').
 Proof.
@@ -394,8 +394,7 @@ Proof.
 Qed.
 
 Theorem Inv_term_synth
-  : forall {ins1}
-           A (A' : ParTerm ins1),
+  : forall {ins1} A (A' : ParTerm ins1),
     Abstracts_term A A' ->
     Abstracts_term (/ A) (InvPT A').
 Proof.
@@ -404,8 +403,7 @@ Proof.
 Qed.
 
 Theorem Sin_term_synth
- : forall {ins1}
-           A (A' : ParTerm ins1),
+ : forall {ins1} A (A' : ParTerm ins1),
     Abstracts_term A A' ->
     Abstracts_term (sin(A)) (SinPT A').
 Proof.
@@ -414,8 +412,7 @@ Proof.
 Qed.
 
 Theorem Cos_term_synth
- : forall {ins1}
-           A (A' : ParTerm ins1),
+ : forall {ins1} A (A' : ParTerm ins1),
     Abstracts_term A A' ->
     Abstracts_term (cos(A)) (CosPT A').
 Proof.
@@ -424,8 +421,7 @@ Proof.
 Qed.
 
 Theorem Arctan_term_synth
- : forall {ins1}
-           A (A' : ParTerm ins1),
+ : forall {ins1} A (A' : ParTerm ins1),
     Abstracts_term A A' ->
     Abstracts_term (atan(A)) (ArctanPT A').
 Proof.
@@ -434,8 +430,7 @@ Proof.
 Qed.
 
 Theorem Sqrt_term_synth
- : forall {ins1}
-           A (A' : ParTerm ins1),
+ : forall {ins1} A (A' : ParTerm ins1),
     Abstracts_term A A' ->
     Abstracts_term (sqrt(A)) (SqrtPT A').
 Proof.
@@ -444,8 +439,7 @@ Proof.
 Qed.
 
 Theorem Exp_term_synth
- : forall {ins1}
-           A (A' : ParTerm ins1),
+ : forall {ins1} A (A' : ParTerm ins1),
     Abstracts_term A A' ->
     Abstracts_term (exp(A)) (ExpPT A').
 Proof.
@@ -755,7 +749,7 @@ Proof.
   Synth_Term.
 Abort.
 
-Require Import TLA.ArithFacts.
+Require Import Logic.ArithFacts.
 Lemma Le_choice :
   forall {ins} (x : Var)
          v (v' : ParTerm ins),

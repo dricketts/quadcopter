@@ -1,10 +1,10 @@
-Require Import TLA.TLA.
-Require Import TLA.BasicProofRules.
+Require Import Logic.Logic.
+Require Import Logic.BasicProofRules.
 Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.Lists.List.
 Require Import ChargeTactics.Lemmas.
-Require Import Examples.ParLang.
-Require Import Examples.FirstDerivShimCtrl.
+Require Import Examples.ParLang.ParLang.
+Require Import Examples.Velocity.
 
 Open Scope HP_scope.
 Open Scope string_scope.
@@ -31,14 +31,14 @@ Proof.
 Qed.
 
 (* Velocity Shim *)
-Module MyParams <: FirstDerivShimParams.
+Module MyParams <: VelocityShimParams.
                     Local Open Scope R_scope.
                     Definition ub : R := 100.
                     Definition d : R := 10.
                     Parameter d_gt_0 : (d > 0).
 End MyParams.
 
-Module MyVelShim := FirstDerivShim MyParams.
+Module MyVelShim := VelocityShim MyParams.
 
 (*
 
@@ -137,14 +137,14 @@ Definition lift2 {A B C} (f : A -> B -> C) (a : option A) (b : option B) : optio
 
 Fixpoint unnext_o (F : Formula) : option Formula :=
   match F with
-  | TRUE | FALSE => Some F
+  | TRUE | FALSE  => Some F
   | Comp t1 t2 op => Some (Comp (unnext_term t1) (unnext_term t2) op)
-  | And f1 f2 => lift2 And (unnext_o f1) (unnext_o f2)
-  | Or f1 f2 => lift2 Or (unnext_o f1) (unnext_o f2)
-  | Imp f1 f2 => lift2 Imp (unnext_o f1) (unnext_o f2)
-  | PropF _ => Some F
-  | Enabled _ => Some F
-  | _ => None
+  | And f1 f2     => lift2 And (unnext_o f1) (unnext_o f2)
+  | Or f1 f2      => lift2 Or (unnext_o f1) (unnext_o f2)
+  | Imp f1 f2     => lift2 Imp (unnext_o f1) (unnext_o f2)
+  | PropF _       => Some F
+  | Enabled _     => Some F
+  | _             => None
   end.
 
 

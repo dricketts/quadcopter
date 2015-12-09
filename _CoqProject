@@ -5,6 +5,7 @@
 -R ChargeTactics ChargeTactics
 -R logic Logic
 -R examples Examples
+-R examples/ParLang Examples.ParLang
 -R shallow-logic SLogic
 
 shallow-logic/Stream.v
@@ -48,3 +49,5 @@ examples/Cuboid.v
 examples/FirstOrderStability.v
 
 examples/ParLang/ParLang.v
+examples/ParLang/ParLangExamples.v
+examples/ParLang/ParLangToSrcProg.v
