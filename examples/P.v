@@ -1,8 +1,8 @@
 Require Import Coq.Reals.Rdefinitions.
-Require Import TLA.TLA.
+Require Import Logic.Logic.
 Import LibNotations.
-Require Import TLA.DifferentialInduction.
-Require Import TLA.ContinuousProofRules.
+Require Import Logic.DifferentialInduction.
+Require Import Logic.ContinuousProofRules.
 Require Import ChargeTactics.Lemmas.
 Require Import ArithFacts.
 
@@ -152,7 +152,7 @@ Section P.
         eapply BasicProofRules.discr_indX
         with (A:=IndInv //\\ Next //\\ BasicProofRules.next IndInv).
         + tlaIntuition.
-        + unfold Spec. repeat rewrite <- BasicProofRules.Always_and.
+        + unfold Spec. repeat rewrite <- BasicProofRules.Always_and.y
           admit.
         + charge_tauto.
         + unfold Next. simpl BasicProofRules.next.

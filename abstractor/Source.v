@@ -1,6 +1,6 @@
-Require Import compcert.cfrontend.Clight.
+(* Require Import compcert.cfrontend.Clight. *)
 Require Import Coq.micromega.Psatz.
-Require Import compcert.cfrontend.Cop.
+(* Require Import compcert.cfrontend.Cop. *)
 Require Import compcert.cfrontend.Ctypes.
 Require Import compcert.lib.Integers.
 Require Import Coq.Reals.Rdefinitions.
@@ -135,7 +135,7 @@ Int.repr $ Z.of_nat n.
 Lemma custom_precGt0 : Fcore_FLX.Prec_gt_0 custom_prec.
 unfold Fcore_FLX.Prec_gt_0.
 unfold custom_prec.
-pose proof precGe1. 
+pose proof precGe1.
 lia.
 Qed.
 
@@ -145,7 +145,7 @@ apply precLtEmax.
 Qed.
 
 Definition custom_nan:float -> float -> bool * nan_pl custom_prec := Floats.Float32.binop_pl.
- 
+
 Definition nat_to_float (n : nat) : float :=
 Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n).
 
@@ -383,7 +383,7 @@ Definition float_le (a b : float) : bool :=
   | B754_infinity is_neg => is_neg
   | B754_nan is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
   | B754_finite is_neg _ _ _ => is_neg
-  end.  
+  end.
 
 Section eval_expr.
   Variable st : fstate.
@@ -464,12 +464,12 @@ Fixpoint eval_SrcProg (sp : SrcProg) (init : fstate) : option fstate :=
   match sp with
     | SAssn v nt   => assn_update_state v nt init
     | SSkip        => Some init
-    | SSeq p1 p2   => 
+    | SSeq p1 p2   =>
       match eval_SrcProg p1 init with
         | Some nxt => eval_SrcProg p2 nxt
         | None     => None
       end
-    | SITE c p1 p2 => 
+    | SITE c p1 p2 =>
       match progr_cond_holds init c with
         | Some true  => eval_SrcProg p1 init
         | Some false => eval_SrcProg p2 init
@@ -543,4 +543,3 @@ Fixpoint eval_progr (p : progr) (init : fstate) : option fstate :=
     end
   end.
 *)
-

@@ -53,14 +53,14 @@ Module Type EMBEDDING.
       pl_equ p p' -> pl_equ p' p'' -> pl_equ p p''.
   Axiom pl_equ_symm : forall (p p' : pl_data),
       pl_equ p p' -> pl_equ p' p.
-  
+
   Definition istate : Type := list (string * pl_data).
-    
+
   Parameter eval : (istate -> ast -> istate -> Prop).
 
   (* Embedding deterministic functions that fail by
    "getting stuck" *)
-  
+
   Definition states_iso (st st' : istate) : Prop :=
     forall (s : string),
       match (fm_lookup st s), (fm_lookup st' s) with
@@ -68,7 +68,7 @@ Module Type EMBEDDING.
       | Some f1, Some f2 => pl_equ f1 f2
       | _, _ => False
       end.
-      
+
   Notation "a ~~ b" := (states_iso a b) (at level 70).
 
   (* we may want to require these but they don't seem to be necessary for our purposes *)
@@ -90,7 +90,7 @@ Module Type EMBEDDING.
   Axiom pl_eq_asReal :
     forall (p1 p2 : pl_data) (r : R),
       pl_equ p1 p2 -> asReal p1 r -> asReal p2 r.
-  
+
   (* relate concrete to abstract states *)
   (* should all variables not in the list must be None *)
   Definition models (vars : list string) (ist : istate) (sst : Syntax.state) : Prop :=
@@ -164,7 +164,7 @@ Module Type EMBEDDING_THEOREMS.
   Axiom states_iso_symm :
     forall (st st' : M.istate),
       M.states_iso st st' -> M.states_iso st' st.
-  
+
   Axiom models_det :
     forall (v : list string) (sst : Syntax.state) (ist ist' : M.istate),
       M.models v ist sst -> M.models v ist' sst ->
@@ -217,7 +217,7 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
     - forward_reason.
       specialize (asReal_det _ _ _ H3 H4).
       intro; subst. rewrite H. rewrite H0. apply pl_equ_symm. auto.
-    - forward_reason. 
+    - forward_reason.
       rewrite H2. rewrite H1. auto.
   Qed.
 
@@ -230,7 +230,7 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
     exists is. exists is'.
     intuition.
   Qed.
-  
+
   Lemma embed_ex_correct2 :
     embedding_correct2 embed_ex.
   Proof.

@@ -53,14 +53,14 @@ Module Type EMBEDDING.
       pl_equ p p' -> pl_equ p' p'' -> pl_equ p p''.
   Axiom pl_equ_symm : forall (p p' : pl_data),
       pl_equ p p' -> pl_equ p' p.
-  
+
   Definition istate : Type := list (string * pl_data).
-    
+
   Parameter eval : (istate -> ast -> istate -> Prop).
 
   (* Embedding deterministic functions that fail by
    "getting stuck" *)
-  
+
   Definition states_iso (st st' : istate) : Prop :=
     forall (s : string),
       match (fm_lookup st s), (fm_lookup st' s) with
@@ -68,7 +68,7 @@ Module Type EMBEDDING.
       | Some f1, Some f2 => pl_equ f1 f2
       | _, _ => False
       end.
-      
+
   Notation "a ~~ b" := (states_iso a b) (at level 70).
 
   (* we may want to require these but they don't seem to be necessary for our purposes *)
@@ -90,7 +90,7 @@ Module Type EMBEDDING.
   Axiom pl_eq_asReal :
     forall (p1 p2 : pl_data) (r : R),
       pl_equ p1 p2 -> asReal p1 r -> asReal p2 r.
-  
+
   (* relate concrete to abstract states *)
   (* should all variables not in the list must be None *)
   Definition models (vars : list string) (ist : istate) (sst : Syntax.state) : Prop :=
@@ -164,7 +164,7 @@ Module Type EMBEDDING_THEOREMS.
   Axiom states_iso_symm :
     forall (st st' : M.istate),
       M.states_iso st st' -> M.states_iso st' st.
-  
+
   Axiom models_det :
     forall (v : list string) (sst : Syntax.state) (ist ist' : M.istate),
       M.models v ist sst -> M.models v ist' sst ->
@@ -217,7 +217,7 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
     - forward_reason.
       specialize (asReal_det _ _ _ H3 H4).
       intro; subst. rewrite H. rewrite H0. apply pl_equ_symm. auto.
-    - forward_reason. 
+    - forward_reason.
       rewrite H2. rewrite H1. auto.
   Qed.
 
@@ -230,7 +230,7 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
     exists is. exists is'.
     intuition.
   Qed.
-  
+
   Lemma embed_ex_correct2 :
     embedding_correct2 embed_ex.
   Proof.
@@ -433,10 +433,10 @@ Module FloatEmbed <: EMBEDDING.
       specialize (Hin0 H0).
       lra.
   Qed.
-  
+
   Require Import ArithFacts.
   Require Import compcert.flocq.Core.Fcore_float_prop.
-  
+
   Lemma F2OR_pl_eq :
     forall f f',
       F2OR f = F2OR f' ->
@@ -520,7 +520,7 @@ Module FloatEmbed <: EMBEDDING.
         - generalize (Coq.Logic.Eqdep_dec.UIP_dec Bool.bool_dec).
           intros. auto. } }
   Qed.
-  
+
   Lemma states_iso_iso' : forall (st st' : istate),
       states_iso st st' <-> states_iso' st st'.
   Proof.
@@ -591,7 +591,7 @@ Module FloatEmbed <: EMBEDDING.
         * simpl. rewrite rel_dec_neq_false; eauto with typeclass_instances.
         * simpl. rewrite rel_dec_neq_false; eauto with typeclass_instances.
   Qed.
-  
+
   Lemma fstate_lookup_fm_lookup :
     forall fst v,
       fstate_lookup fst v = fm_lookup fst v.
@@ -654,7 +654,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -673,7 +673,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -691,7 +691,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -709,7 +709,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -732,7 +732,7 @@ Module FloatEmbed <: EMBEDDING.
         rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_update_match in IHpl_eq.
         rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_update_match in IHpl_eq.
         forward_reason. inversion H1; subst.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_irrelevant_update in IHpl_eq; [|auto].
         specialize (H s). rewrite <- fstate_lookup_fm_lookup in H.
@@ -814,7 +814,7 @@ Module FloatEmbed <: EMBEDDING.
       pose proof e2' as p2'.
       apply Bool.andb_true_iff in p2'. fwd. auto. }
   Qed.
-  
+
   (* For brutal case-analysis *)
   Ltac smash :=
     let rec smash' E :=
@@ -863,7 +863,7 @@ Module FloatEmbed <: EMBEDDING.
         { split. lra. lra. }
         lra. }
     Qed.
-    
+
   Lemma states_iso_fexprD :
     forall ist ist',
       states_iso ist ist' ->
@@ -968,7 +968,7 @@ Module FloatEmbed <: EMBEDDING.
           intros.
           auto. } } }
   Qed.
-  
+
   Lemma eval_det :
     forall prg isti isti' istf,
       (states_iso isti isti') ->
@@ -1024,7 +1024,7 @@ Module FloatEmbed <: EMBEDDING.
     - intros.
       inversion H0.
   Qed.
-  
+
   Lemma asReal_det :
     forall (p p' : pl_data) (r : R),
       asReal p r ->
@@ -1099,7 +1099,7 @@ Module FloatEmbed <: EMBEDDING.
             (forall s', eval s c s' -> Q s'))%type.
 
   End Hoare.
-  
+
 End FloatEmbed.
 
 Require Import bound.
@@ -1131,7 +1131,7 @@ Definition Hoare_ := Hoare.
            (fun fst => exists rst : Syntax.state, vmodels vs fst rst /\ Q rst)%type.
 
   Definition fembed_ex :=
-    embed_ex. 
+    embed_ex.
 
   Lemma Hoare__embed :
     forall P c Q vs,
@@ -1156,7 +1156,7 @@ Definition Hoare_ := Hoare.
     specialize (H _ H4). fwd.
     auto.
   Qed.
-    
+
   Lemma Hoare__skip :
     forall (P : istate -> Prop),
       Hoare_ P FSkip P.
@@ -1187,7 +1187,7 @@ Definition Hoare_ := Hoare.
       specialize (H0 _ H2).
       fwd; auto. }
   Qed.
-  
+
   (* this plus consequence should be enough to get our real assignment rule
    that talks about bounds *)
   Lemma Hoare__asn :
@@ -1232,7 +1232,7 @@ Definition Hoare_ := Hoare.
 
   (* Used to translate between two different representations
    of floating-point state (since bounds proofs use a different one) *)
-  
+
   (* Ensures the variable map only mentions variables in the given expression *)
   Fixpoint varmap_check_fexpr (ivs : list (Var * Var)) (e : fexpr) : Prop :=
     match e with
@@ -1375,7 +1375,7 @@ Definition Hoare_ := Hoare.
           - lra. }
         { inversion Hbfs; subst; clear Hbfs.
           eapply IHl; eauto. } } }
-  Qed.        
+  Qed.
 
 
   Lemma Hoare__conseq :
@@ -1401,7 +1401,7 @@ Definition Hoare_ := Hoare.
     unfold Hoare_, Hoare in *.
     intros.
     destruct H1; eauto.
-  Qed.    
+  Qed.
 
   Lemma Hoare__False :
     forall (P : _ -> Prop) c,
@@ -1582,7 +1582,7 @@ Qed.
                                         let '(prem, _) := denote_singleBoundTermNew fst sbt in prem)
                                      bs)))
     end.
-  
+
   Lemma fwp_correct :
     forall c P,
       Hoare_ (fwp c P)

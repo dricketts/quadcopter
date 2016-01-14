@@ -7,6 +7,7 @@
 -R examples Examples
 -R examples/ParLang Examples.ParLang
 -R shallow-logic SLogic
+-R abstractor Abstractor
 
 shallow-logic/Stream.v
 shallow-logic/Logic.v
@@ -47,6 +48,8 @@ examples/Interval.v
 examples/Rectangle.v
 examples/Cuboid.v
 examples/FirstOrderStability.v
+
+abstractor/Source.v
 
 examples/ParLang/ParLang.v
 examples/ParLang/ParLangExamples.v
