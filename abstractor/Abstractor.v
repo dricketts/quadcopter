@@ -1,3 +1,5 @@
+Print LoadPath.
+
 Require Import TLA.Syntax.
 Require Import TLA.Semantics.
 Require Import TLA.ProofRules.

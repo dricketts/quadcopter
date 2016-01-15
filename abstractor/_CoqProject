@@ -12,10 +12,10 @@
 -R ../coq-ext-lib/theories ExtLib
 -I ../Z3-plugin/src
 -R ../Z3-plugin/theories Z3
--R ../Charge/Charge!/bin/Charge/Logics Charge.Logics
--R ../Charge/Charge!/bin/Charge/Tactics Charge.Tactics
--R ../Charge/Charge!/bin/Charge/Open Charge.Open
--R ../Charge/Charge!/bin/Charge/SepAlg Charge.SepAlg
+-R ../ChargeCore/ChargeCore/src/ChargeCore/Logics Charge.Logics
+-R ../ChargeCore/ChargeCore/src/ChargeCore/Tactics Charge.Tactics
+-R ../ChargeCore/ChargeCore/src/ChargeCore/Open Charge.Open
+-R ../ChargeCore/ChargeCore/src/ChargeCore/SepAlg Charge.SepAlg
 -R ../ChargeTactics ChargeTactics
 Source.v
 Bound.v

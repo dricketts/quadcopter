@@ -1,12 +1,16 @@
 -I Z3-plugin/src
 -R Z3-plugin/theories Z3
--R Charge/Charge!/bin/Charge Charge
+-R ChargeCore/ChargeCore/src/ChargeCore Charge
 -R coq-ext-lib/theories ExtLib
 -R ChargeTactics ChargeTactics
 -R logic Logic
 -R examples Examples
 -R shallow-logic SLogic
 -R shallow-examples SExamples
+-R abstractor Abstractor
+
+Z3-plugin/theories/Tactic.v
+Z3-plugin/src/z3Tactic.ml4
 
 shallow-logic/Stream.v
 shallow-logic/Logic.v

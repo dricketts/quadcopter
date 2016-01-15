@@ -1,8 +1,5 @@
-all: z3-plugin Makefile.coq
+all: Makefile.coq
 	$(MAKE) -f Makefile.coq
-
-z3-plugin:
-	$(MAKE) -C Z3-plugin
 
 
 Makefile.coq: _CoqProject
