@@ -266,8 +266,8 @@ Lemma mkEvolution_and
 Proof.
   unfold mkEvolution; simpl; intros.
   eapply Evolution_lequiv_lequiv.
-  intros. Transparent Charge.Logics.ILInsts.ILFun_Ops.
-  simpl. Opaque Charge.Logics.ILInsts.ILFun_Ops.
+  intros. Transparent ChargeCore.Logics.ILInsts.ILFun_Ops.
+  simpl. Opaque ChargeCore.Logics.ILInsts.ILFun_Ops.
   restoreAbstraction.
   split; charge_tauto.
 Qed.
@@ -429,7 +429,9 @@ Proof.
     rewrite (landC D). repeat rewrite landA.
     rewrite <- Enabled_and_push by (compute; tauto).
     charge_split; [ charge_assumption | ].
-    assumption. }
+    breakAbstraction. intros. specialize (H _ H1).
+    forward_reason. exists x; eauto.
+    (*assumption.*) }
   { unfold Sys.
     rewrite <- Enabled_and_push by (compute; tauto).
     charge_split;

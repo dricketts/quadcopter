@@ -4,7 +4,7 @@ Require Import Coq.Reals.Rtrigo_def.
 Require Import Coq.Reals.Ranalysis1.
 Require Export Logic.Syntax.
 Require Import Logic.Stream.
-Require Export Charge.Logics.ILogic.
+Require Export ChargeCore.Logics.ILogic.
 
 (* The semantics of our restricted logic *)
 

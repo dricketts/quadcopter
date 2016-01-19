@@ -1,4 +1,4 @@
-Require Export Charge.Logics.ILogic.
+Require Export ChargeCore.Logics.ILogic.
 Require ChargeTactics.Lemmas.
 
 Ltac charge_split := apply landR.

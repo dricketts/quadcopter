@@ -6,7 +6,7 @@ Require Import Coq.Reals.Rtrigo_def.
 Require Import Coq.Reals.Ranalysis1.
 Require Export Logic.Syntax.
 Require Import Logic.Stream.
-Require Export Charge.Logics.ILogic.
+Require Export ChargeCore.Logics.ILogic.
 Require Import Coq.Reals.R_sqrt.
 Require Import Coq.Reals.Ratan.
 
@@ -109,11 +109,14 @@ Global Instance ILogicOps_Formula : ILogicOps Formula :=
 
 Global Instance ILogic_Formula : ILogic Formula.
 Proof.
+  SearchAbout PreOrder.
   constructor;
   try solve [ cbv beta iota zeta delta - [ eval_formula ];
               simpl; intros; intuition eauto ].
+  unfold lentails; simpl.
+  unfold tlaEntails. constructor; eauto.
   cbv beta iota zeta delta - [ eval_formula ];
-              simpl; intros; intuition eauto.
+    simpl; intros; intuition eauto.
   destruct H0. eauto.
 Qed.
 

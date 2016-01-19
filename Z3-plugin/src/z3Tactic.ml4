@@ -8,6 +8,8 @@ open Printf
 open Unix
 open Errors
 
+DECLARE PLUGIN "z3Tactic"
+
 (** TODO(gmalecha): This should use CoqPluginUtils **)
 module type TM =
 sig
@@ -184,7 +186,13 @@ struct
     Format.printf "%s\n" msg
 end
 
-module Z3Tactic =
+module Z3Tactic :
+sig
+  val with_debugging : ('a -> 'b) -> 'a -> 'b
+  val z3Tactic : bool -> Proof_type.goal Tacmach.sigma ->
+                         Proof_type.goal list Evd.sigma
+end
+ =
 struct
 
   let contrib_name = "z3-check"
@@ -207,7 +215,7 @@ struct
 
   let resolve_symbol (path : string list) (tm : string) : Term.constr =
     let re = Coqlib.find_reference contrib_name path tm in
-    Libnames.constr_of_global re
+    Universes.constr_of_global re
 
   let r_pkg = ["Coq";"Reals";"Rdefinitions"]
   let logic_pkg = ["Coq";"Init";"Logic"]
@@ -235,11 +243,13 @@ struct
   let c_eq = resolve_symbol logic_pkg "eq"
   let c_Prop = Term.mkProp
 
-  module Cmap = Map.Make
-    (struct
+  module X =
+     struct
       type t = Term.constr
       let compare = Term.constr_ord
-     end)
+     end
+  
+  module Cmap = Map.Make (X)
 
   type r_type = Prop | R
 
@@ -516,7 +526,7 @@ struct
     let hyps = Tacmach.pf_hyps gl in
 
     let is_prop p =
-      Term.eq_constr (Tacmach.pf_type_of gl p) Term.mkProp
+      Term.eq_constr (snd (Tacmach.pf_type_of gl p)) Term.mkProp
     in
 
     let tbl = Cmap.empty in
@@ -564,14 +574,14 @@ struct
 end
 
 TACTIC EXTEND z3_tac
-  | ["z3" "solve"]     ->     [Z3Tactic.z3Tactic false]
+  | ["z3" "solve"]     ->     [Proofview.V82.tactic (Z3Tactic.z3Tactic false)]
 END;;
 
 TACTIC EXTEND z3_tac_dbg
-  | ["z3" "solve_dbg"] ->     [Z3Tactic.with_debugging (Z3Tactic.z3Tactic false)]
+  | ["z3" "solve_dbg"] ->     [Proofview.V82.tactic (Z3Tactic.with_debugging (Z3Tactic.z3Tactic false))]
 END;;
 
 
 TACTIC EXTEND z3_tac_quick
-  | ["z3" "quick" "solve"] -> [Z3Tactic.z3Tactic true]
+  | ["z3" "quick" "solve"] -> [Proofview.V82.tactic (Z3Tactic.z3Tactic true)]
 END;;

@@ -1,17 +1,18 @@
-Require Import compcert.cfrontend.Clight.
+(*Require Import compcert.cfrontend.Clight.*)
 Require Import Coq.micromega.Psatz.
-Require Import compcert.cfrontend.Cop.
-Require Import compcert.cfrontend.Ctypes.
-Require Import compcert.lib.Integers.
+(*Require Import compcert.cfrontend.Cop.
+Require Import compcert.cfrontend.Ctypes.*)
+Require Import Integers.
 Require Import Coq.Reals.Rdefinitions.
 Require Import List.
 Import ListNotations.
 Require Import Logic.Syntax.
 Require Import Logic.Semantics.
 Require Import Logic.Lib.
-Require Import compcert.flocq.Core.Fcore_defs.
-Require Import compcert.flocq.Appli.Fappli_IEEE.
-Require Import compcert.flocq.Appli.Fappli_IEEE_bits.
+
+Require Import Flocq.Core.Fcore_defs.
+Require Import Flocq.Appli.Fappli_IEEE.
+Require Import Flocq.Appli.Fappli_IEEE_bits.
 
 
 Require Import ExtLib.Programming.Extras.
@@ -129,6 +130,7 @@ Definition VarC (x:String.string) : NowTerm :=
 VarNowN x.
 Coercion VarC : String.string >-> NowTerm.
 (* convenient coercions between number formats *)
+
 Definition nat_to_int (n : nat) : int :=
 Int.repr $ Z.of_nat n.
 
@@ -144,8 +146,11 @@ unfold custom_emax, custom_prec.
 apply precLtEmax.
 Qed.
 
+Require Floats.
 Definition custom_nan:float -> float -> bool * nan_pl custom_prec := Floats.Float32.binop_pl.
- 
+
+Require Import Fappli_IEEE_extra.
+
 Definition nat_to_float (n : nat) : float :=
 Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n).
 
@@ -321,7 +326,7 @@ Definition float_mult (a b : float) : float :=
    floating-point numbers) though we must do so using lazy. *)
 Definition concretize_float (f : float) :=
   match f with
-  | B754_finite sig m e pf =>
+  | B754_finite _ _ sig m e pf =>
     @B754_finite _ _ sig m e
                 (match bounded prec emax m e as X return (X = true -> X = true) with
                  | true => fun p => eq_refl
@@ -371,18 +376,18 @@ Definition new_float_one' := Eval lazy in (concretize_float (float_plus custom_f
 (* NB: sign bit is true if negative *)
 Definition float_lt (a b : float) : bool :=
   match float_minus a b with
-  | B754_zero _ => false
-  | B754_infinity is_neg => is_neg
-  | B754_nan is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
-  | B754_finite is_neg _ _ _ => is_neg
+  | B754_zero _ _ _ => false
+  | B754_infinity _ _ is_neg => is_neg
+  | B754_nan _ _ is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
+  | B754_finite _ _ is_neg _ _ _ => is_neg
   end.
 
 Definition float_le (a b : float) : bool :=
   match float_minus a b with
-  | B754_zero _ => true
-  | B754_infinity is_neg => is_neg
-  | B754_nan is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
-  | B754_finite is_neg _ _ _ => is_neg
+  | B754_zero _ _ _ => true
+  | B754_infinity _ _ is_neg => is_neg
+  | B754_nan _ _ is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
+  | B754_finite _ _ is_neg _ _ _ => is_neg
   end.  
 
 Section eval_expr.

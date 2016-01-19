@@ -301,7 +301,7 @@ Proof.
           destruct (RIneq.Rge_dec (f z x) R0).
           { left. rewrite Rabs_right in IVT; solve_linear. }
           { right. rewrite Rabs_left in IVT; solve_linear.
-            apply RIneq.Rplus_opp_r_uniq. solve_linear. } }
+            (*apply RIneq.Rplus_opp_r_uniq. solve_linear.*) } }
         { exists r. split; [ solve_linear | ].
           revert H1. unfold Rmax. rewrite Hf_post.
           destruct_ite; intros.

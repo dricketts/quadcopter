@@ -1,4 +1,4 @@
-Require Export Charge.Logics.ILogic.
+Require Export ChargeCore.Logics.ILogic.
 
 Section logic.
   Context {L : Type}.

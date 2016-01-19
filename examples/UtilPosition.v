@@ -102,8 +102,8 @@ Proof. solve_nonlinear. Qed.
 Module Type SdistParams.
 
   (* Our breaking acceleration. *)
-  Variable amin : R.
-  Hypothesis amin_lt_0 : (amin < 0)%R.
+  Parameter amin : R.
+  Axiom amin_lt_0 : (amin < 0)%R.
 
 End SdistParams.
 
@@ -114,6 +114,7 @@ Module SdistUtil (Import Params : SdistParams).
   (* The distance traveled before stopping when
      applying acceleration amin, starting with
      velocity v. *)
+
   Definition sdist (v:Term) : Term :=
     (v^^2)*(--(/2)%R)*(/amin)%R.
 

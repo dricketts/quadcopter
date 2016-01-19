@@ -1,15 +1,15 @@
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Raxioms.
 Require Import Coq.micromega.Psatz.
-Add LoadPath "../compcert" as compcert.
+(*Add LoadPath "../compcert" as compcert.
 Add LoadPath "../coq-ext-lib/theories" as ExtLib.
 Add LoadPath "../tla" as TLA.
 Add LoadPath "../Charge/Charge!/bin/Charge" as Charge.
-Add LoadPath "../ChargeTactics" as ChargeTactics.
+Add LoadPath "../ChargeTactics" as ChargeTactics.*)
 Require Import Source.
-Require Import compcert.flocq.Core.Fcore_defs.
+Require Import Flocq.Core.Fcore_defs.
 
-Require Import compcert.lib.Integers.
+Require Import Integers.
 Require Import Coq.Reals.Rdefinitions.
 Require Import List.
 Import ListNotations.
@@ -17,23 +17,22 @@ Require Import Logic.Syntax.
 Require Import Logic.Semantics.
 Require Import Logic.Lib.
 Require Import Logic.Automation.
-Require Import compcert.flocq.Appli.Fappli_IEEE.
-Require Import compcert.flocq.Appli.Fappli_IEEE_bits.
-Require Import compcert.flocq.Core.Fcore_Raux.
+Require Import Flocq.Appli.Fappli_IEEE.
+Require Import Flocq.Appli.Fappli_IEEE_bits.
+Require Import Flocq.Core.Fcore_Raux.
 Require Import Source.
 Require Import Coq.Reals.Raxioms.
 Require Import Coq.micromega.Psatz.
-Require Import compcert.flocq.Prop.Fprop_relative.
-Require Import compcert.flocq.Core.Fcore_Raux.
-Require Import compcert.flocq.Core.Fcore_FLT.
-Require Import compcert.flocq.Core.Fcore_generic_fmt.      
+Require Import Flocq.Prop.Fprop_relative.
+Require Import Flocq.Core.Fcore_Raux.
+Require Import Flocq.Core.Fcore_FLT.
+Require Import Flocq.Core.Fcore_generic_fmt.      
 
-Require Import compcert.flocq.Core.Fcore_Raux.
+Require Import Flocq.Core.Fcore_Raux.
 
 Local Open Scope HP_scope.
 
 Definition error := bpow radix2 (- (custom_prec) + 1).
-Print Formula.
 
 Record singleBoundTerm : Type := mkSBT {lb : fstate -> R;
                                  ub : fstate -> R ; 
@@ -42,7 +41,7 @@ Record singleBoundTerm : Type := mkSBT {lb : fstate -> R;
 (*used for addition when the result is positive and multiplication when both the arguments are positive*)
 
 (* Definition bd := mkSBT (RealT R0) (RealT R0) (RealT R0 > RealT R0) .*)
-Require Import Charge.Logics.ILInsts.
+Require Import ChargeCore.Logics.ILInsts.
 
 (* need "arithable" typeclass with addition, subtraction, multipliction, division
    make Terms arithable, as well as real numbers and stuff
@@ -567,6 +566,10 @@ Definition simpleBound33
         (fun _ => floatMin)
         fla.
 
+Arguments B754_zero {_ _} _.
+Arguments B754_infinity {_ _} _.
+Arguments B754_nan {_ _} _ _.
+Arguments B754_finite {_ _} _ _ _ _.
 
 Definition isFloatConstValid (f:binary_float custom_prec custom_emax) : Prop 
   := match f with 
@@ -1569,7 +1572,7 @@ repeat simpl; reflexivity.
 Qed.
 
 Local Close Scope HP_scope.
- Require Import compcert.flocq.Prop.Fprop_relative.
+ Require Import Flocq.Prop.Fprop_relative.
 
 
 Lemma simpleTruth : true = true.

@@ -1,7 +1,7 @@
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Require Import Coq.Classes.Morphisms.
-Require Import Charge.Logics.ILogic.
+Require Import ChargeCore.Logics.ILogic.
 Require Import ChargeTactics.Tactics.
 
 Section named.

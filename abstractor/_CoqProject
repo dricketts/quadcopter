@@ -1,23 +1,20 @@
 -R . Abstractor
 -R ../logic Logic
--R ../compcert/lib compcert.lib
--R ../compcert/common compcert.common
--R ../compcert/cfrontend compcert.cfrontend
--R ../compcert/flocq/Core compcert.flocq.Core
--R ../compcert/flocq/Appli compcert.flocq.Appli
--R ../compcert/flocq/Calc compcert.flocq.Calc
--R ../compcert/flocq/Appli compcert.flocq.Appli
--R ../compcert/flocq/Prop compcert.flocq.Prop
--R ../compcert/ia32 compcert.ia32
+-R ../flocq-2.5.1/src Flocq
 -R ../coq-ext-lib/theories ExtLib
 -I ../Z3-plugin/src
 -R ../Z3-plugin/theories Z3
--R ../ChargeCore/ChargeCore/src/ChargeCore/Logics Charge.Logics
--R ../ChargeCore/ChargeCore/src/ChargeCore/Tactics Charge.Tactics
--R ../ChargeCore/ChargeCore/src/ChargeCore/Open Charge.Open
--R ../ChargeCore/ChargeCore/src/ChargeCore/SepAlg Charge.SepAlg
+-R ../ChargeCore/ChargeCore/src/ChargeCore/Logics ChargeCore.Logics
+-R ../ChargeCore/ChargeCore/src/ChargeCore/Tactics ChargeCore.Tactics
+-R ../ChargeCore/ChargeCore/src/ChargeCore/Open ChargeCore.Open
+-R ../ChargeCore/ChargeCore/src/ChargeCore/SepAlg ChargeCore.SepAlg
 -R ../ChargeTactics ChargeTactics
 Source.v
 Bound.v
 Embed.v
 FloatEmbed.v
+Floats.v
+Fappli_IEEE_extra.v
+Integers.v
+Archi.v
+Coqlib.v
