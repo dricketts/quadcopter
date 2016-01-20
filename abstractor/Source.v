@@ -312,13 +312,13 @@ Definition lift2 {T U V : Type} (f : T -> U -> V) (a : option T) (b : option U) 
 
 (* Useful floating-point operations for our format *)
 Definition float_plus (a b : float) : float :=
-  Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_NE a b.
+  Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR a b.
 
 Definition float_minus (a b : float) : float :=
-  Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_NE a b.
+  Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR a b.
 
 Definition float_mult (a b : float) : float :=
-  Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_NE a b.
+  Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR a b.
 
 (* This replaces a validity proof in the floating-point representation and replaces it with
    eq_refl (this is possible since boolean equality is decidable). Doing this optimization
