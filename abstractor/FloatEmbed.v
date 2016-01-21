@@ -22,19 +22,19 @@ Inductive fexpr :=
 
 Definition fplus : Source.float -> Source.float -> Source.float :=
   Fappli_IEEE.Bplus custom_prec custom_emax custom_precGt0
-                    custom_precLtEmax custom_nan Fappli_IEEE.mode_NE.
+                    custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
 Definition fminus : Source.float -> Source.float -> Source.float :=
   Fappli_IEEE.Bminus custom_prec custom_emax custom_precGt0
-                     custom_precLtEmax custom_nan Fappli_IEEE.mode_NE.
+                     custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
 Definition fmult : Source.float -> Source.float -> Source.float :=
   Fappli_IEEE.Bmult custom_prec custom_emax custom_precGt0
-                    custom_precLtEmax custom_nan Fappli_IEEE.mode_NE.
+                    custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
 Definition fdiv : Source.float -> Source.float -> Source.float :=
   Fappli_IEEE.Bdiv custom_prec custom_emax custom_precGt0
-                   custom_precLtEmax custom_nan Fappli_IEEE.mode_NE.
+                   custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
 (* TODO pretty sure we need to do variable translation here *)
 Fixpoint fexprD (fx : fexpr) (sf : fstate) : option Source.float :=
@@ -59,12 +59,12 @@ Inductive fcmd : Type :=
 Definition fzero : float := Fappli_IEEE.B754_zero 24 128 false.
 Definition fnegzero : float := Fappli_IEEE.B754_zero 24 128 true.
 
-Require Import compcert.flocq.Core.Fcore_ulp.
+Require Import Flocq.Core.Fcore_ulp.
 
 Definition F2OR (f : float) : option R :=
   match f with
-    | Fappli_IEEE.B754_zero   _       => Some (FloatToR f)
-    | Fappli_IEEE.B754_finite _ _ _ _ => Some (FloatToR f)
+    | Fappli_IEEE.B754_zero   _ _ _      => Some (FloatToR f)
+    | Fappli_IEEE.B754_finite _ _ _ _ _ _ => Some (FloatToR f)
     | _                               => None
   end.
 
@@ -97,7 +97,7 @@ Inductive feval : fstate -> fcmd -> fstate -> Prop :=
       feval s (FIte ex c1 c2) os'
 .
 
-Require Import compcert.flocq.Appli.Fappli_IEEE.
+Require Import Flocq.Appli.Fappli_IEEE.
 
 Inductive pl_eq : float -> float -> Prop :=
 | pl_zero : forall b b', pl_eq (B754_zero _ _ b) (B754_zero _ _ b')
@@ -184,8 +184,8 @@ Module FloatEmbed <: EMBEDDING.
   Qed.
   
   Require Import ArithFacts.
-  Require Import compcert.flocq.Core.Fcore_float_prop.
-  
+  Require Import Flocq.Core.Fcore_float_prop.
+  Require Import Flocq.Core.Fcore_Zaux.
   Lemma F2OR_pl_eq :
     forall f f',
       F2OR f = F2OR f' ->
@@ -1019,9 +1019,11 @@ Definition Hoare_ := Hoare.
       fexprD fx fst = Some f ->
       eval_NowTerm fst (fexpr_to_NowTerm fx) = Some f.
   Proof.
+    Locate fplus.
+    Print float_plus.
     induction fx; eauto;
     try (intros; simpl; simpl in *; fwd;
-         unfold lift2 in *;
+         unfold lift2, fplus, float_plus in *;
            consider (fexprD fx1 fst); intros; try congruence;
          consider (fexprD fx2 fst); intros; try congruence;
          erewrite IHfx1; eauto;

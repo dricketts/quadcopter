@@ -131,6 +131,7 @@ Module Float.
     apply to all architectures supported by CompCert. *)
 
 (** Transform a Nan payload to a quiet Nan payload. *)
+(* TODO move nat_iter defn elsewhere *)
 Program Definition transform_quiet_pl (pl:nan_pl 53) : nan_pl 53 :=
   Pos.lor pl (nat_iter 51 xO xH).
 Next Obligation.

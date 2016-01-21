@@ -1061,7 +1061,7 @@ Ltac peel_bound_post H :=
   unfold land, lor, limpl, validFloat, lofst, lift2, error in H;
   repeat match goal with
          | H: context[Fcore_defs.F2R ?X] |- _ =>
-           let Y := constr:(@Fcore_defs.F2R Fappli_IEEE.radix2 X) in
+           let Y := constr:(@Fcore_defs.F2R Fcore_Zaux.radix2 X) in
            let Y' := eval compute in Y in
                change Y with Y' in H
          end;
@@ -1193,7 +1193,7 @@ Proof.
                    end;
             repeat match goal with
                | H': context[Fcore_defs.F2R ?X] |- _ =>
-                 let Y := constr:(@Fcore_defs.F2R Fappli_IEEE.radix2 X) in
+                 let Y := constr:(@Fcore_defs.F2R Fcore_Zaux.radix2 X) in
                  let Y' := eval compute in Y in
                      change Y with Y' in H'
                end;
@@ -1230,7 +1230,9 @@ Proof.
                   simpleBound14 simpleBound15 simpleBound16 simpleBound17 simpleBound18 simpleBound19 simpleBound20
                   simpleBound21 simpleBound22 simpleBound23 simpleBound24 simpleBound25 simpleBound26 simpleBound27
                   simpleBound28 simpleBound29 simpleBound30 simpleBound31 simpleBound32 simpleBound33
+                  (*simpleBoundM1 simpleBoundM2 simpleBoundM3 simpleBoundM4*)
             ] in H8.
+        Locate simpleBoundM1.
         rewrite H4 in H8.
         rewrite H5 in H8.
         Lemma validity_condition :
