@@ -91,7 +91,7 @@ Lemma copy_next_undup : forall xs,
 Proof.
   induction xs.
   { simpl. reflexivity. }
-  { simpl. admit.  }
+  { simpl. auto.  }
 Admitted.
 
 Lemma Abstracts_copy_next_same

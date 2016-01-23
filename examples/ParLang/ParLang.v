@@ -680,18 +680,13 @@ Proof.
   simpl. unfold eval_comp. rewrite H, H0. unfold eval_ParComp.
   destruct O; repeat rewrite isTrue_is_eq_true.
 
-  { destruct RIneq.Rgt_dec.
-    { intros; tauto. }
-    { split.
-      { intros; tauto. }
-      { inversion 1. } } }
-
   Ltac go :=
-    split;
-    try solve [ intros; tauto
-              | intros; assumption
-              | inversion 1].
+  split;
+  try solve [ intros; tauto
+            | intros; assumption
+            | inversion 1].
 
+  destruct RIneq.Rgt_dec; go; split; go.
   destruct RIneq.Rge_dec; go.
   destruct RIneq.Rlt_dec; go.
   destruct RIneq.Rle_dec; go.
