@@ -2,8 +2,8 @@ Require Import Coq.Classes.Morphisms.
 Require Import ExtLib.Structures.Applicative.
 Require Import ExtLib.Structures.Functor.
 Require Import ExtLib.Structures.CoFunctor.
-Require Import Charge.Logics.ILogic.
-Require Import Charge.Logics.ILEmbed.
+Require Import ChargeCore.Logics.ILogic.
+Require Import ChargeCore.Logics.ILEmbed.
 Require Import SLogic.Logic.
 
 Section with_state.

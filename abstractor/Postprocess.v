@@ -857,8 +857,13 @@ Definition velshim : fcmd :=
        (FAsn "a" (FConst fzero))
        (FAsn "a" (FVar "a")).
 
+Print f10.
+Locate f10.
+
+Definition f9 := Eval lazy in (concretize_float (nat_to_float 9)).
+
 Definition velshim2 : fcmd :=
-  FIte (FMinus (FConst f10) (FPlus (FVar "a") (FVar "v")))
+  FIte (FMinus (FConst f9) (FPlus (FVar "a") (FVar "v")))
        (FAsn "a" (FConst fzero))
        (FAsn "a" (FVar "a")).
 
@@ -1023,6 +1028,7 @@ Proof.
   destruct f; unfold asReal, fstate_lookup_force in *; rewrite H; simpl in *; congruence.
 Qed.
 
+(* use firstN, skipN *)
 Lemma hide_tail :
   forall {T : Type} (ls : list T),
     ls = match ls with
@@ -1033,6 +1039,9 @@ Proof.
   induction ls; reflexivity.
 Qed.
 
+Check firstn.
+Check firstn_skipn.      
+
 (* use theorem to hide tail. then use cbv whitelist that doesn't
            reduce the tail *)
 
@@ -1040,7 +1049,10 @@ Definition bound_fexpr2 := bound_fexpr.
 Opaque bound_fexpr2.
 
 Transparent ILInsts.ILFun_Ops.
+Require Import Coq.Logic.ClassicalFacts.
+Axiom pe_ax : prop_extensionality.
 
+(* Lemma used to automatically instantiate certain pattern of existentials *)
 Lemma exists_eq_instantiate :
   forall {T : Type} (y : T) (P : T -> Prop),
     (exists x : T, Some x = Some y /\ P x) <-> P y.
@@ -1049,6 +1061,16 @@ Proof.
   split.
   { intros. fwd. inversion H; subst; auto. }
   { intros. exists y. auto. }
+Qed.
+
+(* wrapped in propositional extensionality for faster rewriting *)
+Lemma exists_eq_eq_instantiate :
+  forall {T : Type} (y : T) (P : T -> Prop),
+    (exists x : T, Some x = Some y /\ P x) = P y.
+Proof.
+  intros.
+  apply pe_ax.
+  apply exists_eq_instantiate.
 Qed.
 
 Ltac peel_bound_hyp H :=
@@ -1089,6 +1111,7 @@ Proof.
   destruct f; simpl; intros; congruence.
 Qed.
 
+Print velshim2.
 
 Fact fwp_velshim2_full : preVarIsFloat "a" //\\ preVarIsFloat "v" //\\
                                        (embed_ex velshim_vs velshim2)
@@ -1137,6 +1160,10 @@ Proof.
           [lift2 fplus fmult float_one fzero Fappli_IEEE.Bopp Fappli_IEEE.Bplus Fappli_IEEE.Bmult custom_prec custom_emax prec emax custom_nan].
       eexists. split; [reflexivity|].
 
+      Print velshim2.
+
+      Check Fappli_IEEE.Bplus_correct.
+
       cbv beta zeta iota delta
           [maybe_lt0 maybe_ge0].
 
@@ -1174,6 +1201,51 @@ Proof.
         unfold asReal in H6.
         rewrite H6.
 
+        Lemma AnyOf_app :
+          forall (l1 l2 : list Prop),
+            AnyOf (l1 ++ l2) <-> AnyOf l1 \/ AnyOf l2.
+        Proof.
+          split.
+          { induction l1; intros. 
+            - auto.
+            - simpl in *.
+              destruct H; auto.
+              rewrite or_assoc. auto. }
+          { induction l1; intros.
+            - simpl in *. destruct H; auto; contradiction.
+            - simpl in *. rewrite or_assoc in H.
+              destruct H; auto. }
+        Qed.
+
+        Ltac peel_bounds_hyp H n :=
+          rewrite <- (firstn_skipn n) in H;
+          apply AnyOf_app in H;
+          change bound_fexpr with bound_fexpr2 in H at 2;
+          simpl in H; (* simpl bound_fexpr? *)
+          destruct H; [|change bound_fexpr2 with bound_fexpr in H].
+
+        (*peel_bounds_hyp H8 10.*)
+
+        simpl in H8.
+        
+        Ltac do_F2Rs :=
+          match goal with
+          | H: context[Fcore_defs.F2R ?X] |- _ =>
+            let FR := fresh "FR" in
+            let FRE := fresh "FRE" in
+            remember (Fcore_defs.F2R X) as FR eqn: FRE;
+              compute in FRE
+          | |- context[Fcore_defs.F2R ?X] =>
+            let FR := fresh "FR" in
+            let FRE := fresh "FRE" in
+            remember (Fcore_defs.F2R X) as FR eqn: FRE;
+              compute in FRE
+          end.
+
+        do_F2Rs.
+
+        (* find F2R's; remember them; pull them; compute them *)
+
         (* tactic for converting output of bound_term into a form Z3 can understand *)
         Ltac prepare_bound_hyp H :=
             unfold fstate_lookup_force, isVarValid, isFloatConstValid, asReal, lofst, error in *;
@@ -1210,6 +1282,7 @@ Proof.
                    | H1 : eq (F2OR ?x) ?r |- _ =>
                      apply F2OR_weaken in H1
                    end.
+          
         (*z3 solve.*)
         (* you can use this tactic to solve this part but it's too slow *)
         (* experiment in minimizing proof term follows *)
@@ -1232,9 +1305,115 @@ Proof.
                   simpleBound28 simpleBound29 simpleBound30 simpleBound31 simpleBound32 simpleBound33
                   (*simpleBoundM1 simpleBoundM2 simpleBoundM3 simpleBoundM4*)
             ] in H8.
-        Locate simpleBoundM1.
-        rewrite H4 in H8.
-        rewrite H5 in H8.
+        
+        unfold fstate_lookup_force in *.
+
+        repeat match goal with
+               | H : fstate_lookup _ _ = Some _ |- _ =>
+                 rewrite H in *; clear H
+               end.
+        (* Time repeat rewrite exists_eq_instantiate in H8. (* 8.502s *) *)
+        Time repeat rewrite exists_eq_eq_instantiate in H8.
+        unfold asReal in *.
+        repeat match goal with
+               | H : F2OR ?X = Some ?Y |- _ =>
+                 apply F2OR_FloatToR' in H
+               end.
+        show_value floatMin.
+        show_value floatMax.
+        show_value error.
+        
+
+        z3 solve. admit.
+      }
+      {
+
+        simpl.
+        (* left. *)
+
+        Lemma pe_triv :
+          forall (A : Prop),
+            A -> (A = True).
+        Proof.
+          intros.
+          apply pe_ax. split; auto.
+        Qed.
+
+
+        repeat match goal with
+               | |- context[isVarValid ?str ?sta] =>
+                 let HV := fresh "Hvalid" in
+                 assert (isVarValid str sta) as HV by proveVarValid;
+                   rewrite (pe_triv _ HV)
+               end.
+
+        unfold fstate_lookup_force.
+        repeat match goal with
+               | H : fstate_lookup _ _ = Some _ |- _ =>
+                 rewrite H in *; clear H
+               end.
+
+        unfold asReal in *.
+        repeat match goal with
+               | H : F2OR ?X = Some ?Y |- _ =>
+                 apply F2OR_FloatToR' in H
+               end.
+        show_value floatMin.
+        show_value floatMax.
+        show_value error.
+        unfold lift2, lofst.
+        do_F2Rs.
+
+        repeat rewrite exists_eq_eq_instantiate.
+
+        (* These will be solvable with arithmetic soon after some tweaks
+           to the backend (bound.v) *)
+        repeat match goal with
+               | |- context[validFloat ?X] =>
+                 let HV := fresh "HFvalid" in 
+                 assert (validFloat X) as HV by admit;
+                   rewrite (pe_triv _ HV)
+               end.
+
+        idtac.
+
+        assert (-1000 < FloatToR x4 < 1000)%R by admit.
+        assert (-1000 < FloatToR x5 < 1000)%R by admit.
+
+        z3 solve. admit.
+      }
+      }
+      {
+        breakAbstraction.
+        intros.
+        unfold fstate_get_rval in *.
+        fwd.
+        consider (fstate_lookup x0 "a"); intros; try contradiction.
+        consider (F2OR f); intros; try contradiction.
+        consider (fstate_lookup x0 "v"); intros; try contradiction.        
+        consider (F2OR f0); intros; try contradiction.
+        unfold vmodels, models in *.
+        generalize (H "a"); generalize (H "v"); intros.
+        unfold velshim_vs in *.
+        simpl in *.
+        destruct H5; destruct H6.
+        destruct H5;  auto.
+        destruct H6; auto.
+        fwd.
+        rewrite <- fstate_lookup_fm_lookup in H5, H6.
+        unfold asReal in *.
+        rewrite H5 in H2. inversion H2.
+        rewrite H6 in H0. inversion H0.
+        subst.
+        rewrite H1 in H9. inversion H9.
+        rewrite H3 in H10. inversion H10.
+        z3 solve.
+        admit.
+      }
+Admitted.        
+        (*Time rewrite_strat (topdown (choice H11 (choice exists_eq_instantiate (choice H4 H5)))) in H8.*
+        
+
         Lemma validity_condition :
           forall v s x r,
           fstate_lookup v s = Some x ->

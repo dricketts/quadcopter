@@ -1,8 +1,8 @@
 Require Import Coq.Lists.List.
 Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.Reals.Ranalysis1.
-Require Import Charge.Logics.ILogic.
-Require Import Charge.Logics.ILEmbed.
+Require Import ChargeCore.Logics.ILogic.
+Require Import ChargeCore.Logics.ILEmbed.
 Require Import SLogic.Logic.
 Require Import SLogic.Instances.
 

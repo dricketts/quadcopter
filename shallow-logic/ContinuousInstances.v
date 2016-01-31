@@ -1,6 +1,6 @@
 Require Import ExtLib.Structures.Applicative.
 Require Import ExtLib.Structures.Functor.
-Require Import Charge.Logics.ILogic.
+Require Import ChargeCore.Logics.ILogic.
 Require Import SLogic.Continuous.
 
 Section with_state.

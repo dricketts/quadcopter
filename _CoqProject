@@ -13,18 +13,18 @@
 Z3-plugin/theories/Tactic.v
 Z3-plugin/src/z3Tactic.ml4
 
-shallow-logic/Stream.v
-shallow-logic/Logic.v
-shallow-logic/Instances.v
-shallow-logic/BasicProofRules.v
-shallow-logic/LTLNotation.v
-shallow-logic/Tactics.v
-shallow-logic/Continuous.v
-shallow-logic/ContinuousInstances.v
-shallow-logic/BoundingFunctions.v
-shallow-logic/Robustness.v
+#shallow-logic/Stream.v
+#shallow-logic/Logic.v
+#shallow-logic/Instances.v
+#shallow-logic/BasicProofRules.v
+#shallow-logic/LTLNotation.v
+#shallow-logic/Tactics.v
+#shallow-logic/Continuous.v
+#shallow-logic/ContinuousInstances.v
+#shallow-logic/BoundingFunctions.v
+#shallow-logic/Robustness.v
 
-shallow-examples/Velocity.v
+#shallow-examples/Velocity.v
 
 logic/Stream.v
 logic/Syntax.v

@@ -1,7 +1,7 @@
 Require Import Coq.Reals.Rdefinitions.
 Require Import Coq.micromega.Psatz.
-Require Import Charge.Logics.ILogic.
-Require Import ChargeTactics.Tactics.
+Require Import ChargeCore.Logics.ILogic.
+Require Import ChargeCoreTactics.Tactics.
 Require Import SLogic.Logic.
 Require Import SLogic.BasicProofRules.
 

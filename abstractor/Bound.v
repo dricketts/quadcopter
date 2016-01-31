@@ -12475,7 +12475,8 @@ Proof.
   }
 
   {
-    simpl in *.    
+    simpl in *.
+    
     intros.
     destruct H.
     {
@@ -12821,6 +12822,7 @@ Proof.
     simpl in *.
     intros.   
     eapply In_cross_In in H.
+    
     simpl in H.
     forward_reason.
     destruct H2.
@@ -12833,12 +12835,14 @@ Proof.
       destruct H2.
       destruct H3.
       destruct H4.
+      clear H5.
+(*      
       destruct H5.
       destruct H5.
       destruct H5.
       destruct H6.
       destruct H6.
-      
+*)      
       forward_reason.
       assert (floatToReal x2 = floatToReal x2).
       intuition.

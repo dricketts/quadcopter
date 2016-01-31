@@ -4,9 +4,9 @@ Require Import Coq.Lists.List.
 Require Import Coq.Reals.Reals.
 Require Import Coq.micromega.Psatz.
 Require Import ExtLib.Structures.Applicative.
-Require Import Charge.Logics.ILogic.
-Require Import Charge.Logics.ILEmbed.
-Require Import ChargeTactics.Tactics.
+Require Import ChargeCore.Logics.ILogic.
+Require Import ChargeCore.Logics.ILEmbed.
+Require Import ChargeCoreTactics.Tactics.
 Require Import SLogic.Logic.
 Require Import SLogic.LTLNotation.
 Require Import SLogic.Instances.
