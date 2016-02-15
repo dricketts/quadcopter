@@ -1,11 +1,6 @@
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Raxioms.
 Require Import Coq.micromega.Psatz.
-(*Add LoadPath "../compcert" as compcert.
-Add LoadPath "../coq-ext-lib/theories" as ExtLib.
-Add LoadPath "../tla" as TLA.
-Add LoadPath "../Charge/Charge!/bin/Charge" as Charge.
-Add LoadPath "../ChargeTactics" as ChargeTactics.*)
 Require Import Source.
 Require Import Flocq.Core.Fcore_defs.
 
@@ -26,7 +21,7 @@ Require Import Coq.micromega.Psatz.
 Require Import Flocq.Prop.Fprop_relative.
 Require Import Flocq.Core.Fcore_Raux.
 Require Import Flocq.Core.Fcore_FLT.
-Require Import Flocq.Core.Fcore_generic_fmt.                       
+Require Import Flocq.Core.Fcore_generic_fmt.
 
 
 Require Import Flocq.Core.Fcore_Raux.
@@ -39,8 +34,8 @@ Definition error := bpow radix2 (- (custom_prec) + 1).
 Print Formula.
 
 Record singleBoundTerm : Type := mkSBT {lb : fstate -> R;
-                                 ub : fstate -> R ; 
-                                 premise : fstate -> Prop}. 
+                                 ub : fstate -> R ;
+                                 premise : fstate -> Prop}.
 
 (*used for addition when the result is positive and multiplication when both the arguments are positive*)
 
@@ -240,93 +235,93 @@ Definition bd := mkSBT (fun _ => R0) (fun _ => R0) (lfalse).
 Local Open Scope arithable_scope.
 
 
-Definition simpleBound 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla: fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 - error)) 
-        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error)) 
-        fla. 
+Definition simpleBound
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla: fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 - error))
+        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error))
+        fla.
 
 (*used for subtraction when the result is positive*)
-Definition simpleBound2 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 - error)) 
-        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error)) 
-        fla. 
+Definition simpleBound2
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 - error))
+        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
+        fla.
 
 (*used for multiplication - when both the arguments is negative*)
-Definition simpleBound3 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (ub triple1)  (ub triple2)) * (fun _ => R1 - error)) 
-        ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error)) 
+Definition simpleBound3
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (ub triple1)  (ub triple2)) * (fun _ => R1 - error))
+        ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for addition - negative result*)
-Definition simpleBound4 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1)  (lb triple2)) * (fun _ => R1 + error)) 
-        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 - error)) 
+Definition simpleBound4
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1)  (lb triple2)) * (fun _ => R1 + error))
+        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 - error))
         fla.
 
 (*used for subtraction when the result is negative*)
-Definition simpleBound5 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 + error)) 
-        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 - error)) 
+Definition simpleBound5
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 + error))
+        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 - error))
         fla.
 
 (*used for multiplication - when one of the arguments is negative*)
-Definition simpleBound6 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (ub triple1)  (lb triple2)) * (fun _ => R1 + error)) 
-        ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 - error)) 
+Definition simpleBound6
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (ub triple1)  (lb triple2)) * (fun _ => R1 + error))
+        ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 - error))
         fla.
 
 (*used for multiplication - when one of the arguments is negative*)
-Definition simpleBound7 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 + error)) 
-        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 - error)) 
+Definition simpleBound7
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 + error))
+        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 - error))
         fla.
 
 (*used for multiplication - when one of the arguments is negative*)
-Definition simpleBound8 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 + error)) 
-        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error)) 
+Definition simpleBound8
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1)  (ub triple2)) * (fun _ => R1 + error))
+        ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for additon - when lb1 + lb2 < floatMin*)
 Definition simpleBound9
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => 0%R)
-        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error)) 
+        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error))
         fla.
 
 Definition floatMax:= bpow radix2 custom_emax.
@@ -334,247 +329,247 @@ Definition floatMin := bpow radix2 custom_emin%Z.
 
 (*used for addition when ub1 + ub2 < floatMin*)
 Definition simpleBound10
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => 0%R) (fun _ => floatMin)
         fla.
 
 (*used for subtraction - when lb1 + lb2 is greater than -floatMin*)
 Definition simpleBound11
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1)  (lb triple2)) * (fun _ => R1 + error)) (fun _ => 0%R)
         fla.
 
 (* used for addition - when lb1+lb2 >= -floatMin and when ub1 + ub2 >= floatMin*)
 Definition simpleBound12
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT (fun _ => R0 - floatMin) 
-        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error)) 
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT (fun _ => R0 - floatMin)
+        ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error))
         fla.
 
 (* used for addition - when ub1+ub2 < floatMin and when lb1 + lb2 <= floatMin*)
 Definition simpleBound13
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
-  mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error)) 
-        (fun _ => floatMin) 
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
+  mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error))
+        (fun _ => floatMin)
         fla.
 
 (*used for addition when lb1 + lb2 >= 0 - floatMin and when ub1 + ub2 <= floatMin*)
 Definition simpleBound14
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin) (fun _ => floatMin)
         fla.
 
 (*used for addition when lb1 + lb2 is between 0 and floatMin and ub1 + ub2 >= floatMin *)
-Definition simpleBound15 
-           (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+Definition simpleBound15
+           (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0) ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error))
         fla.
-           
+
 (*used for addition when lb1 + lb2 is between 0 - floatMin and 0 and ub1 + ub2 >= floatMin *)
 Definition simpleBound16
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin) ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error))
         fla.
-  
-        
+
+
 (*used for addition when lb1 + lb2 is less than 0 - floatMin and ub1 + ub2 >= floatMin *)
 Definition simpleBound17
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 + error))
-        fla.         
+        fla.
 
-        
+
 (*used for addition when lb1 + lb2 is between 0 and floatMin and ub1 + ub2 is between 0 and floatMin *)
 Definition simpleBound18
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0)
         (fun _ => floatMin)
-        fla. 
+        fla.
 
 (*used for addition when lb1 + lb2 is between -floatMin and 0 and ub1 + ub2 is between 0 and floatMin *)
 Definition simpleBound19
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         (fun _ => floatMin)
-        fla. 
+        fla.
 
 (*used for addition when lb1 + lb2 is less than -floatMin and ub1 + ub2 is between 0 and floatMin *)
 Definition simpleBound20
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error))
         (fun _ => floatMin)
         fla.
 
 (*used for addition when lb1 + lb2 is between -floatMin and 0 and ub1 + ub2 is between -floatMin and 0*)
 Definition simpleBound21
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         (fun _ => R0)
         fla.
 
 (*used for addition when lb1 + lb2 is less than -floatMin and ub1 + ub2 is between -floatMin and 0*)
 Definition simpleBound22
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error))
         (fun _ => R0)
         fla.
 
 (*used for addition when lb1 + lb2 is less than -floatMin and ub1 + ub2 is less than -floatMin*)
 Definition simpleBound23
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (lb triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (ub triple2)) * (fun _ => R1 - error))
         fla.
 
 (*used for subtraction when lb1 >= ub2 and lb1 - ub2 < floatMin, ub1 - lb2 >= floatMin*)
 Definition simpleBoundM3
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0)
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for subtraction when lb1 >= ub2 and lb1 - ub2 < floatMin, ub1 - lb2 < floatMin*)
 Definition simpleBoundM4
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0)
         (fun _ => floatMin )
         fla.
 
 (*used for subtraction when lb1 < ub2, ub1 >= lb2, lb1 - ub2 > 0 - floatMin, ub1 - lb2 >= floatMin*)
 Definition simpleBoundM5
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for subtraction when lb1 < ub2, ub1 >= lb2, lb1 - ub2 > 0 - floatMin, ub1 - lb2 < floatMin*)
 Definition simpleBoundM6
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         (fun _ => floatMin)
         fla.
 
 (*used for subtraction when lb1 < ub2, ub1 >= lb2, lb1 - ub2 <= 0 - floatMin, ub1 - lb2 > floatMin*)
 Definition simpleBoundM7
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for subtraction when lb1 < ub2, ub1 >= lb2, lb1 - ub2 <= 0 - floatMin, ub1 - lb2 < floatMin*)
 Definition simpleBoundM8
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         (fun _ => floatMin)
         fla.
 
 (*used for subtraction when ub1 < lb2, ub1 - lb2 > 0 - floatMin, lb1 - ub2 > 0 - floatMin*)
 Definition simpleBoundM9
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         (fun _ => R0)
         fla.
 
 (*used for subtraction when ub1 < lb2, ub1 - lb2 > 0 - floatMin, lb1 - ub2 <= 0 - floatMin*)
 Definition simpleBoundM10
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         (fun _ => R0)
         fla.
 
 (*used for subtraction when ub1 < lb2, ub1 - lb2 <= 0 - floatMin*)
 Definition simpleBoundM11
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 - error))
         fla.
 
 (*used for subtraction when lb1 >= lb2 and ub1 >= ub2 and ub2 - lb1 >= floatMin*)
 Definition simpleBound24
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for subtraction when lb1 >= lb2 and ub1 >= ub2 and ub2 - lb1 < floatMin and ub1 - lb2 >= floatMin*)
 Definition simpleBound25
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
@@ -582,20 +577,20 @@ Definition simpleBound25
 
 (*used for subtraction when lb1 >= lb2 and ub1 >= ub2 and ub2 - lb1 < floatMin and ub1 - lb2 < floatMin*)
 Definition simpleBound26
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         (fun _ => floatMin)
         fla.
 
 (*used for subtraction when lb1 >= lb2 and ub1 < ub2 and ub2 - lb1 >= floatMin and ub1 - lb2 >= floatMin*)
 Definition simpleBound27
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
    mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
@@ -603,105 +598,101 @@ Definition simpleBound27
 
 (*used for subtraction when lb1 >= lb2 and ub1 < ub2 and ub2 - lb1 >= floatMin and ub1 - lb2 < floatMin*)
 Definition simpleBound28
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
    mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
          (fun _ => floatMin)
         fla.
 
 (*used for subtraction when lb1 >= lb2 and ub1 < ub2 and ub2 - lb1 < floatMin and ub1 - lb2 >= floatMin*)
 Definition simpleBound29
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT  (fun _ => R0 - floatMin)
          ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for subtraction when lb1 >= lb2 and ub1 < ub2 and ub2 - lb1 < floatMin and ub1 - lb2 >= floatMin*)
 Definition simpleBound30
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT  (fun _ => R0 - floatMin)
           (fun _ => floatMin)
         fla.
 
 (*used for subtraction when lb1 < lb2 and ub1 > ub2 and ub1 - lb2 >= floatMin *)
 Definition simpleBound31
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         ((combFunc (ub triple1) (lb triple2)) * (fun _ => R1 + error))
         fla.
 
 (*used for subtraction when lb1 < lb2 and ub1 > ub2 and ub1 - lb2 < floatMin and ub2 - lb1 >= floatMin*)
 Definition simpleBound32
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT ((combFunc (lb triple1) (ub triple2)) * (fun _ => R1 + error))
         (fun _ => floatMin)
         fla.
 
 (*used for subtraction when lb1 < lb2 and ub1 > ub2 and ub1 - lb2 < floatMin and ub2 - lb1 < floatMin*)
 Definition simpleBound33
-            (triple1 triple2:singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))  
-           (fla:fstate -> Prop) : 
-  singleBoundTerm := 
+            (triple1 triple2:singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (fla:fstate -> Prop) :
+  singleBoundTerm :=
   mkSBT (fun _ => R0 - floatMin)
         (fun _ => floatMin)
         fla.
 
-Arguments B754_zero {_ _} _.
-Arguments B754_infinity {_ _} _.
-Arguments B754_nan {_ _} _ _.
-Arguments B754_finite {_ _} _ _ _ _.
 
-Definition isFloatConstValid (f:binary_float custom_prec custom_emax) : Prop 
-  := match f with 
-       | B754_zero _ => True
-       | B754_infinity _=> False
-       | B754_nan _ _=> False
-       | B754_finite _ _ _ _=> True
+Definition isFloatConstValid (f:binary_float custom_prec custom_emax) : Prop
+  := match f with
+       | B754_zero _ _ _ => True
+       | B754_infinity _ _ _ => False
+       | B754_nan _ _ _ _=> False
+       | B754_finite _ _ _ _ _ _=> True
      end.
 
 
-Definition plusResultValidity (t1 t2 : NowTerm) (fState : fstate):  Prop:= 
+Definition plusResultValidity (t1 t2 : NowTerm) (fState : fstate):  Prop:=
       (
           let result := (lift2
                            (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
-                                  custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2)) 
-          in match result with 
-                | Some f => isFloatConstValid f 
+                                  custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2))
+          in match result with
+                | Some f => isFloatConstValid f
                 | None => False
              end).
 
-Definition minusResultValidity (t1 t2 : NowTerm) (fState : fstate) : Prop := 
+Definition minusResultValidity (t1 t2 : NowTerm) (fState : fstate) : Prop :=
       (
           let result := (lift2
                            (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
-                                  custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2)) 
-          in match result with 
-                | Some f => isFloatConstValid f 
+                                  custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2))
+          in match result with
+                | Some f => isFloatConstValid f
                 | None => False
               end).
 
-Definition multResultValidity (t1 t2 : NowTerm) (fState : fstate) : Prop := 
+Definition multResultValidity (t1 t2 : NowTerm) (fState : fstate) : Prop :=
       (
           let result := (lift2
                            (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
-                                  custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2)) 
-          in match result with 
-                | Some f => isFloatConstValid f 
+                                  custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2))
+          in match result with
+                | Some f => isFloatConstValid f
                 | None => False
              end).
 
@@ -713,10 +704,10 @@ Definition lofst (r : R) : fstate -> R :=
 
 
 Definition floatToReal (f:binary_float custom_prec custom_emax) : option R :=
-  match f with 
-    | B754_zero _ =>  Some (B2R _ _ f)
-    | B754_infinity _ => None
-    | B754_nan _ _ => None
+  match f with
+    | B754_zero _ _ _ =>  Some (B2R _ _ f)
+    | B754_infinity _ _ _ => None
+    | B754_nan _ _ _ _ => None
     | _ => Some (B2R _ _ f)
     end.
 
@@ -727,111 +718,90 @@ Definition validFloat (f : binary_float custom_prec custom_emax) : Prop :=
 
 
 Definition combineTriplePlus (triple triple2 : singleBoundTerm) (t1 t2 : NowTerm):=
-  ((simpleBound triple triple2 a_plus 
+  ((simpleBound triple triple2 a_plus
                 (premise triple //\\
-                         premise triple2 //\\ 
-                         ((lofst floatMin <= lb triple + lb triple2)) //\\ 
-                         ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
-                         (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                         (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                         premise triple2 //\\
+                         ((lofst floatMin <= lb triple + lb triple2)) //\\
+                         ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax)
    )) ::
-      (simpleBound15 triple triple2 a_plus 
+      (simpleBound15 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
-                              ((lb triple + lb triple2 < lofst floatMin)) //\\ 
+                              premise triple2 //\\
+                              ((lb triple + lb triple2 < lofst floatMin)) //\\
                               ((lofst floatMin <= ub triple + ub triple2)) //\\
                               ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
-                              (lb triple + lb triple2 >= lofst R0) //\\ 
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                              (lb triple + lb triple2 >= lofst R0)
       )) ::
-      (simpleBound16 triple triple2 a_plus 
+      (simpleBound16 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
-                              (lb triple + lb triple2 > lofst 0 - lofst floatMin) //\\ 
+                              premise triple2 //\\
+                              (lb triple + lb triple2 > lofst 0 - lofst floatMin) //\\
                               (ub triple + ub triple2 >=  lofst floatMin) //\\
                               ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\
-                              (lb triple + lb triple2 < lofst R0) //\\ 
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                              (lb triple + lb triple2 < lofst R0)
       )) ::
-      (simpleBound17 triple triple2 a_plus 
+      (simpleBound17 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
-                              (lb triple + lb triple2 <= lofst 0 - lofst floatMin) //\\ 
+                              premise triple2 //\\
+                              (lb triple + lb triple2 <= lofst 0 - lofst floatMin) //\\
                               (ub triple + ub triple2 >=  lofst floatMin) //\\
                               ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
-                              (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\ 
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                              (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax)
       )) ::
-      (simpleBound18 triple triple2 a_plus 
+      (simpleBound18 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
-                              (lb triple + lb triple2 < lofst floatMin) //\\ 
-                              (lb triple + lb triple2 >= lofst R0) //\\ 
+                              premise triple2 //\\
+                              (lb triple + lb triple2 < lofst floatMin) //\\
+                              (lb triple + lb triple2 >= lofst R0) //\\
                               (ub triple + ub triple2 <  lofst floatMin) //\\
                               (ub triple + ub triple2 >=  lofst R0) //\\
-                             
-                              ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
-                              
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
-      )) :: 
-      (simpleBound19 triple triple2 a_plus 
+
+                              ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax)
+      )) ::
+      (simpleBound19 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
-                              (lb triple + lb triple2 > lofst 0 - lofst floatMin) //\\ 
-                              (lb triple + lb triple2 < lofst R0) //\\ 
+                              premise triple2 //\\
+                              (lb triple + lb triple2 > lofst 0 - lofst floatMin) //\\
+                              (lb triple + lb triple2 < lofst R0) //\\
                               (ub triple + ub triple2 < lofst floatMin) //\\
                               (ub triple + ub triple2 >= lofst R0) //\\
                               ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
-                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax)
       )) ::
-      (simpleBound20 triple triple2 a_plus 
+      (simpleBound20 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
-                              (lb triple + lb triple2 <= lofst 0 - lofst floatMin) //\\ 
+                              premise triple2 //\\
+                              (lb triple + lb triple2 <= lofst 0 - lofst floatMin) //\\
                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\
                               (ub triple + ub triple2 <  lofst floatMin) //\\
                               (ub triple + ub triple2 >=  lofst R0) //\\
-                              ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                              ((ub triple + ub triple2)*(lofst (1+error)) < lofst floatMax)
       )) ::
-      (simpleBound21 triple triple2 a_plus 
+      (simpleBound21 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
+                              premise triple2 //\\
                               (lb triple + lb triple2 < lofst R0) //\\
                               (lb triple + lb triple2 > lofst R0 - lofst floatMin) //\\
                               (ub triple + ub triple2 < lofst R0) //\\
                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\
-                              (ub triple + ub triple2 > lofst R0 - lofst floatMin) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                              (ub triple + ub triple2 > lofst R0 - lofst floatMin)
       )) ::
-      (simpleBound22 triple triple2 a_plus 
+      (simpleBound22 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
+                              premise triple2 //\\
                               (lb triple + lb triple2 <= lofst R0 - lofst floatMin) //\\
                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\
                               (ub triple + ub triple2 < lofst R0) //\\
-                              (ub triple + ub triple2 > lofst R0 - lofst floatMin) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
+                              (ub triple + ub triple2 > lofst R0 - lofst floatMin)
       )) ::
-      (simpleBound23 triple triple2 a_plus 
+      (simpleBound23 triple triple2 a_plus
                      (premise triple //\\
-                              premise triple2 //\\ 
+                              premise triple2 //\\
                               (lb triple + lb triple2 <= lofst R0 - lofst floatMin) //\\
                               (((lofst 0 - lb triple + (lofst 0 - lb triple2))*(lofst (1+error))) < lofst floatMax) //\\
-                              (ub triple + ub triple2 <= lofst R0 - lofst floatMin) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f)) //\\
-                              (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))
-      ))  
+                              (ub triple + ub triple2 <= lofst R0 - lofst floatMin)
+      ))
       :: List.nil).
 (*
     (((ub triple - ub triple2 >= floatMin) //\\ (lb triple - lb triple2 >=floatMin) //\\ (ub triple2 - lb triple >= floatMin)) \/
@@ -840,133 +810,107 @@ Definition combineTriplePlus (triple triple2 : singleBoundTerm) (t1 t2 : NowTerm
                                          ((ub triple2 - ub triple >=floatMin) /\ (ub triple - lb triple2 >=floatMin) /\ (lb triple2 - lb triple >= floatMin)) ) /\
 *)
 Definition combineTripleMinus (triple triple2 : singleBoundTerm) (t1 t2:NowTerm):=
-  ((simpleBound2 triple triple2 a_minus 
-                 (premise triple //\\ 
-                  premise triple2  //\\ 
-                 (lb triple - ub triple2 >= lofst floatMin) //\\ 
-                ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                 (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))))
-     ::(simpleBoundM3 triple triple2 a_minus 
-                      (premise triple //\\ 
-                               premise triple2  //\\ 
+  ((simpleBound2 triple triple2 a_minus
+                 (premise triple //\\
+                  premise triple2  //\\
+                 (lb triple - ub triple2 >= lofst floatMin) //\\
+                ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
+     ::(simpleBoundM3 triple triple2 a_minus
+                      (premise triple //\\
+                               premise triple2  //\\
                                (lb triple >= ub triple2) //\\
-                               (lb triple - ub triple2 < lofst floatMin) //\\ 
+                               (lb triple - ub triple2 < lofst floatMin) //\\
                                (ub triple - lb triple2 >= lofst floatMin) //\\
-                               ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                               (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                               (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))))
-          ::(simpleBoundM4 triple triple2 a_minus 
-                      (premise triple //\\ 
-                               premise triple2  //\\ 
+                               ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
+          ::(simpleBoundM4 triple triple2 a_minus
+                      (premise triple //\\
+                               premise triple2  //\\
                                (lb triple >= ub triple2) //\\
-                               (lb triple - ub triple2 < lofst floatMin) //\\ 
+                               (lb triple - ub triple2 < lofst floatMin) //\\
                                (ub triple - lb triple2 < lofst floatMin) //\\
-                               ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                               (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                               (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))))
+                               ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
 
-          ::(simpleBoundM5 triple triple2 a_minus 
-                      (premise triple //\\ 
-                               premise triple2  //\\ 
+          ::(simpleBoundM5 triple triple2 a_minus
+                      (premise triple //\\
+                               premise triple2  //\\
                                (lb triple < ub triple2) //\\
                                (lb triple - ub triple2 > lofst R0 - lofst floatMin) //\\
                                (ub triple - lb triple2 >= lofst floatMin) //\\
                                ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                               ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                               (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                               (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-          
-          ::(simpleBoundM6 triple triple2 a_minus 
-                           (premise triple //\\ 
-                                    premise triple2  //\\ 
+                               ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
+
+          ::(simpleBoundM6 triple triple2 a_minus
+                           (premise triple //\\
+                                    premise triple2  //\\
                                     (lb triple < ub triple2) //\\
                                     (ub triple >= lb triple2) //\\
                                     (lb triple - ub triple2 > lofst R0 - lofst floatMin) //\\
                                     (ub triple - lb triple2 < lofst floatMin) //\\
                                     ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                                    ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-          ::(simpleBoundM7 triple triple2 a_minus 
-                           (premise triple //\\ 
-                                    premise triple2  //\\ 
+                                    ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
+          ::(simpleBoundM7 triple triple2 a_minus
+                           (premise triple //\\
+                                    premise triple2  //\\
                                     (lb triple - ub triple2 <= lofst R0 - lofst floatMin) //\\
                                     (ub triple - lb triple2 >= lofst floatMin) //\\
                                     ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                                    ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-          ::(simpleBoundM8 triple triple2 a_minus 
-                           (premise triple //\\ 
-                                    premise triple2  //\\ 
+                                    ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
+          ::(simpleBoundM8 triple triple2 a_minus
+                           (premise triple //\\
+                                    premise triple2  //\\
                                     (ub triple >= lb triple2) //\\
                                     (lb triple - ub triple2 <= lofst R0 - lofst floatMin) //\\
                                     (ub triple - lb triple2 < lofst floatMin) //\\
                                     ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                                    ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-          ::(simpleBoundM9 triple triple2 a_minus 
-                           (premise triple //\\ 
-                                    premise triple2  //\\ 
+                                    ((ub triple - lb triple2)*(lofst (1+error)) < lofst floatMax)))
+          ::(simpleBoundM9 triple triple2 a_minus
+                           (premise triple //\\
+                                    premise triple2  //\\
                                     (ub triple < lb triple2) //\\
                                     (lb triple - ub triple2 > lofst R0 - lofst floatMin) //\\
                                     (ub triple - lb triple2 > lofst R0 - lofst floatMin) //\\
-                                    ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-          ::(simpleBoundM10 triple triple2 a_minus 
-                           (premise triple //\\ 
-                                    premise triple2  //\\ 
+                                    ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) ))
+          ::(simpleBoundM10 triple triple2 a_minus
+                           (premise triple //\\
+                                    premise triple2  //\\
                                     (ub triple < lb triple2) //\\
                                     (lb triple - ub triple2 <= lofst R0 - lofst floatMin) //\\
                                     (ub triple - lb triple2 > lofst R0 - lofst floatMin) //\\
-                                    ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-                    ::(simpleBoundM11 triple triple2 a_minus 
-                           (premise triple //\\ 
-                                    premise triple2  //\\ 
+                                    ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax)))
+                    ::(simpleBoundM11 triple triple2 a_minus
+                           (premise triple //\\
+                                    premise triple2  //\\
                                     (ub triple - lb triple2 <= lofst R0 - lofst floatMin) //\\
-                                    ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) //\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                                    (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
+                                    ((ub triple2 - lb triple)*(lofst (1+error)) < lofst floatMax) ))
      :: List.nil).
 
 
-   
+
 Definition combineTripleMult (triple triple2 : singleBoundTerm) (t1 t2:NowTerm):=
-  ((simpleBound triple triple2 a_mult 
-                (premise triple //\\ 
-                 premise triple2 //\\ 
-                 (lofst floatMin <= lb triple * lb triple2) //\\ 
-                 ((ub triple * ub triple2)*(lofst (1+error)) < lofst floatMax) //\\ 
-                 (lb triple >= lofst R0) //\\ (lb triple2 >= lofst R0) //\\ 
-                (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                 (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))))
+  ((simpleBound triple triple2 a_mult
+                (premise triple //\\
+                 premise triple2 //\\
+                 (lofst floatMin <= lb triple * lb triple2) //\\
+                 ((ub triple * ub triple2)*(lofst (1+error)) < lofst floatMax) //\\
+                 (lb triple >= lofst R0) //\\ (lb triple2 >= lofst R0) ))
     :: (simpleBound3 triple triple2 a_mult
-                      (premise triple //\\ 
-                       premise triple2 //\\ 
-                       (lofst floatMin <= (lofst 0 - ub triple) * (lofst 0 - ub triple2)) //\\ 
-                       (((lofst 0 - lb triple) * (lofst 0 - lb triple2))*(lofst (1+error)) < lofst floatMax) //\\ 
-                       (ub triple < lofst R0) //\\ (ub triple2 < lofst R0) //\\ 
-                       (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                 (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f))))
+                      (premise triple //\\
+                       premise triple2 //\\
+                       (lofst floatMin <= (lofst 0 - ub triple) * (lofst 0 - ub triple2)) //\\
+                       (((lofst 0 - lb triple) * (lofst 0 - lb triple2))*(lofst (1+error)) < lofst floatMax) //\\
+                       (ub triple < lofst R0) //\\ (ub triple2 < lofst R0) ))
           :: (simpleBound6 triple triple2 a_mult
-                      (premise triple //\\ 
-                       premise triple2 //\\ 
-                       (lofst floatMin <= (lb triple) * (lofst 0 - (ub triple2))) //\\ 
-                       ((ub triple * (lofst 0 - lb triple2))*(lofst (1+error)) < lofst floatMax) //\\ 
-                       (lb triple >= lofst R0) //\\  (ub triple2 < lofst R0) //\\ (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                 (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) 
-                      ::  (simpleBound7 triple triple2 a_mult 
-                                        (premise triple //\\ 
-                                         premise triple2 //\\ 
-                                         (lofst floatMin <= (lofst 0 - ub triple) * lb triple2) //\\ 
-                                         (((lofst 0 - lb triple) * (ub triple2))*(lofst (1+error)) < lofst floatMax) //\\ 
-                                         (ub triple < lofst R0) //\\  (lb triple2 >= lofst R0) //\\ (fun fState => exists f, (Some f = eval_NowTerm fState t1 /\ validFloat f))//\\
-                 (fun fState => exists f, (Some f = eval_NowTerm fState t2 /\ validFloat f)))) :: List.nil).   
+                      (premise triple //\\
+                       premise triple2 //\\
+                       (lofst floatMin <= (lb triple) * (lofst 0 - (ub triple2))) //\\
+                       ((ub triple * (lofst 0 - lb triple2))*(lofst (1+error)) < lofst floatMax) //\\
+                       (lb triple >= lofst R0) //\\  (ub triple2 < lofst R0) ))
+                      ::  (simpleBound7 triple triple2 a_mult
+                                        (premise triple //\\
+                                         premise triple2 //\\
+                                         (lofst floatMin <= (lofst 0 - ub triple) * lb triple2) //\\
+                                         (((lofst 0 - lb triple) * (ub triple2))*(lofst (1+error)) < lofst floatMax) //\\
+                                         (ub triple < lofst R0) //\\  (lb triple2 >= lofst R0) )) :: List.nil).
 Local Close Scope HP_scope.
 
 Fixpoint cross {T U R : Type} (f : T -> U -> list R) (ls : list T) (rs : list U) : list R :=
@@ -991,7 +935,7 @@ Fixpoint cross {T U R : Type} (f : T -> U -> list R) (ls : list T) (rs : list U)
           destruct H.
           { exists a; apply in_flat_map in H; inversion H; exists x0;
             intuition.
-          }          
+          }
           { eapply IHls in H.
             repeat match goal with
                    | H : exists x , _ |- _ => destruct H
@@ -999,7 +943,7 @@ Fixpoint cross {T U R : Type} (f : T -> U -> list R) (ls : list T) (rs : list U)
                    end.
             do 2 eexists; split; eauto. } }
         { intros.
-          repeat destruct H. 
+          repeat destruct H.
           { constructor; apply in_flat_map;
             exists x1; apply H0.
           }
@@ -1013,152 +957,152 @@ Fixpoint cross {T U R : Type} (f : T -> U -> list R) (ls : list T) (rs : list U)
 
     Check simpleBound4.
 
-Definition plusMinusfoldBoundListWithTriple 
-           (list:list singleBoundTerm) 
-           (triple: singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R)) 
-           (simpleBoundFunc1 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
-                              singleBoundTerm) 
-           (simpleBoundFunc2 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
-                              singleBoundTerm) 
-  := 
+Definition plusMinusfoldBoundListWithTriple
+           (list:list singleBoundTerm)
+           (triple: singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (simpleBoundFunc1 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
+                              singleBoundTerm)
+           (simpleBoundFunc2 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
+                              singleBoundTerm)
+  :=
 
-  fold_right (fun triple2 curList => ((simpleBoundFunc1 triple triple2 combFunc 
-                                                      (premise triple //\\ 
-                                                       premise triple2 //\\ 
-                                                       ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\ 
+  fold_right (fun triple2 curList => ((simpleBoundFunc1 triple triple2 combFunc
+                                                      (premise triple //\\
+                                                       premise triple2 //\\
+                                                       ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\
                                                        (ub triple + ub triple2 < lofst floatMax) //\\
-                                                             ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\ 
+                                                             ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\
                                                        (lb triple + lb triple2 >= lofst R0)))
-                                       :: ((simpleBoundFunc2 triple triple2 combFunc 
-                                                            (premise triple //\\ 
-                                                             premise triple2 //\\ 
-                                                            ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\ 
+                                       :: ((simpleBoundFunc2 triple triple2 combFunc
+                                                            (premise triple //\\
+                                                             premise triple2 //\\
+                                                            ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\
                                                              (ub triple + ub triple2 < lofst floatMax) //\\
-                                                             ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\ 
+                                                             ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\
                                                              (ub triple + ub triple2 < lofst R0))) ::
-                                             curList))) List.nil list. 
+                                             curList))) List.nil list.
 Print Scopes.
 
 Locate nat.
 
-Definition multfoldBoundListWithTriple 
-           (list:list singleBoundTerm) 
-           (triple: singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R)) 
-           (simpleBoundFunc1 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
-                              singleBoundTerm) 
-           (simpleBoundFunc2 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
-                              singleBoundTerm) 
-           (simpleBoundFunc3 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
-                              singleBoundTerm) 
-           (simpleBoundFunc4 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
-                              singleBoundTerm) 
-  := 
+Definition multfoldBoundListWithTriple
+           (list:list singleBoundTerm)
+           (triple: singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (simpleBoundFunc1 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
+                              singleBoundTerm)
+           (simpleBoundFunc2 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
+                              singleBoundTerm)
+           (simpleBoundFunc3 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
+                              singleBoundTerm)
+           (simpleBoundFunc4 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
+                              singleBoundTerm)
+  :=
 
     fold_right (
-        fun triple2 curList => (simpleBoundFunc1 triple triple2 combFunc  (premise triple //\\ 
-                                                                           premise triple2 //\\ 
+        fun triple2 curList => (simpleBoundFunc1 triple triple2 combFunc  (premise triple //\\
+                                                                           premise triple2 //\\
                                                                            ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0)))//\\
-                                                                           (ub triple + ub triple2 < lofst floatMax) //\\  
+                                                                           (ub triple + ub triple2 < lofst floatMax) //\\
                                                                            ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\
                                                                            (lb triple >= lofst R0) //\\ (lb triple2 >= lofst R0)))
-                                 :: ((simpleBoundFunc2 triple triple2 combFunc 
-                                                       (premise triple //\\ 
-                                                        premise triple2 //\\ 
-                                                        ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\ 
+                                 :: ((simpleBoundFunc2 triple triple2 combFunc
+                                                       (premise triple //\\
+                                                        premise triple2 //\\
+                                                        ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\
                                                         (ub triple + ub triple2 < lofst floatMax) //\\
                                                         ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\
                                                         (ub triple < lofst R0) //\\ (ub triple2 < lofst R0)))
-                                       :: ((simpleBoundFunc3 triple triple2 combFunc 
-                                                             (premise triple //\\ 
-                                                              premise triple2 //\\ 
-                                                              ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\ 
+                                       :: ((simpleBoundFunc3 triple triple2 combFunc
+                                                             (premise triple //\\
+                                                              premise triple2 //\\
+                                                              ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\
                                                               (ub triple + ub triple2 < lofst floatMax) //\\
                                                               ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\
                                                               (lb triple >= lofst R0) //\\ (ub triple2 < lofst R0)))
-                                             :: ((simpleBoundFunc4 triple triple2 combFunc 
-                                                                   (premise triple //\\ 
-                                                                    premise triple2 //\\ 
-                                                                    ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\ 
+                                             :: ((simpleBoundFunc4 triple triple2 combFunc
+                                                                   (premise triple //\\
+                                                                    premise triple2 //\\
+                                                                    ((lofst floatMin <= lb triple + lb triple2) \\// (lofst floatMin <= ((lofst 0 - lb triple) + (lofst 0 - lb triple2))) \\// ((lb triple + lb triple = lofst 0) //\\ (ub triple + ub triple = lofst 0))) //\\
                                                                     ((ub triple + ub triple2 < lofst floatMax) //\\
-                                                                     ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax)) //\\ 
+                                                                     ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax)) //\\
                                                                     (ub triple < lofst R0) //\\ (lb triple2 >= lofst R0)))
-                                                   ::   
-                                                   curList)))) List.nil list. 
+                                                   ::
+                                                   curList)))) List.nil list.
 
-Definition plusMinusfoldListwithList 
-           (list1 list2: list singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R)) 
-           (simpleBoundFunc1 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
+Definition plusMinusfoldListwithList
+           (list1 list2: list singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (simpleBoundFunc1 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
                               singleBoundTerm )
-           (simpleBoundFunc2 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
+           (simpleBoundFunc2 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
                               singleBoundTerm )
-           
+
   : list singleBoundTerm :=
- 
+
   fold_right (fun triple list => list ++ (plusMinusfoldBoundListWithTriple list1 triple combFunc simpleBoundFunc1 simpleBoundFunc2)) List.nil list2.
 
-Definition multfoldListwithList 
-           (list1 list2: list singleBoundTerm) 
-           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R)) 
-           (simpleBoundFunc1 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
+Definition multfoldListwithList
+           (list1 list2: list singleBoundTerm)
+           (combFunc: (fstate -> R) -> (fstate -> R) -> (fstate -> R))
+           (simpleBoundFunc1 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
                               singleBoundTerm )
-           (simpleBoundFunc2 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
+           (simpleBoundFunc2 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
                               singleBoundTerm )
-           (simpleBoundFunc3 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
+           (simpleBoundFunc3 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
                               singleBoundTerm )
-           (simpleBoundFunc4 : singleBoundTerm -> 
-                              singleBoundTerm -> 
-                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) -> 
-                              (fstate -> Prop) -> 
+           (simpleBoundFunc4 : singleBoundTerm ->
+                              singleBoundTerm ->
+                              ((fstate -> R) -> (fstate -> R) -> (fstate -> R)) ->
+                              (fstate -> Prop) ->
                               singleBoundTerm )
-           
+
   : list singleBoundTerm :=
- 
+
   fold_right (fun triple list => list ++ (multfoldBoundListWithTriple list1 triple combFunc simpleBoundFunc1 simpleBoundFunc2 simpleBoundFunc3 simpleBoundFunc4)) List.nil list2.
 
 
 
 
-Definition lift4 {T U V W X: Type} 
-                 (f : T -> U -> V -> W -> X) 
-                 (a : option T) 
-                 (b : option U) 
-                 (c : option V) 
+Definition lift4 {T U V W X: Type}
+                 (f : T -> U -> V -> W -> X)
+                 (a : option T)
+                 (b : option U)
+                 (c : option V)
                  (d : option W): option X :=
 
   match a , b , c , d with
@@ -1166,18 +1110,18 @@ Definition lift4 {T U V W X: Type}
     | _ , _ , _ , _ => None
   end.
 
-Definition getBound (t1 t2:NowTerm) 
-                     (boundFunc: list singleBoundTerm -> 
-                                 list singleBoundTerm -> 
-                                 list singleBoundTerm) 
+Definition getBound (t1 t2:NowTerm)
+                     (boundFunc: list singleBoundTerm ->
+                                 list singleBoundTerm ->
+                                 list singleBoundTerm)
                      (bound_term_func : NowTerm ->
-                                        list singleBoundTerm) :=  
+                                        list singleBoundTerm) :=
   boundFunc (bound_term_func t1) (bound_term_func t2).
 
 
-Definition isVarValid (v:Var) (fState : fstate) : Prop 
+Definition isVarValid (v:Var) (fState : fstate) : Prop
   :=
-    match (fstate_lookup fState v) with 
+    match (fstate_lookup fState v) with
         | Some f => isFloatConstValid f
         | None => False
     end.
@@ -1203,23 +1147,23 @@ Definition natBound (n:nat): list singleBoundTerm :=
 
 
 
-Fixpoint addPlusResultValidity (bounds:list singleBoundTerm) (t1:NowTerm) (t2:NowTerm) := 
-  match bounds with 
-    | (h :: t) => 
-      (match h with  
+Fixpoint addPlusResultValidity (bounds:list singleBoundTerm) (t1:NowTerm) (t2:NowTerm) :=
+  match bounds with
+    | (h :: t) =>
+      (match h with
          | mkSBT lb ub premise  =>
-           (let resultValidPremise := 
+           (let resultValidPremise :=
                 (forall (fState:fstate),
                     let result := (lift2
                                      (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
-                                            custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2)) 
-                    in (match result with 
-                          | Some f => isFloatConstValid f 
+                                            custom_nan mode_ZR) (eval_NowTerm fState t1) (eval_NowTerm fState t2))
+                    in (match result with
+                          | Some f => isFloatConstValid f
                           | None => False
                         end)
                 ) in (mkSBT lb ub (premise //\\ lpofst resultValidPremise))
            )
-       end) ::  (addPlusResultValidity t t1 t2) 
+       end) ::  (addPlusResultValidity t t1 t2)
   | Nil => Nil
   end.
 
@@ -1232,7 +1176,7 @@ Definition fstate_lookup_force (fst : fstate) (v : Var) : R :=
   | None => 0%R
   end.
 Print Fappli_IEEE_extra.BofZ.
-Fixpoint bound_term (x:NowTerm)  : (list singleBoundTerm):= 
+Fixpoint bound_term (x:NowTerm)  : (list singleBoundTerm):=
   match x with
     | VarNowN var =>  [mkSBT (fun fst => fstate_lookup_force fst var) (fun fst => fstate_lookup_force fst var) (fun fst => isVarValid var fst)]
     | NatN n =>  natBound n
@@ -1244,31 +1188,31 @@ Fixpoint bound_term (x:NowTerm)  : (list singleBoundTerm):=
 
 Local Close Scope HP_scope.
 Definition foldBoundProp (evalExpr:option (binary_float custom_prec custom_emax)) (fst:fstate) :=
-  match evalExpr with 
-  | Some evalExpr =>  
-    match floatToReal evalExpr with 
-    | Some realEvalExpr => 
+  match evalExpr with
+  | Some evalExpr =>
+    match floatToReal evalExpr with
+    | Some realEvalExpr =>
       (fun (triple:singleBoundTerm) (prop:Prop) =>
-         (prop //\\ 
-          ((premise triple fst) 
-           -->> (lb triple fst) <= 
-              realEvalExpr <= 
+         (prop //\\
+          ((premise triple fst)
+           -->> (lb triple fst) <=
+              realEvalExpr <=
               (ub triple fst))%R))
     | None => fun _ prop => prop
     end
   | None => fun _ prop => prop
   end.
 
-Lemma fold_right_truth: forall lst, fold_right (fun (_ : singleBoundTerm) (prop : Prop) => prop) True lst = True. 
+Lemma fold_right_truth: forall lst, fold_right (fun (_ : singleBoundTerm) (prop : Prop) => prop) True lst = True.
 intros.
-induction lst.  
+induction lst.
 * simpl.
   reflexivity.
 * simpl.
   apply IHlst.
 Qed.
 
-CoFixpoint traceFromState (st:state) : (trace) := 
+CoFixpoint traceFromState (st:state) : (trace) :=
   @Stream.Cons state st (traceFromState st).
 
  (*
@@ -1285,7 +1229,7 @@ Definition denote_singleBoundTermNew (fst:fstate) (s:singleBoundTerm) : Prop*(R-
 (* More convinced now. --M *)
 (*
 Definition denote_singleBoundTermNew (st:state) (s:singleBoundTerm) : Prop*(R->Prop) :=
-  let tr := traceFromState st in                                              
+  let tr := traceFromState st in
   let s1 := Stream.hd tr in
   let s2 := Stream.hd (Stream.tl tr) in
   ((eval_formula (premise s) tr, fun f => eval_term (lb s) s1 s2 <= f <= eval_term (ub s) s1 s2)%R).*)
@@ -1334,7 +1278,7 @@ Definition boundDef' (expr : NowTerm) (fst : fstate) : Prop :=
 
 
 
-Lemma emptyListappend : forall (A:Type) (lst:list A), lst ++ (List.nil) = lst. 
+Lemma emptyListappend : forall (A:Type) (lst:list A), lst ++ (List.nil) = lst.
 intros.
 simpl in *.
 induction lst.
@@ -1349,7 +1293,7 @@ Qed.
 Theorem fold_right_acc_empty :forall boundlist, (fold_right (fun (_ : singleBoundTerm) (list : list singleBoundTerm) => list ++ List.nil) List.nil boundlist) = List.nil.
 intros.
 simpl in *.
-induction boundlist.      
+induction boundlist.
 simpl.
 reflexivity.
 simpl.
@@ -1371,7 +1315,7 @@ tlaIntuition.
 Qed.
 
 (*
-Lemma fold_right_inferring_sublist_truth_from_list_truth : forall x xs tr expr, fold_right (foldBoundProp expr (hd tr) (hd (tl tr)) tr) 
+Lemma fold_right_inferring_sublist_truth_from_list_truth : forall x xs tr expr, fold_right (foldBoundProp expr (hd tr) (hd (tl tr)) tr)
                                                   True (x :: xs) ->
                                        fold_right (foldBoundProp expr (hd tr) (hd (tl tr)) tr)
                                                   True xs.
@@ -1421,7 +1365,7 @@ Lemma fold_right_combine : forall fst lst a x,   fold_right
           prop //\\
           ((premise triple fst) -->>
            ((lb triple fst) <= x <=
-            (ub triple fst))%R)) True lst //\\ 
+            (ub triple fst))%R)) True lst //\\
              ((premise a fst) -->>
        ((lb a fst) <= x <=
         (ub a fst))%R) -->>   fold_right (fun (triple : singleBoundTerm) (prop : Prop) =>
@@ -1444,7 +1388,7 @@ Lemma fold_right_combine_opp :   forall fst lst a x,  fold_right (fun (triple : 
           prop //\\
           ((premise triple fst) -->>
            ((lb triple fst) <= x <=
-            (ub triple fst))%R)) True lst //\\ 
+            (ub triple fst))%R)) True lst //\\
              (premise a fst) -->>
        ((lb a fst) <= x <=
         (ub a fst))%R.
@@ -1495,7 +1439,7 @@ intuition.
 Qed.
 
 
-Lemma fold_right_two_list :forall lst1 lst2 x fst, 
+Lemma fold_right_two_list :forall lst1 lst2 x fst,
                       fold_right
                (fun (triple : singleBoundTerm) (prop : Prop) =>
                 prop //\\
@@ -1541,7 +1485,7 @@ Qed.
     reflexivity.
     Qed.
 
-Lemma fold_right_two_list_opp :forall lst1 lst2 x fst, 
+Lemma fold_right_two_list_opp :forall lst1 lst2 x fst,
                        (fold_right
                (fun (triple : singleBoundTerm) (prop : Prop) =>
                 prop //\\
@@ -1561,7 +1505,7 @@ Lemma fold_right_two_list_opp :forall lst1 lst2 x fst,
                  ((lb triple fst) <= x <=
                   (ub triple fst))%R)) True
                (lst1 ++ lst2).
-                         breakAbstraction.
+  breakAbstraction.
   intros.
   decompose [and] H.
   induction lst1.
@@ -1580,7 +1524,7 @@ Lemma fold_right_two_list_opp :forall lst1 lst2 x fst,
   intuition.
   intuition.
   Qed.
-  
+
  Lemma deNowifyPlus : forall t1 t2, denowify t1 + denowify t2 = denowify (PlusN t1 t2).
 intros.
 induction t1;
@@ -1598,7 +1542,7 @@ Qed.             Lemma truth : true = true.
 intuition.
 Qed.
 
-Lemma rltProof2 : forall r1 r2,  (r1 < r2)%R -> ( Rlt_bool r1 r2 = true). 
+Lemma rltProof2 : forall r1 r2,  (r1 < r2)%R -> ( Rlt_bool r1 r2 = true).
 intros.
  unfold Rlt_bool in *.
                          Transparent Rcompare.
@@ -1611,7 +1555,7 @@ intros.
                          psatz R.
                          Qed.
 
- Lemma rltProof : forall r1 r2, (false = Rlt_bool r1 r2) -> (r1 >= r2)%R. 
+ Lemma rltProof : forall r1 r2, (false = Rlt_bool r1 r2) -> (r1 >= r2)%R.
                          intros.
                          unfold Rlt_bool in *.
                          Transparent Rcompare.
@@ -1632,10 +1576,10 @@ Definition related (f : fstate) (s : state) : Prop :=
 
 
 Print Floats.float.
-Lemma resultImplicationsPlus : 
-        forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),  
-         (Some f =  lift2 (Bplus custom_prec custom_emax 
-                                 custom_precGt0 custom_precLtEmax custom_nan mode_ZR) 
+Lemma resultImplicationsPlus :
+        forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),
+         (Some f =  lift2 (Bplus custom_prec custom_emax
+                                 custom_precGt0 custom_precLtEmax custom_nan mode_ZR)
                           (eval_NowTerm fState expr1)
                           (eval_NowTerm fState expr2)) ->
          validFloat f ->
@@ -1644,7 +1588,7 @@ Lemma resultImplicationsPlus :
            /\ Some f2 = eval_NowTerm fState expr2
                                        /\ validFloat f1 /\ validFloat f2.
   breakAbstraction.
-  intros.  
+  intros.
   unfold lift2 in H.
   remember (eval_NowTerm fState expr1) as evalExpr1.
   destruct evalExpr1.
@@ -1759,7 +1703,7 @@ Lemma resultImplicationsPlus :
            Fcore_defs.Fexp := e |}) as r.
           exists r.
           reflexivity.
-        } 
+        }
       }
     }
     {
@@ -1771,10 +1715,10 @@ Lemma resultImplicationsPlus :
   }
    Qed.
 
-Lemma resultImplicationsMult : 
-        forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),  
-         (Some f =  lift2 (Bmult custom_prec custom_emax 
-                                 custom_precGt0 custom_precLtEmax custom_nan mode_ZR) 
+Lemma resultImplicationsMult :
+        forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),
+         (Some f =  lift2 (Bmult custom_prec custom_emax
+                                 custom_precGt0 custom_precLtEmax custom_nan mode_ZR)
                           (eval_NowTerm fState expr1)
                           (eval_NowTerm fState expr2)) ->
          validFloat f ->
@@ -1819,7 +1763,7 @@ Lemma resultImplicationsMult :
         simpl in *.
         apply H0.
       }
-        
+
       {
         destruct f1;
         inversion H;
@@ -1847,7 +1791,7 @@ Lemma resultImplicationsMult :
         }
         {
           simpl in *.
-          
+
           destruct f0.
           inversion H.
           rewrite H2 in H0.
@@ -1938,10 +1882,10 @@ Lemma resultImplicationsMult :
   inversion H.
 Qed.
 
-Lemma resultImplicationsMinus : 
-        forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),  
-         (Some f =  lift2 (Bminus custom_prec custom_emax 
-                                 custom_precGt0 custom_precLtEmax custom_nan mode_ZR) 
+Lemma resultImplicationsMinus :
+        forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),
+         (Some f =  lift2 (Bminus custom_prec custom_emax
+                                 custom_precGt0 custom_precLtEmax custom_nan mode_ZR)
                           (eval_NowTerm fState expr1)
                           (eval_NowTerm fState expr2)) ->
          validFloat f ->
@@ -2063,10 +2007,10 @@ Lemma resultImplicationsMinus :
            {|
            Fcore_defs.Fnum := cond_Zopp b (Z.pos m);
            Fcore_defs.Fexp := e |})) as r.
-         
+
           exists r.
           reflexivity.
-        } 
+        }
       }
     }
     {
@@ -2094,13 +2038,13 @@ Lemma validFexpProof : Valid_exp (FLT_exp (3 - custom_emax - custom_prec) custom
   lia.
   intros. split. unfold FLT_exp in *.
   unfold FLT_exp in *.
-  
+
   lia.
-  intros. unfold FLT_exp in *.  
+  intros. unfold FLT_exp in *.
   lia.
 Qed.
 
-Lemma validFloat2 : forall (f1:float) (r:R), Some r = floatToReal f1 -> r = B2R custom_prec custom_emax f1.   
+Lemma validFloat2 : forall (f1:float) (r:R), Some r = floatToReal f1 -> r = B2R custom_prec custom_emax f1.
 intros.
 unfold floatToReal in *.
 destruct f1.
@@ -2117,35 +2061,35 @@ Qed.
 
 Definition choiceDef := (fun x => negb (Zeven x)).
 
-(* commenting this for now - since we are abstracting the float type 
+(* commenting this for now - since we are abstracting the float type
 Lemma precThm: (forall k : Z, (-1021 < k)%Z -> (custom_prec <= k - FLT_exp (3-custom_emax - custom_prec) custom_prec k)%Z).
   intros.
-  unfold custom_emax in *. unfold custom_prec in *. unfold FLT_exp. unfold custom_emin in *. 
+  unfold custom_emax in *. unfold custom_prec in *. unfold FLT_exp. unfold custom_emin in *.
   unfold Z.max.
   pose proof Z_lt_ge_dec ((k - 53)%Z) ((3 - 1024 - 53)%Z).
   pose (k - 53 ?= 3 - 1024 - 53)%Z.
   Print Datatypes.Eq.
   Search (_ -> Datatypes.comparison).
   Print Cge.
-  destruct H0 eqn:H0_des. 
+  destruct H0 eqn:H0_des.
   destruct (k - 53 ?= 3 - 1024 - 53)%Z eqn:des.
-  lia.  simpl in *. 
+  lia.  simpl in *.
 c  clear des.
   simpl in *.
-  lia. 
+  lia.
   lia.
   destruct ( k - 53 ?= 3 - 1024 - 53)%Z.
   lia.
   lia.
   lia.
-  
+
 Qed.
 *)
 Lemma floatValid : forall (r:R) (f:float), Some r = floatToReal f -> is_finite _ _ f = true .
 Proof.
   intros.
   unfold floatToReal in *.
-  destruct f. 
+  destruct f.
   {
     simpl in *.
     reflexivity.
@@ -2160,7 +2104,7 @@ Proof.
     simpl in *.
     reflexivity.
   }
-Qed.  
+Qed.
 
 
 
@@ -2303,7 +2247,7 @@ Qed.
 
 
 
-Lemma RtoZ: forall z, (Z2R z > 0)%R <-> (z > 0)%Z. 
+Lemma RtoZ: forall z, (Z2R z > 0)%R <-> (z > 0)%Z.
   split.
   intros.
   compute in *.
@@ -2348,7 +2292,7 @@ Lemma P2Rgt0: forall p0, (((fix P2R (p2 : positive) : R :=
                                       | ((_~0 as t)~0)%positive => 2 * P2R t
                                       | 2%positive => 2
                                       | 1%positive => 1
-                                      end) p0)%R as pr. 
+                                      end) p0)%R as pr.
                         destruct p0.
                         psatz R.
                         psatz R.
@@ -2374,7 +2318,7 @@ Lemma P2Rgt0: forall p0, (((fix P2R (p2 : positive) : R :=
 Qed.
 
 
-Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z. 
+Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z.
   split.
   {
     intros.
@@ -2400,14 +2344,14 @@ Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z.
       }
     }
     {
-      
+
       unfold Z2R in *.
       pose proof posZ as posZ.
       specialize (posZ p).
       psatz R.
     }
-  }    
-  
+  }
+
 {
   intros.
   induction z.
@@ -2430,7 +2374,7 @@ Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z.
         pose proof P2Rgt0 as P2Rgt0.
         specialize (P2Rgt0 p0).
         rewrite <- Heqpr in P2Rgt0.
-        destruct p0 eqn:p0_des. 
+        destruct p0 eqn:p0_des.
         {
           psatz R.
         }
@@ -2456,7 +2400,7 @@ Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z.
         pose proof P2Rgt0 as P2Rgt0.
         specialize (P2Rgt0 p0).
         rewrite <- Heqpr in P2Rgt0.
-        destruct p0 eqn:p0_des. 
+        destruct p0 eqn:p0_des.
         {
           psatz R.
         }
@@ -2467,7 +2411,7 @@ Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z.
           clear H des pr Heqpr P2Rgt0.
           psatzl R.
         }
-        
+
       }
       intuition.
     }
@@ -2475,23 +2419,23 @@ Lemma RtoZgt1: forall z, (Z2R z >= 1)%R <-> (z >= 1)%Z.
   }
 Qed.
 
-Lemma inverseTemp: (forall x : Z, (fun z:Z => (z >= 1)%Z) x -> 
+Lemma negToPos : forall p:positive, (Zneg p <= -1)%Z <-> (p >= 1)%positive.
+                                                   split;lia. Qed.
+
+Lemma inverseTemp: (forall x : Z, (fun z:Z => (z >= 1)%Z) x ->
 (fun z:Z => (z>=1)%Z) (2*x) %Z).
 intros.
 simpl in *.
 destruct x.
 lia.
-lia. 
+lia.
 lia.
 Qed.
 
-Lemma inverseTemp2: ((fun z : Z => (z >= 1)%Z) 1%Z). 
+Lemma inverseTemp2: ((fun z : Z => (z >= 1)%Z) 1%Z).
 simpl.
 intuition.
 Qed.
-
-Lemma negToPos : forall p:positive, (Zneg p <= -1)%Z <-> (p >= 1)%positive.
-split;lia. Qed.
 
 Lemma inverse: forall p:positive, (Z.neg p <= 0)%Z -> (Z2R (Z.pow_pos radix2 p) >= 1)%R.
 intros. apply RtoZgt1.
@@ -2503,11 +2447,13 @@ specialize (H0 (Z.mul 2)).
 specialize (H0 (fun z => z>=1 )%Z).
 
 pose proof negToPos as negToPos.
-(* inverseTemp was here*)
+
+
+
 intros.
 specialize (H0 inverseTemp).
 specialize (H0 1%Z).
-(* inverseTemp2 was here*)
+
 intros.
 specialize (H0 inverseTemp2).
 simpl in H0.
@@ -2521,6 +2467,7 @@ destruct pow eqn:pow_des.
 psatzl R.
 lia.
 pose proof RtoZgt1.
+
 intros.
 pose proof inverse.
 specialize (H1 p H).
@@ -2550,7 +2497,7 @@ Qed.
 Lemma errorLessThan1: (error <= 1)%R.
   unfold error.
   pose proof custom_precGe1.
-  Lemma OneMinus : forall x:Z, (x >= 1 -> 1-x <= 0)%Z. 
+  Lemma OneMinus : forall x:Z, (x >= 1 -> 1-x <= 0)%Z.
     intros.
     lia.
   Qed.
@@ -2558,7 +2505,7 @@ Lemma errorLessThan1: (error <= 1)%R.
   pose proof OneMinus.
   apply H0 in H.
 
-Lemma minus: forall x, (eq (1- x) (-x +1)) %Z. 
+Lemma minus: forall x, (eq (1- x) (-x +1)) %Z.
 intros.
 lia.
 Qed.
@@ -2600,7 +2547,7 @@ Proof.
         Qed.
 
         specialize (H multiplyBy2).
-        specialize (H 1%Z).  
+        specialize (H 1%Z).
         simpl in *.
         Lemma OneGt0 : (1 > 0)%Z.
         Proof.
@@ -2622,8 +2569,8 @@ Qed.
 
 
 Lemma errorGt0 : (error > 0)%R.
-Proof.  
-  unfold error. 
+Proof.
+  unfold error.
   apply powGt0.
 Qed.
 
@@ -2641,20 +2588,20 @@ Proof.
 Qed.
 
 
-Lemma absoluteValGe : forall (r1 r2:R) , 
-                (Rabs r1 >= r2 -> r1 >= r2 \/ -r1 >= r2)%R. 
+Lemma absoluteValGe : forall (r1 r2:R) ,
+                (Rabs r1 >= r2 -> r1 >= r2 \/ -r1 >= r2)%R.
             Proof.
               intros.
               unfold Rabs in *. simpl.
               destruct Rcase_abs; psatz R.
             Qed.
-            
-Lemma absoluteValLt : forall (r1 r2:R) , 
-                (Rabs r1 < r2 -> r1 < r2 \/ -r1 < r2)%R. 
+
+Lemma absoluteValLt : forall (r1 r2:R) ,
+                (Rabs r1 < r2 -> r1 < r2 \/ -r1 < r2)%R.
 Proof.
   intros.
   unfold Rabs in *. simpl.
-  destruct Rcase_abs; psatz R. 
+  destruct Rcase_abs; psatz R.
 Qed.
 
 
@@ -2662,22 +2609,22 @@ Qed.
 
 
 Declare ML Module "z3Tactic".
-(*((ub2 >= lb1) /\ 
-      (ub1 >= lb2) /\ 
+(*((ub2 >= lb1) /\
+      (ub1 >= lb2) /\
       (((ub1 - ub2 >= floatMin) /\ (lb1 - lb2 >=floatMin) /\ (ub2 - lb1 >= floatMin)) \/
        ((ub2 - ub1 >= floatMin) /\ (lb1 - lb2 >=floatMin)) \/
        ((ub1 - ub2 >= floatMin) /\ (lb2 - lb1 >= floatMin)) \/
        ((ub2 - ub1 >=floatMin) /\ (ub1 - lb2 >=floatMin) /\ (lb2 - lb1 >= floatMin)) ))*)
-Lemma minusfloatMinBoundProof:  forall (x1 x2 lb1 lb2 ub1 ub2:R), 
-    (((lb1 >= ub2) /\ (floatMin <= lb1 - ub2)) \/ 
+Lemma minusfloatMinBoundProof:  forall (x1 x2 lb1 lb2 ub1 ub2:R),
+    (((lb1 >= ub2) /\ (floatMin <= lb1 - ub2)) \/
      ((ub1 <= lb2) /\(floatMin <= lb2 - ub1))
-    -> 
-  lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 -> (Rabs (x1 - x2) >= floatMin))%R. 
+    ->
+  lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 -> (Rabs (x1 - x2) >= floatMin))%R.
 Proof.
 breakAbstraction.
 intros.
 pose proof floatMinGt0.
-unfold Rabs.  
+unfold Rabs.
 destruct Rcase_abs.
 destruct H. simpl in H.
 psatz R.
@@ -2698,7 +2645,7 @@ clear -H6 r H4 H1 H2.
 psatz R.
 Qed.
 
-Lemma plusfloatMinBoundProof:  forall (x1 x2 lb1 lb2 ub1 ub2:R), ((floatMin <= lb1 + lb2) \/ (floatMin <= 0 - ub1 + (0 - ub2)) -> lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 -> (Rabs (x1 + x2) >= floatMin))%R. 
+Lemma plusfloatMinBoundProof:  forall (x1 x2 lb1 lb2 ub1 ub2:R), ((floatMin <= lb1 + lb2) \/ (floatMin <= 0 - ub1 + (0 - ub2)) -> lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 -> (Rabs (x1 + x2) >= floatMin))%R.
 Proof.
   intros.
   pose proof floatMinGt0.
@@ -2724,11 +2671,11 @@ psatz R.
 Qed.
 
 
-Lemma multfloatMinBoundProof:  forall (x1 x2 lb1 lb2 ub1 ub2:R), 
+Lemma multfloatMinBoundProof:  forall (x1 x2 lb1 lb2 ub1 ub2:R),
     (((floatMin <= lb1 * lb2) /\  (lb1 >= R0) /\ (lb2 >= R0))
-    \/ (floatMin <= (0 - ub1) * (0 - ub2) /\ (ub1 < R0) /\ (ub2 < R0)) 
-    \/ (floatMin <= lb1 * (0 - ub2) /\ (lb1 >= R0) /\  (ub2 < R0)) 
-    \/ (floatMin <= (0 - ub1) * lb2 /\ (ub1 < R0) /\  (lb2 >= R0)) -> lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 -> (Rabs (x1 * x2) >= floatMin))%R. 
+    \/ (floatMin <= (0 - ub1) * (0 - ub2) /\ (ub1 < R0) /\ (ub2 < R0))
+    \/ (floatMin <= lb1 * (0 - ub2) /\ (lb1 >= R0) /\  (ub2 < R0))
+    \/ (floatMin <= (0 - ub1) * lb2 /\ (ub1 < R0) /\  (lb2 >= R0)) -> lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 -> (Rabs (x1 * x2) >= floatMin))%R.
 Proof.
   breakAbstraction.
   intros;
@@ -2750,35 +2697,35 @@ Proof.
   psatz R.
 Qed.
 
-Lemma relErrorBasedOnFloatMinTruthMult : forall (x1 x2 lb1 lb2 ub1 ub2:R), 
-    ((((floatMin <= lb1 * lb2) /\  (lb1 >= R0) /\ (lb2 >= R0)) 
+Lemma relErrorBasedOnFloatMinTruthMult : forall (x1 x2 lb1 lb2 ub1 ub2:R),
+    ((((floatMin <= lb1 * lb2) /\  (lb1 >= R0) /\ (lb2 >= R0))
 \/ (floatMin <= (0 - ub1) * (0 - ub2) /\ (ub1 < R0) /\ (ub2 < R0))
-\/ (floatMin <= lb1 * (0 - ub2) /\ (lb1 >= R0) /\  (ub2 < R0)) 
+\/ (floatMin <= lb1 * (0 - ub2) /\ (lb1 >= R0) /\  (ub2 < R0))
 \/ (floatMin <= (0 - ub1) * lb2 /\ (ub1 < R0) /\  (lb2 >= R0)))
- -> 
-lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 ->  
-(Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (x1 * x2) - (x1 * x2)) < 
+ ->
+lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 ->
+(Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (x1 * x2) - (x1 * x2)) <
  bpow radix2 (- custom_prec + 1) * Rabs (x1 * x2)))%R.
 Proof.
   breakAbstraction.
   intros.
   pose proof relative_error as Rel_Err.
-(* 
+(*
 
 
 (Rabs
                 (round radix2 (Fcore_FLX.FLX_exp custom_prec)
-                   (Znearest choiceDef) (x1 * x2) - 
+                   (Znearest choiceDef) (x1 * x2) -
                  x1 * x2) <=
               / 2 * bpow radix2 (- custom_prec + 1) * Rabs (x1 * x2))%R*)
   unfold round_mode.
   unfold FLT_exp.
   unfold Fcore_FLX.FLX_exp in *.
-  remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp. 
+  remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
   specialize (Rel_Err radix2 round_fexp).
   Check relative_error.
   subst.
-  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec precThm (round_mode mode_ZR)). 
+  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec precThm (round_mode mode_ZR)).
   specialize (Rel_Err (valid_rnd_ZR)).
   pose proof multfloatMinBoundProof as multfloatMinBoundProof.
   specialize (multfloatMinBoundProof x1 x2 lb1 lb2 ub1 ub2).
@@ -2789,11 +2736,11 @@ Proof.
   specialize (Rel_Err multfloatMinBoundProof).
   apply Rel_Err.
 Qed.
-Lemma relErrorBasedOnFloatMinTruthMinus : forall (x1 x2 lb1 lb2 ub1 ub2:R), 
-(((lb1 >= ub2)  /\  (floatMin <= lb1 - ub2)) 
-\/ ((ub1 <= lb2) /\(floatMin <= lb2 - ub1)) -> 
-lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 ->  
-(Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (x1 - x2) - (x1 - x2)) < 
+Lemma relErrorBasedOnFloatMinTruthMinus : forall (x1 x2 lb1 lb2 ub1 ub2:R),
+(((lb1 >= ub2)  /\  (floatMin <= lb1 - ub2))
+\/ ((ub1 <= lb2) /\(floatMin <= lb2 - ub1)) ->
+lb1 <= x1 -> lb2 <= x2 -> x1 <= ub1 -> x2 <= ub2 ->
+(Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (x1 - x2) - (x1 - x2)) <
  bpow radix2 (- custom_prec + 1) * Rabs (x1 - x2)))%R.
 intros.
  intros.
@@ -2801,7 +2748,7 @@ intros.
   remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
   specialize (Rel_Err radix2 round_fexp).
   subst.
-  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)). 
+  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)).
   specialize (Rel_Err (valid_rnd_ZR)).
   pose proof minusfloatMinBoundProof as minusfloatMinBoundProof.
   specialize (minusfloatMinBoundProof x1 x2 lb1 lb2 ub1 ub2).
@@ -2813,12 +2760,12 @@ intros.
   apply Rel_Err.
 Qed.
 
-Lemma relErrorBasedOnFloatMinTruthPlus2 : forall (x1 x2 lb1 lb2 ub1 ub2:R), (lb1 <= x1 -> 
-      lb2 <= x2 -> 
-      x1 <= ub1 -> 
+Lemma relErrorBasedOnFloatMinTruthPlus2 : forall (x1 x2 lb1 lb2 ub1 ub2:R), (lb1 <= x1 ->
+      lb2 <= x2 ->
+      x1 <= ub1 ->
       x2 <= ub2 ->  (Rabs
                 (round radix2 (Fcore_FLX.FLX_exp custom_prec)
-                   (Znearest choiceDef) (x1 + x2) - 
+                   (Znearest choiceDef) (x1 + x2) -
                  (x1 + x2)) <=
               / 2 * bpow radix2 (- custom_prec + 1) * Rabs (x1 + x2)))%R.
 Proof.
@@ -2827,21 +2774,21 @@ Proof.
   specialize (Rel_Err radix2 custom_prec custom_precGt0 choiceDef (x1+x2)%R).
   apply Rel_Err.
 Qed.
-Lemma relErrorBasedOnFloatMinTruthPlus : forall (x1 x2 lb1 lb2 ub1 ub2:R), 
+Lemma relErrorBasedOnFloatMinTruthPlus : forall (x1 x2 lb1 lb2 ub1 ub2:R),
     (
-      (floatMin <= lb1 + lb2)  
-      \/ (floatMin <= 0 - ub1 + (0 - ub2)) -> 
-      lb1 <= x1 -> 
-      lb2 <= x2 -> 
-      x1 <= ub1 -> 
-      x2 <= ub2 ->  
-      (Rabs 
-         (round 
-            radix2 (FLT_exp 
-                      (3 - custom_emax - custom_prec) 
+      (floatMin <= lb1 + lb2)
+      \/ (floatMin <= 0 - ub1 + (0 - ub2)) ->
+      lb1 <= x1 ->
+      lb2 <= x2 ->
+      x1 <= ub1 ->
+      x2 <= ub2 ->
+      (Rabs
+         (round
+            radix2 (FLT_exp
+                      (3 - custom_emax - custom_prec)
                       custom_prec
-                   ) 
-            (round_mode mode_ZR) 
+                   )
+            (round_mode mode_ZR)
             (x1 + x2) - (x1 + x2)
          )
        < bpow radix2 (- custom_prec + 1) * Rabs (x1 + x2))
@@ -2851,11 +2798,11 @@ Proof.
   pose proof relative_error as Rel_Err.
   pose proof relative_error_N_FLX as Rel_Err2.
   specialize (Rel_Err2 radix2 custom_prec custom_precGt0 choiceDef (x1+x2)%R).
-  
+
   remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
   specialize (Rel_Err radix2 round_fexp).
   subst.
-  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)). 
+  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)).
   specialize (Rel_Err (valid_rnd_ZR)).
   pose proof plusfloatMinBoundProof as plusfloatMinBoundProof.
   specialize (plusfloatMinBoundProof x1 x2 lb1 lb2 ub1 ub2).
@@ -2868,28 +2815,28 @@ Proof.
 Qed.
 
 
-Lemma minusRoundingTruth : forall (f1 f2:float)  (lb1 lb2 ub1 ub2 r1 r2:R),  (Some r1 = (floatToReal f1) -> 
+Lemma minusRoundingTruth : forall (f1 f2:float)  (lb1 lb2 ub1 ub2 r1 r2:R),  (Some r1 = (floatToReal f1) ->
                                                                               Some r2 = (floatToReal f2) ->
-                                                                              ( (((lb1 >= ub2)  /\  (floatMin <= lb1 - ub2)) /\  ((ub1 - lb2)*(1+error) < floatMax)) \/ 
-                                                                                (((ub1 <= lb2)  /\  (floatMin <= lb2 - ub1)) /\  ((ub2 - lb1)*(1+error) < floatMax)) 
+                                                                              ( (((lb1 >= ub2)  /\  (floatMin <= lb1 - ub2)) /\  ((ub1 - lb2)*(1+error) < floatMax)) \/
+                                                                                (((ub1 <= lb2)  /\  (floatMin <= lb2 - ub1)) /\  ((ub2 - lb1)*(1+error) < floatMax))
                                                                               ) ->
                                                                               (lb1 <= r1) ->
                                                                               (lb2 <= r2) ->
                                                                               (r1 <= ub1) ->
-                                                                              (r2 <= ub2) ->    
-                                                                              ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 - B2R custom_prec custom_emax f2))) 
-                                                                               <  (bpow radix2 custom_emax)))%R. 
+                                                                              (r2 <= ub2) ->
+                                                                              ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 - B2R custom_prec custom_emax f2)))
+                                                                               <  (bpow radix2 custom_emax)))%R.
 Proof.
   intros.
   unfold floatToReal in *.
   destruct f1.
   {
-    destruct f2. 
+    destruct f2.
     {
       inversion H.
       inversion H0.
       pose proof relErrorBasedOnFloatMinTruthMinus.
-      Lemma andOrProof : forall (p1 p2 p3 p4 p5 p6:Prop), 
+      Lemma andOrProof : forall (p1 p2 p3 p4 p5 p6:Prop),
                            ((p1 /\ p2) /\ p3) \/ ((p4 /\ p5) /\ p6) -> (p1 /\ p2 ) \/ (p4 /\ p5).
         tlaIntuition.
       Qed.
@@ -2902,7 +2849,7 @@ Proof.
       pose proof errorGt0 as errorGt0.
       rewrite H7 in H6.
       rewrite H8 in H6.
-      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                        (round_mode mode_ZR) (0 - 0)) as roundedValue.
       clear HeqroundedValue.
       clear H7 H8.
@@ -2923,7 +2870,7 @@ Proof.
       unfold error;
       unfold floatMax;
       psatz R.
-      
+
     }
     inversion H0.
     inversion H0.
@@ -2938,7 +2885,7 @@ Proof.
     unfold Rabs in *.
     pose proof errorGt0 as errorGt0.
     rewrite <- H8.
-    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                      (round_mode mode_ZR) (r1 - r2)) as roundedValue.
     clear HeqroundedValue.
     clear H8.
@@ -2952,7 +2899,7 @@ Proof.
       destruct Rcase_abs; destruct H1';
       unfold error in *; unfold floatMax in *;
       psatz R.
-    
+
   }
   {
     inversion H.
@@ -2963,10 +2910,10 @@ Proof.
 
   destruct f2.
   {
-    
+
     simpl in H1.
     inversion H.
-    remember ((B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b0))) as arg2.
+    remember ((B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))) as arg2.
     inversion H0.
     rewrite H8 in *.
     pose proof relErrorBasedOnFloatMinTruthMinus.
@@ -2978,23 +2925,23 @@ Proof.
     unfold Rabs in *.
     unfold custom_prec,custom_emax in *.
     pose proof errorGt0 as errorGt0.
-    remember  (round radix2 (FLT_exp (3 - 1024 - 53) 53) 
+    remember  (round radix2 (FLT_exp (3 - 1024 - 53) 53)
                      (round_mode mode_ZR) (r1 - arg2)) as roundedValue.
     simpl in H1.
     clear HeqroundedValue.
-    
+
     pose proof floatMaxGt0.
     pose proof floatMinGt0.
     clear H Heqarg2 H0 H8 H7.
     unfold error in *.
     unfold custom_prec,custom_emax in *.
     destruct Rcase_abs;
-      destruct Rcase_abs; 
-      destruct Rcase_abs; 
+      destruct Rcase_abs;
+      destruct Rcase_abs;
       unfold floatMax,custom_prec,custom_emax in *;
       psatz R.
   }
-  
+
   {
     inversion H0.
   }
@@ -3027,13 +2974,13 @@ Proof.
       destruct Rcase_abs;
       unfold error,floatMax in *;
       psatz R.
-  }    
-Qed.  
+  }
+Qed.
   Lemma abs: forall x y, (x >= y \/ x <= (0-y) -> y <= Rabs x)%R.
   Proof.
     breakAbstraction.
     intros.
-         destruct H;unfold Rabs;destruct Rcase_abs; breakAbstraction; psatz R;psatz R. 
+         destruct H;unfold Rabs;destruct Rcase_abs; breakAbstraction; psatz R;psatz R.
         Qed.
 
         Lemma orExtra : forall (p1 p2:Prop), p1 -> p1 \/ p2.
@@ -3043,31 +2990,31 @@ Qed.
       Qed.
 
 
-Lemma plusRoundingTruth3 : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 x1 x2:R), 
+Lemma plusRoundingTruth3 : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 x1 x2:R),
     (
-      Some x1 = (floatToReal f1) -> 
+      Some x1 = (floatToReal f1) ->
       Some x2 = (floatToReal f2) ->
       (
         x1 + x2 >= floatMin \/ x1 + x2 <= (0-floatMin)
       ) ->
       lb1 <= x1 ->
       lb2 <= x2 ->
-      (ub1 + ub2)*(1+error ) < floatMax -> 
+      (ub1 + ub2)*(1+error ) < floatMax ->
       (0 - lb1 + (0 - lb2))* (1+error) < floatMax ->
       x1 <= ub1 ->
       x2 <= ub2 ->
       (
         (
-          Rabs 
-            (round 
-               radix2 
-               (FLT_exp 
-                  (3-custom_emax- custom_prec) 
-                  custom_prec) 
-               (round_mode mode_ZR) 
-               (B2R custom_prec custom_emax f1 
+          Rabs
+            (round
+               radix2
+               (FLT_exp
+                  (3-custom_emax- custom_prec)
+                  custom_prec)
+               (round_mode mode_ZR)
+               (B2R custom_prec custom_emax f1
                 + B2R custom_prec custom_emax f2))
-        ) 
+        )
         <  (bpow radix2 custom_emax)
       )
     )%R.
@@ -3076,16 +3023,16 @@ Proof.
   unfold floatToReal in *.
 
  (*getting the relative error proof*)
-  remember (x1 + x2)%R as realResult. 
+  remember (x1 + x2)%R as realResult.
   pose proof relative_error.
   remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
-  
 
-  specialize (H8 radix2 round_fexp). 
+
+  specialize (H8 radix2 round_fexp).
   rewrite Heqround_fexp in H8.
   specialize (H8 validFexpProof  (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)).
   specialize (H8 (valid_rnd_ZR) (x1+x2)%R).
-  
+
   intros.
   pose proof abs as absProof.
   specialize (absProof realResult floatMin H1).
@@ -3099,17 +3046,17 @@ Proof.
   (*getting the relative error proof*)
   destruct f1.
   {
-    destruct f2. 
+    destruct f2.
     {
       inversion H.
       inversion H0.
-      
+
 
       Check relErrorBasedOnFloatMinTruthPlus.
       unfold B2R in *.
       unfold Rabs in *.
       pose proof errorGt0 as errorGt0.
-      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                        (round_mode mode_ZR) (0 + 0)) as roundedValue.
       clear HeqroundedValue.
       clear H H0.
@@ -3130,7 +3077,7 @@ Proof.
     unfold Rabs in *.
     pose proof errorGt0 as errorGt0.
     rewrite <- H11 in *.
-    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                      (round_mode mode_ZR) (0  + x2)) as roundedValue.
     clear HeqroundedValue.
     clear H10.
@@ -3144,14 +3091,14 @@ Proof.
     unfold error in *;
     unfold floatMax in *;
     psatz R.
-    
+
   }
   inversion H0.
   inversion H.
   inversion H.
-  
+
   destruct f2.
-  
+
 
   inversion H.
   inversion H0.
@@ -3161,7 +3108,7 @@ Proof.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   unfold error in *.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                    (round_mode mode_ZR) (x1 + 0)) as roundedValue.
   clear HeqroundedValue.
   clear H11 H10.
@@ -3185,7 +3132,7 @@ Proof.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   unfold error in *.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                    (round_mode mode_ZR) (x1 + x2)) as roundedValue.
   clear HeqroundedValue.
   clear H11 H10.
@@ -3208,31 +3155,31 @@ Proof.
 Qed.
 
 
-Lemma minusRoundingTruth3 : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 x1 x2:R), 
+Lemma minusRoundingTruth3 : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 x1 x2:R),
     (
-      Some x1 = (floatToReal f1) -> 
+      Some x1 = (floatToReal f1) ->
       Some x2 = (floatToReal f2) ->
       (
         x1 - x2 >= floatMin \/ x1 - x2 <= (0-floatMin)
       ) ->
       lb1 <= x1 ->
       lb2 <= x2 ->
-      (ub1 - lb2)*(1+error ) < floatMax -> 
+      (ub1 - lb2)*(1+error ) < floatMax ->
       (ub2 - lb1) * (1+error) < floatMax ->
       x1 <= ub1 ->
       x2 <= ub2 ->
       (
         (
-          Rabs 
-            (round 
-               radix2 
-               (FLT_exp 
-                  (3-custom_emax- custom_prec) 
-                  custom_prec) 
-               (round_mode mode_ZR) 
-               (B2R custom_prec custom_emax f1 
+          Rabs
+            (round
+               radix2
+               (FLT_exp
+                  (3-custom_emax- custom_prec)
+                  custom_prec)
+               (round_mode mode_ZR)
+               (B2R custom_prec custom_emax f1
                 - B2R custom_prec custom_emax f2))
-        ) 
+        )
         <  (bpow radix2 custom_emax)
       )
     )%R.
@@ -3241,16 +3188,16 @@ Proof.
   unfold floatToReal in *.
 
  (*getting the relative error proof*)
-  remember (x1 - x2)%R as realResult. 
+  remember (x1 - x2)%R as realResult.
   pose proof relative_error.
   remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
-  
 
-  specialize (H8 radix2 round_fexp). 
+
+  specialize (H8 radix2 round_fexp).
   rewrite Heqround_fexp in H8.
   specialize (H8 validFexpProof  (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)).
   specialize (H8 (valid_rnd_ZR) (x1-x2)%R).
-  
+
   intros.
   pose proof abs as absProof.
   specialize (absProof realResult floatMin H1).
@@ -3264,16 +3211,16 @@ Proof.
   (*getting the relative error proof*)
   destruct f1.
   {
-    destruct f2. 
+    destruct f2.
     {
       inversion H.
       inversion H0.
-      
+
 
       unfold B2R in *.
       unfold Rabs in *.
       pose proof errorGt0 as errorGt0.
-      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                        (round_mode mode_ZR) (0 - 0)) as roundedValue.
       clear HeqroundedValue.
       clear H H0.
@@ -3282,7 +3229,8 @@ Proof.
       clear H1.
       unfold error in *.
       unfold floatMax in *.
-      destruct Rcase_abs; destruct Rcase_abs; destruct Rcase_abs; psatz R.
+      destruct Rcase_abs; destruct Rcase_abs; destruct Rcase_abs;
+      psatz R.
     }
     inversion H0.
     inversion H0.
@@ -3293,7 +3241,7 @@ Proof.
     unfold Rabs in *.
     pose proof errorGt0 as errorGt0.
     rewrite <- H11 in *.
-    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                      (round_mode mode_ZR) (0  + x2)) as roundedValue.
     clear HeqroundedValue.
     clear H10.
@@ -3307,14 +3255,14 @@ Proof.
     unfold error in *;
     unfold floatMax in *;
     psatz R.
-    
+
   }
   inversion H0.
   inversion H.
   inversion H.
-  
+
   destruct f2.
-  
+
 
   inversion H.
   inversion H0.
@@ -3324,7 +3272,7 @@ Proof.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   unfold error in *.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                    (round_mode mode_ZR) (x1 + 0)) as roundedValue.
   clear HeqroundedValue.
   clear H11 H10.
@@ -3348,7 +3296,7 @@ Proof.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   unfold error in *.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                    (round_mode mode_ZR) (x1 + x2)) as roundedValue.
   clear HeqroundedValue.
   clear H11 H10.
@@ -3371,33 +3319,200 @@ Proof.
 Qed.
 
 
-Lemma plusRoundingTruth : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 r1 r2:R), 
-    
+Lemma multRoundingTruth3 : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 x1 x2:R),
     (
-      Some r1 = (floatToReal f1) -> 
+      Some x1 = (floatToReal f1) ->
+      Some x2 = (floatToReal f2) ->
+      (
+        x1 * x2 >= floatMin \/ x1 * x2 <= (0-floatMin)
+      ) ->
+      lb1 <= x1 ->
+      lb2 <= x2 ->
+      (ub1 * ub2) * (1+error ) < floatMax ->
+      (lb1 * lb2) * (1 + error) < floatMax ->
+      (lb1 * ub2) * (1 + error) > 0 - floatMax ->
+      (lb2 * ub1) * (1 + error) > 0 - floatMax ->
+      x1 <= ub1 ->
+      x2 <= ub2 ->
+      (
+        (
+          Rabs
+            (round
+               radix2
+               (FLT_exp
+                  (3-custom_emax- custom_prec)
+                  custom_prec)
+               (round_mode mode_ZR)
+               (B2R custom_prec custom_emax f1
+                * B2R custom_prec custom_emax f2))
+        )
+        <  (bpow radix2 custom_emax)
+      )
+    )%R.
+Proof.
+  intros.
+  unfold floatToReal in *.
+
+ (*getting the relative error proof*)
+  remember (x1 * x2)%R as realResult.
+  pose proof relative_error.
+  remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
+
+
+  specialize (H10 radix2 round_fexp).
+  rewrite Heqround_fexp in H10.
+  specialize (H10 validFexpProof  (custom_emin)%Z custom_prec  precThm (round_mode mode_ZR)).
+  specialize (H10 (valid_rnd_ZR) (x1*x2)%R).
+
+  intros.
+  pose proof abs as absProof.
+  specialize (absProof realResult floatMin H1).
+  rewrite HeqrealResult in absProof.
+  unfold floatMin in absProof.
+  specialize (H10 absProof).
+  clear absProof.
+  rewrite HeqrealResult in *.
+  rewrite Heqround_fexp.
+  clear HeqrealResult round_fexp Heqround_fexp.
+  (*getting the relative error proof*)
+  destruct f1.
+  {
+    destruct f2.
+    {
+      inversion H.
+      inversion H0.
+
+
+      unfold B2R in *.
+      unfold Rabs in *.
+      pose proof errorGt0 as errorGt0.
+      remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                       (round_mode mode_ZR) (0 * 0)) as roundedValue.
+      clear HeqroundedValue.
+      clear H H0.
+      pose proof floatMaxGt0.
+      pose proof floatMinGt0.
+      clear H1.
+      unfold error in *.
+      unfold floatMax in *.
+      destruct Rcase_abs; destruct Rcase_abs; destruct Rcase_abs;
+      psatz R.
+    }
+    inversion H0.
+    inversion H0.
+    inversion H.
+    inversion H0.
+    rewrite H12 in *.
+    unfold B2R in *.
+    unfold Rabs in *.
+    pose proof errorGt0 as errorGt0.
+    rewrite <- H13 in *.
+    remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                     (round_mode mode_ZR) (0  * x2)) as roundedValue.
+    clear HeqroundedValue.
+    clear H H0 H12.
+    pose proof floatMaxGt0.
+    pose proof floatMinGt0.
+    clear H1.
+    clear H13.
+
+    destruct Rcase_abs; destruct Rcase_abs;
+    unfold error in *;
+    unfold floatMax in *;
+    psatz R.
+
+  }
+  inversion H0.
+  inversion H.
+  inversion H.
+
+  destruct f2.
+
+
+  inversion H.
+  inversion H0.
+  unfold B2R in *.
+  rewrite H13 in *.
+  rewrite <- H12 in *.
+  unfold Rabs in *.
+  pose proof errorGt0 as errorGt0.
+  unfold error in *.
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                   (round_mode mode_ZR) (x1 * 0)) as roundedValue.
+  clear HeqroundedValue.
+  clear H12 H13.
+  clear H H0.
+  pose proof floatMaxGt0.
+  pose proof floatMinGt0.
+  clear H1.
+  destruct Rcase_abs; destruct Rcase_abs; destruct Rcase_abs;
+  unfold error in *;
+  unfold floatMax in *;
+  psatz R.
+
+  inversion H0.
+  inversion H0.
+
+  inversion H.
+  inversion H0.
+  unfold B2R in *.
+  rewrite <- H12 in *.
+  rewrite <- H13 in *.
+  unfold Rabs in *.
+  pose proof errorGt0 as errorGt0.
+  unfold error in *.
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                   (round_mode mode_ZR) (x1 * x2)) as roundedValue.
+  clear HeqroundedValue.
+  clear H12 H13.
+  clear H H0.
+  pose proof floatMaxGt0.
+  pose proof floatMinGt0.
+  clear H1.
+  unfold floatMax in *.
+  unfold error in *.
+  destruct Rcase_abs. destruct Rcase_abs. destruct Rcase_abs.
+  Check Bplus_correct.
+  z3 solve_dbg. admit.
+  z3 solve_dbg. admit.
+  destruct Rcase_abs.
+  z3 solve_dbg. admit.
+  z3 solve_dbg. admit.
+  destruct Rcase_abs. destruct Rcase_abs.
+  z3 solve_dbg. admit.
+  z3 solve_dbg. admit.
+  destruct Rcase_abs.
+  z3 solve_dbg. admit.
+  z3 solve_dbg. admit.
+Admitted.
+
+Lemma plusRoundingTruth : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 r1 r2:R),
+
+    (
+      Some r1 = (floatToReal f1) ->
       Some r2 = (floatToReal f2) ->
       (
-        (floatMin <= lb1 + lb2) \/ 
+        (floatMin <= lb1 + lb2) \/
         (floatMin <= 0 - ub1 + (0 - ub2))
       ) ->
       lb1 <= r1 ->
       lb2 <= r2 ->
-      (ub1 + ub2)*(1+error ) < floatMax -> 
+      (ub1 + ub2)*(1+error ) < floatMax ->
       (0 - lb1 + (0 - lb2))* (1+error) < floatMax ->
       r1 <= ub1 ->
       r2 <= ub2 ->
       (
         (
-          Rabs 
-            (round 
-               radix2 
-               (FLT_exp 
-                  (3-custom_emax- custom_prec) 
-                  custom_prec) 
-               (round_mode mode_ZR) 
-               (B2R custom_prec custom_emax f1 
+          Rabs
+            (round
+               radix2
+               (FLT_exp
+                  (3-custom_emax- custom_prec)
+                  custom_prec)
+               (round_mode mode_ZR)
+               (B2R custom_prec custom_emax f1
                 + B2R custom_prec custom_emax f2))
-        ) 
+        )
         <  (bpow radix2 custom_emax)
       )
     )%R.
@@ -3405,20 +3520,20 @@ Lemma plusRoundingTruth : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 r1 r2:R),
   unfold floatToReal in *.
   destruct f1.
 {
-  destruct f2. 
+  destruct f2.
   {
     inversion H.
   inversion H0.
   Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
-  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).  
+  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
   unfold B2R.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   rewrite H9 in H8.
   rewrite H10 in H8.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
              (round_mode mode_ZR) (0 + 0)) as roundedValue.
   clear HeqroundedValue.
   clear H9 H10.
@@ -3439,7 +3554,7 @@ destruct Rcase_abs;destruct Rcase_abs;destruct Rcase_abs;
 unfold error;
 unfold floatMax;
 psatz R.
-    
+
   }
   inversion H0.
   inversion H0.
@@ -3447,14 +3562,14 @@ psatz R.
   inversion H0.
   Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
-  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).  
+  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
   unfold B2R.
   rewrite <- H9.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   rewrite <- H10.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
              (round_mode mode_ZR) (r1 + r2)) as roundedValue.
   clear HeqroundedValue.
   clear H10.
@@ -3481,22 +3596,22 @@ unfold floatMax;
 psatz R.
 
 
-    
+
   }
 inversion H0.
 inversion H.
 inversion H.
 
-  
- 
+
+
   destruct f2.
-  
+
 
   inversion H.
   inversion H0.
   Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
-  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).  
+  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
   unfold B2R.
   rewrite <- H9.
@@ -3504,7 +3619,7 @@ inversion H.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   unfold error in *.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
              (round_mode mode_ZR) (r1 + r2)) as roundedValue.
   clear HeqroundedValue.
   clear H9 H10.
@@ -3532,7 +3647,7 @@ inversion H0.
   inversion H0.
   Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
-  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).  
+  specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
   unfold B2R.
   rewrite <- H9.
@@ -3540,7 +3655,7 @@ inversion H0.
   unfold Rabs in *.
   pose proof errorGt0 as errorGt0.
   unfold error in *.
-  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
+  remember  (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
              (round_mode mode_ZR) (r1 + r2)) as roundedValue.
   clear HeqroundedValue.
   clear H9 H10.
@@ -3561,31 +3676,31 @@ unfold error;
 unfold floatMax;
 psatz R.
 Qed.
-    
 
 
-Lemma multRoundingTruth : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 r1 r2:R),  (Some r1 = (floatToReal f1) -> 
+
+Lemma multRoundingTruth : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 r1 r2:R),  (Some r1 = (floatToReal f1) ->
     Some r2 = (floatToReal f2) ->
-    
-    (((floatMin <= lb1 * lb2) /\  (lb1 >= R0) /\ (lb2 >= R0)) /\ ((ub1 * ub2)*(1+error) < floatMax)) 
+
+    (((floatMin <= lb1 * lb2) /\  (lb1 >= R0) /\ (lb2 >= R0)) /\ ((ub1 * ub2)*(1+error) < floatMax))
 
     \/ ((floatMin <= (0 - ub1) * (0 - ub2) /\ (ub1 < R0) /\ (ub2 < R0)) /\ (((0 - lb1) * (0 - lb2))*(1+error) < floatMax))
 
-    \/   ((floatMin <= lb1 * (0 - ub2) /\ (lb1 >= R0) /\  (ub2 < R0)) /\ ((ub1 * (0 - lb2))*(1+error) < floatMax)) 
+    \/   ((floatMin <= lb1 * (0 - ub2) /\ (lb1 >= R0) /\  (ub2 < R0)) /\ ((ub1 * (0 - lb2))*(1+error) < floatMax))
 
     \/   ((floatMin <= (0 - ub1) * lb2 /\ (ub1 < R0) /\  (lb2 >= R0)) /\ (((0 - lb1) * (ub2))*(1+error) < floatMax)) ->
-    
-    
-    (lb1 <= r1) ->
-    
-    (lb2 <= r2) ->
-    
-    (r1 <= ub1) ->
-    
-    (r2 <= ub2) ->    
 
-    ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2))) 
-     <  (bpow radix2 custom_emax)))%R. 
+
+    (lb1 <= r1) ->
+
+    (lb2 <= r2) ->
+
+    (r1 <= ub1) ->
+
+    (r2 <= ub2) ->
+
+    ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2)))
+     <  (bpow radix2 custom_emax)))%R.
 
 Proof.
   intros.
@@ -3599,9 +3714,9 @@ Proof.
       pose proof relErrorBasedOnFloatMinTruthMult.
       Lemma andOrProof2 : forall (p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16:Prop),
           (p1 /\ p2 /\ p3) /\ p4
-          \/ (p5 /\ p6 /\ p7) /\ p8 
+          \/ (p5 /\ p6 /\ p7) /\ p8
           \/ (p9 /\ p10 /\ p11) /\ p12
-          \/ ( p13 /\ p14 /\ p15) /\ p16 
+          \/ ( p13 /\ p14 /\ p15) /\ p16
           ->
           (p1 /\ p2 /\ p3)
           \/ (p5 /\ p6 /\ p7)
@@ -3609,9 +3724,9 @@ Proof.
           \/ (p13 /\ p14 /\ p15).
       Proof.
         intros.
-        tlaIntuition.      
+        tlaIntuition.
       Qed.
-      
+
       intros.
       assert (H1':=H1).
       apply andOrProof2 in H1.
@@ -3701,13 +3816,13 @@ Proof.
               unfold error.
               unfold floatMax.
               psatz R.
-              
+
             }
             {
-              destruct H1. 
+              destruct H1.
               {
                 decompose [and] H1.
-                clear H10 H0 H1. 
+                clear H10 H0 H1.
                 repeat match goal with
                        | H : @eq R _ _ |- _ => revert H
                        | H : @Rle _ _ |- _ => revert H
@@ -3826,7 +3941,7 @@ Proof.
                    end.
             unfold error.
             unfold floatMax.
-            psatz R.            
+            psatz R.
           }
           {
             destruct H1.
@@ -3863,7 +3978,7 @@ Proof.
                 psatz R.
               }
               {
-               
+
                 decompose [and] H1.
                 clear H10 H10.
                 repeat match goal with
@@ -3876,7 +3991,7 @@ Proof.
                        end.
                 unfold error.
                 unfold floatMax.
-                psatz R.                
+                psatz R.
               }
             }
           }
@@ -3988,7 +4103,7 @@ Proof.
                 psatz R.
               }
               {
-                destruct H1. 
+                destruct H1.
                 {
                   decompose [and] H1.
                   clear H10 H0 H1 H8.
@@ -4128,7 +4243,7 @@ Proof.
                 psatz R.
               }
               {
-                destruct H1. 
+                destruct H1.
                 {
                   decompose [and] H1.
                    clear H10 H8 H0 H1.
@@ -4246,8 +4361,8 @@ Proof.
      inversion H.
       inversion H0.
       pose proof relErrorBasedOnFloatMinTruthMult.
-      
-      
+
+
       intros.
       assert (H1':=H1).
       apply andOrProof2 in H1.
@@ -4339,7 +4454,7 @@ Proof.
               psatz R.
             }
             {
-              destruct H1. 
+              destruct H1.
               {
                   decompose [and] H1.
                 clear H10 H0 H1 H7.
@@ -4357,7 +4472,7 @@ Proof.
               }
               {
                   decompose [and] H1.
-                clear H10 H0 H7 H1. 
+                clear H10 H0 H7 H1.
                 repeat match goal with
                        | H : @eq R _ _ |- _ => revert H
                        | H : @Rle _ _ |- _ => revert H
@@ -4452,7 +4567,7 @@ Proof.
                    end.
             unfold error.
             unfold floatMax.
-            psatz R.            
+            psatz R.
           }
           {
             destruct H1.
@@ -4619,7 +4734,7 @@ Proof.
                psatz R.
              }
              {
-               destruct H1. 
+               destruct H1.
                {
                    decompose [and] H1.
                  clear  H10 H0 H1 H7.
@@ -4760,7 +4875,7 @@ Proof.
                psatz R.
              }
              {
-               destruct H1. 
+               destruct H1.
                {
                    decompose [and] H1.
                  clear  H10 H0 H1 H7.
@@ -4863,20 +4978,20 @@ Proof.
              }
            }
          }
-       }     
+       }
     }
 }
 Qed.
 
 
-Lemma plusRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) , 
-    Some r1 = floatToReal f1 -> 
+Lemma plusRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,
+    Some r1 = floatToReal f1 ->
 
     Some r2 = floatToReal f2 ->
 
     ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 + B2R custom_prec custom_emax f2))) <  (bpow radix2 custom_emax))%R  ->
-    
-    (B2R custom_prec custom_emax (Bplus custom_prec custom_emax  custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) =round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 + B2R custom_prec custom_emax f2)  /\   is_finite custom_prec custom_emax (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) = true)%R. 
+
+    (B2R custom_prec custom_emax (Bplus custom_prec custom_emax  custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) =round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 + B2R custom_prec custom_emax f2)  /\   is_finite custom_prec custom_emax (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) = true)%R.
 Proof.
   intros.
   pose proof Bplus_correct.
@@ -4893,16 +5008,16 @@ Proof.
   rewrite H1 in H2.
     decompose [and] H2.
   split.
-  apply H2. 
+  apply H2.
   apply H5.
 
 Qed.
 Print Bminus_correct.
-Lemma minusRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,  Some r1 = (floatToReal f1) -> 
-                                                                       Some r2 = (floatToReal f2) ->   
-                                                                       
-                                                                       ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 - B2R custom_prec custom_emax f2))) 
-                                                                        <  (bpow radix2 custom_emax))%R -> 
+Lemma minusRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,  Some r1 = (floatToReal f1) ->
+                                                                       Some r2 = (floatToReal f2) ->
+
+                                                                       ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 - B2R custom_prec custom_emax f2)))
+                                                                        <  (bpow radix2 custom_emax))%R ->
                                                                        (B2R custom_prec custom_emax (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) =round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 - B2R custom_prec custom_emax f2)  /\   is_finite custom_prec custom_emax (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) = true)%R.
 
 Proof.
@@ -4920,16 +5035,16 @@ Proof.
   rewrite H1 in H2.
   decompose [and] H2.
   split.
-  apply H2. 
+  apply H2.
   apply H5.
 Qed.
 
 
-Lemma multRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,  Some r1 = (floatToReal f1) -> 
-                                                                      Some r2 = (floatToReal f2) ->   
-                                                                      
-                                                                      ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2))) 
-                                                                       <  (bpow radix2 custom_emax))%R -> 
+Lemma multRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,  Some r1 = (floatToReal f1) ->
+                                                                      Some r2 = (floatToReal f2) ->
+
+                                                                      ((Rabs (round radix2 (FLT_exp (3-custom_emax- custom_prec) custom_prec ) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2)))
+                                                                       <  (bpow radix2 custom_emax))%R ->
                                                                       (B2R custom_prec custom_emax (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) =round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2)  /\   is_finite custom_prec custom_emax (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR f1 f2) = true)%R.
 
 Proof.
@@ -4946,7 +5061,7 @@ Proof.
   rewrite H1 in H2.
   decompose [and] H2.
   split.
-  apply H3. 
+  apply H3.
   unfold custom_prec, custom_emax in *.
   rewrite H in H5.
   rewrite H0 in H5.
@@ -4957,7 +5072,7 @@ Proof.
 Qed.
 
 
-Lemma natFloatMinBoundProof : 
+Lemma natFloatMinBoundProof :
   forall n,
     ((floatMin <= INR n /\ INR n >= 0) \/ (floatMin <= 0 -(INR n) /\ INR n < 0) -> floatMin <= Rabs (INR n))%R.
 Proof.
@@ -4978,20 +5093,20 @@ Proof.
     psatz R.
 Qed.
 
-Lemma relErrorTruthNat : 
-  forall n, 
+Lemma relErrorTruthNat :
+  forall n,
     (
       (floatMin <= INR n)%R /\ (INR n >= 0)%R \/
        (floatMin <= 0 - INR n)%R /\ (INR n < 0)%R
-      -> 
-      (Rabs 
-         (round 
-            radix2 
-            (FLT_exp (3 - custom_emax - custom_prec) custom_prec) 
-            (round_mode mode_NE) 
-            (INR n) - 
+      ->
+      (Rabs
+         (round
+            radix2
+            (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+            (round_mode mode_NE)
+            (INR n) -
           (INR n)
-         ) < 
+         ) <
        bpow radix2 (- custom_prec + 1) * Rabs (INR n))
     )%R.
   Proof.
@@ -5000,7 +5115,7 @@ Lemma relErrorTruthNat :
 remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
 specialize (Rel_Err radix2 round_fexp).
   subst.
-  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec  precThm (round_mode mode_NE)). 
+  specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec  precThm (round_mode mode_NE)).
   specialize (Rel_Err (valid_rnd_N choiceDef)).
   specialize (Rel_Err (INR n)).
   pose proof natFloatMinBoundProof.
@@ -5012,17 +5127,17 @@ specialize (Rel_Err radix2 round_fexp).
 Qed.
 
 
-  Lemma natRoundingTruth : 
-    forall n, 
+  Lemma natRoundingTruth :
+    forall n,
       (((floatMin <= INR n)%R /\ (INR n >= 0)%R /\  ((INR n)* (1+error) <  (floatMax))%R) \/
-       ((floatMin <= 0 - INR n)%R /\ (INR n < 0)%R /\  ((0 -(INR n))* (1+error) <  (floatMax))) 
+       ((floatMin <= 0 - INR n)%R /\ (INR n < 0)%R /\  ((0 -(INR n))* (1+error) <  (floatMax)))
 
        ->
-       
-       (Rabs 
-          (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_NE) (Z2R (Z.of_nat n))) 
+
+       (Rabs
+          (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_NE) (Z2R (Z.of_nat n)))
    < (bpow radix2 custom_emax)))%R.
-                               
+
 Proof.
   intros.
   pose proof relErrorTruthNat as relErrorTruthNat.
@@ -5032,9 +5147,9 @@ Proof.
     tlaIntuition.
     Qed.
   intros.
-  assert (H1 := H). 
+  assert (H1 := H).
   apply orProof in H.
-  
+
   specialize (relErrorTruthNat n H).
  Lemma natToReal : forall n,  Z2R (Z.of_nat n) = INR n.
    intros.
@@ -5043,10 +5158,10 @@ Proof.
    reflexivity.
 Qed.
  intros.
- rewrite natToReal. 
+ rewrite natToReal.
  remember    (round radix2
                     (FLT_exp (3 - custom_emax - custom_prec)
-                             custom_prec) (round_mode mode_NE) 
+                             custom_prec) (round_mode mode_NE)
                     (INR n)) as roundedValue.
  clear HeqroundedValue.
  unfold floatMax in *.
@@ -5054,14 +5169,14 @@ Qed.
  unfold custom_emax in *.
  unfold error in *.
  destruct H1;
-    
+
    decompose [and] H0;
    clear H0;
    clear H;
    unfold Rabs in *;
    destruct Rcase_abs in *;
    destruct Rcase_abs in *;
-   destruct Rcase_abs in *; 
+   destruct Rcase_abs in *;
    repeat match goal with
           | H : @eq R _ _ |- _ => revert H
           | H : @Rle _ _ |- _ => revert H
@@ -5078,20 +5193,20 @@ SearchAbout Fappli_IEEE_extra.BofZ.
 
 Lemma natRoundingTruth2 : forall (f:float)  (n:nat),
     Some f = Some (nat_to_float n)->
-    (Rabs 
-       (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_NE) (Z2R (Z.of_nat n))) 
+    (Rabs
+       (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_NE) (Z2R (Z.of_nat n)))
      < (bpow radix2 custom_emax))%R ->
     B2R custom_prec custom_emax (Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n)) =
     round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_NE) (Z2R (Z.of_nat n)) /\ is_finite custom_prec custom_emax
                   (Fappli_IEEE_extra.BofZ custom_prec custom_emax
-                     custom_precGt0 custom_precLtEmax 
-                     (Z.of_nat n)) = true.                         
+                     custom_precGt0 custom_precLtEmax
+                     (Z.of_nat n)) = true.
 
-Proof.       
+Proof.
   intros.
   pose proof Fappli_IEEE_extra.BofZ_correct as Z2Rcorrect.
   Set Printing Notations.
-  
+
   specialize (Z2Rcorrect custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n)).
   apply rltProof2 in H0.
   rewrite H0 in Z2Rcorrect.
@@ -5110,28 +5225,28 @@ Qed.
            List.Forall
              (fun term : singleBoundTerm =>
               let (premise0, pred) := denote_singleBoundTermNew fState term in
-              premise0 -> match floatToReal evalAsF with 
+              premise0 -> match floatToReal evalAsF with
                             | Some f => pred f
                             | None => True
                           end) (bound_term expr)
 
    | None => True
-   end ->   
+   end ->
    (*related fState (Stream.hd (traceFromState st)) ->*)
    match eval_NowTerm fState expr with
    | Some evalAsF =>
-     match floatToReal evalAsF with 
-       | Some f => 
+     match floatToReal evalAsF with
+       | Some f =>
            List.Forall
           (denote_singleBoundTerm f fState)   (bound_term expr)
        | None => True
      end
    | None => True
    end.
-   
+
     unfold denote_singleBoundTermNew.
     unfold denote_singleBoundTerm.
-    Lemma boundTermProof : forall fState expr,  
+    Lemma boundTermProof : forall fState expr,
         match eval_NowTerm fState expr with
           | Some evalAsF =>
             List.Forall
@@ -5144,7 +5259,7 @@ Qed.
                    | None => True
                  end) (bound_term expr)
           | None => True
-        end ->  
+        end ->
         match eval_NowTerm fState expr with
           | Some evalAsF =>
             match floatToReal evalAsF with
@@ -5153,7 +5268,7 @@ Qed.
                   (fun s : singleBoundTerm =>
                      (premise s fState) ->
                      ((lb s fState)  <= f <=
-                      (ub s fState))%R) 
+                      (ub s fState))%R)
                   (bound_term expr)
               | None => True
             end
@@ -5164,9 +5279,9 @@ Qed.
       destruct evaluatedFloat.
       {
         (remember (floatToReal f) as floatConvertedToReal).
-        destruct floatConvertedToReal eqn:floatConvertedToReal_des. 
+        destruct floatConvertedToReal eqn:floatConvertedToReal_des.
         {
-          apply H. 
+          apply H.
         }
         {
           intuition.
@@ -5174,10 +5289,10 @@ Qed.
       }
       {
         apply H.
-        
-      } 
+
+      }
     Qed.
-    intros.    
+    intros.
 
     apply boundTermProof.
     apply H.
@@ -5218,15 +5333,15 @@ Proof.
 
 Lemma posResInf : forall lb1 lb2 x1 x2, (x1 >= lb1 -> x2 >= lb2 -> lb1 + lb2 >=0 -> x1 + x2 >= 0)%R.
 Proof.
-  intros. 
+  intros.
   psatz R. Qed.
-Check Build_ln_beta_prop.
-Definition el2 (r : radix) (x : R) (lbp : ln_beta_prop r x) : 
+
+Definition el2 (r : radix) (x : R) (lbp : ln_beta_prop r x) :
                 (x <> 0%R -> (bpow r (ln_beta_val r x lbp - 1) <= Rabs x < bpow r (ln_beta_val r x lbp)))%R := let '(Build_ln_beta_prop _ _ _ pf) := lbp in pf.
 
 Lemma abs2: forall x0 y : R, (x0 > 0)%R -> (x0 < y)%R -> (Rabs x0 < y)%R.
 Proof.
-  intros. unfold Rabs. destruct Rcase_abs. 
+  intros. unfold Rabs. destruct Rcase_abs.
   psatz R.
   psatz R.
 Qed.
@@ -5242,7 +5357,7 @@ Proof.
   intros.
   assert (Rabs x < bpow radix2 custom_emin)%R.
   unfold Rabs. destruct Rcase_abs.
-  
+
   psatz R.
   psatz R.
   specialize (H2 H3).
@@ -5271,37 +5386,37 @@ Proof.
 Lemma gt0ImpNE0 :forall x, (x>0 -> x<>0)%R.
                   intros. psatz R. Qed.
 
-Lemma zMaxProof : forall x1 x2, (x1<=x2 -> Z.max x1 x2 = x2)%Z. 
-intros. SearchAbout Z.max . pose proof Z.max_r. 
+Lemma zMaxProof : forall x1 x2, (x1<=x2 -> Z.max x1 x2 = x2)%Z.
+intros. SearchAbout Z.max . pose proof Z.max_r.
 specialize (H0 x1 x2 H). apply H0.
 Qed.
 
 Lemma fexpEminGtEmax :  (3 - custom_emax - custom_prec < custom_emax)%Z.
-pose proof precGe1. pose proof precLtEmax. unfold error,custom_emax, custom_prec in *. 
-lia. 
+pose proof precGe1. pose proof precLtEmax. unfold error,custom_emax, custom_prec in *.
+lia.
 Qed.
 
 Lemma fexpEminGtEmax1 : forall ex,  (ex <= custom_emin -> (ex <= ex - custom_prec) -> ex - custom_prec < custom_emax)%Z.
-intros. unfold custom_emin, custom_prec,custom_emax in *. 
+intros. unfold custom_emin, custom_prec,custom_emax in *.
 pose proof precGe1. pose proof precLtEmax.
 pose proof emaxGtEmin. lia.
 Qed.
  Set Printing Notations.
-Lemma floatMaxProofRounding : 
-  forall x ex, (bpow radix2 (ex - 1) <= Rabs (x) < bpow radix2 ex)%R -> 
+Lemma floatMaxProofRounding :
+  forall x ex, (bpow radix2 (ex - 1) <= Rabs (x) < bpow radix2 ex)%R ->
                (ex <= custom_emin)%Z ->
-               (x < floatMin -> x > 0 ->                        
+               (x < floatMin -> x > 0 ->
                 (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x = bpow radix2 ((FLT_exp (3 - custom_emax - custom_prec) custom_prec) ex) \/ round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x = R0 \/ bpow radix2 (ex - 1)<= round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x <= bpow radix2 ex) /\ Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x) < bpow radix2 custom_emax)%R.
 Proof.
-  
-  intros. 
-  assert (gt0 := H2).                  
+
+  intros.
+  assert (gt0 := H2).
   apply gt0ImpNE0 in H2.
   pose proof bpow_le.
   specialize (H3 radix2 ex custom_emin H0).
   pose proof emaxGtEmin.
   apply Z.gt_lt in H4.
-  
+
   pose proof bpow_lt.
   specialize (H5 radix2 emin emax H4 ).
   clear H4.
@@ -5309,8 +5424,8 @@ Proof.
   specialize (H4 x gt0).
   rewrite H4 in H.
   clear H4.
-  
-  
+
+
   destruct (Coqlib.zle ex  (FLT_exp (3 - custom_emax - custom_prec) custom_prec ex)).
   {
     pose proof round_bounded_small_pos.
@@ -5323,33 +5438,33 @@ Proof.
       rewrite H4 in *.
       pose proof floatMaxGt0.
       unfold floatMax in *.
-      unfold Rabs. destruct Rcase_abs.                       
-      split. constructor 2. constructor 1. intuition. 
+      unfold Rabs. destruct Rcase_abs.
+      split. constructor 2. constructor 1. intuition.
       psatz R. split. constructor 2. constructor 1. intuition.
-      psatz R. 
+      psatz R.
     }
     {
       pose proof bpow_lt.
       unfold FLT_exp in *.
       destruct (Z_le_gt_dec (ex - custom_prec) (3 - custom_emax - custom_prec)%Z).
       {
-        
+
         intros.
         pose proof zMaxProof as zMaxProof.
         specialize (zMaxProof (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z l0).
         rewrite zMaxProof in *.
-        
-        clear zMaxProof l0 H6 Heqr. 
+
+        clear zMaxProof l0 H6 Heqr.
         pose proof errorGt0.
         unfold error in *.
-        
+
         intros.
         pose proof fexpEminGtEmax as fexpEminGtEmax.
         pose proof bpow_lt.
         specialize (H7 radix2 (3 - custom_emax - custom_prec)%Z custom_emax fexpEminGtEmax).
-        split. 
+        split.
         constructor 1. apply H4.
-        clear fexpEminGtEmax H H1 H6 l H2 H5.     
+        clear fexpEminGtEmax H H1 H6 l H2 H5.
         pose proof bpow_gt_0.
         specialize (H radix2 (3 - custom_emax - custom_prec)%Z).
         pose proof bpow_gt_0.
@@ -5357,17 +5472,17 @@ Proof.
         unfold Rabs. destruct Rcase_abs. psatz R.   psatz R.
       }
       {
-        pose proof zMaxProof as zMaxProof. 
+        pose proof zMaxProof as zMaxProof.
         apply Z.gt_lt in g0.
         pose proof Z.lt_le_incl.
-        
+
         specialize (H7 (3 - custom_emax - custom_prec)%Z (ex - custom_prec)%Z g0).
         specialize (zMaxProof   (3 - custom_emax - custom_prec)%Z (ex - custom_prec)%Z H7).
         rewrite Z.max_comm in zMaxProof.
         rewrite zMaxProof in *.
-        
-        clear zMaxProof g0 H7 H6 Heqr. 
-        
+
+        clear zMaxProof g0 H7 H6 Heqr.
+
 
         intros.
         pose proof fexpEminGtEmax1.
@@ -5397,16 +5512,16 @@ Proof.
     pose proof bpow_gt_0.
     specialize (H7 radix2 (ex-1)%Z).
     psatz R. psatz R.
-    
+
   }
 Qed.
-Lemma floatMaxNegProofRounding : 
-  forall x ex, (bpow radix2 (ex - 1) <= Rabs (x) < bpow radix2 ex)%R -> 
-               (x > -floatMin ->   
-                (x < 0)%R ->                     
+Lemma floatMaxNegProofRounding :
+  forall x ex, (bpow radix2 (ex - 1) <= Rabs (x) < bpow radix2 ex)%R ->
+               (x > -floatMin ->
+                (x < 0)%R ->
                 (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x = -bpow radix2 ((FLT_exp (3 - custom_emax - custom_prec) custom_prec) ex) \/ round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x = R0 \/ -bpow radix2 ex<= round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x <= -bpow radix2 (ex-1)) /\ Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) x) < bpow radix2 custom_emax)%R.
 Proof.
-  intros. 
+  intros.
   assert (ex <= custom_emin)%Z.
   unfold floatMin in *.
   unfold Rabs in *.
@@ -5420,8 +5535,8 @@ Proof.
   apply lt_bpow in H.
   lia.
   psatz R.
-  
-  assert (lt0 := H1).                  
+
+  assert (lt0 := H1).
   assert (x <> R0).
   psatz R.
   unfold Rabs in *.
@@ -5429,7 +5544,7 @@ Proof.
 
   destruct (Coqlib.zle ex  (FLT_exp (3 - custom_emax - custom_prec) custom_prec ex)).
   {
-    
+
     pose proof round_bounded_small_pos.
     specialize (H4 radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (valid_rnd_ZR) (-x)%R ex).
     specialize (H4 l H).
@@ -5464,7 +5579,7 @@ Proof.
       rewrite round_ZR_opp in H4.
       unfold round_mode in *.
       split.
-      {       
+      {
         constructor 1.
         psatz R.
       }
@@ -5494,7 +5609,7 @@ Proof.
             pose proof custom_emaxGtCustom_emin.
             lia.
           }
-          
+
           rewrite Heqr0.
           rewrite H4.
           apply bpow_lt.
@@ -5517,7 +5632,7 @@ Proof.
     split. constructor 2. constructor 2. rewrite round_ZR_opp in Heqr0.
     unfold round_mode.
     psatz R.
-    
+
     unfold custom_emax, custom_prec, custom_emin in *.
     assert (bpow radix2 (FLT_exp (3 - emax - prec) prec ex) < bpow radix2 ex)%R.
     apply bpow_lt.
@@ -5527,7 +5642,7 @@ Proof.
     SearchAbout emax.
     pose proof emaxGtEmin.
     lia.
-    unfold round_mode in *.    
+    unfold round_mode in *.
     rewrite round_ZR_opp in *.
     pose proof emaxGtEmin.
     assert (bpow radix2 (FLT_exp (3 - emax - prec) prec ex) < bpow radix2 ex)%R.
@@ -5535,8 +5650,8 @@ Proof.
     intuition.
     assert (bpow radix2 ex < bpow radix2 emax)%R.
     apply bpow_lt.
-    lia.    
-    unfold Rabs. destruct Rcase_abs.    
+    lia.
+    unfold Rabs. destruct Rcase_abs.
     psatz R.
     assert (bpow radix2 emax > 0)%R.
     apply bpow_gt_0.
@@ -5544,11 +5659,11 @@ Proof.
     apply bpow_gt_0.
     psatz R.
   }
-  
+
   psatz R.
 Qed.
 
-Lemma floatMaxProof1 : forall x, 
+Lemma floatMaxProof1 : forall x,
                          (x < floatMin ->
                           x > 0 ->
                           Rabs (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
@@ -5556,7 +5671,7 @@ Lemma floatMaxProof1 : forall x,
 Proof.
   intros.
   generalize (el2 radix2 (x)%R (ln_beta radix2 (x))).
-  intros. 
+  intros.
   assert (gt0 := H0).
   apply gt0ImpNE0 in H0.
   specialize (H1 H0).
@@ -5567,7 +5682,7 @@ Proof.
   specialize (H3 radix2 ex custom_emin H2).
   pose proof emaxGtEmin.
   apply Z.gt_lt in H4.
-  
+
   pose proof bpow_lt.
   specialize (H5 radix2 emin emax H4 ).
   clear H4.
@@ -5587,7 +5702,7 @@ Proof.
       rewrite H4 in *.
       pose proof floatMaxGt0.
       unfold floatMax in *.
-      unfold Rabs. destruct Rcase_abs.                       
+      unfold Rabs. destruct Rcase_abs.
       psatz R. psatz R.
     }
     {
@@ -5599,14 +5714,14 @@ Proof.
         pose proof zMaxProof as zMaxProof.
         specialize (zMaxProof (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z l0).
         rewrite zMaxProof in H4.
-        clear zMaxProof l0 H6 Heqr. 
+        clear zMaxProof l0 H6 Heqr.
         pose proof errorGt0.
         unfold error in *.
         intros.
         pose proof fexpEminGtEmax as fexpEminGtEmax.
         pose proof bpow_lt.
         specialize (H7 radix2 (3 - custom_emax - custom_prec)%Z custom_emax fexpEminGtEmax).
-        clear fexpEminGtEmax H H1 H6 l H2 H5.     
+        clear fexpEminGtEmax H H1 H6 l H2 H5.
         pose proof bpow_gt_0.
         specialize (H radix2 (3 - custom_emax - custom_prec)%Z).
         pose proof bpow_gt_0.
@@ -5614,17 +5729,17 @@ Proof.
         unfold Rabs. destruct Rcase_abs. psatz R. psatz R.
       }
       {
-        pose proof zMaxProof as zMaxProof. 
+        pose proof zMaxProof as zMaxProof.
         apply Z.gt_lt in g0.
         pose proof Z.lt_le_incl.
-        
+
         specialize (H7 (3 - custom_emax - custom_prec)%Z (ex - custom_prec)%Z g0).
         specialize (zMaxProof   (3 - custom_emax - custom_prec)%Z (ex - custom_prec)%Z H7).
         rewrite Z.max_comm in zMaxProof.
         rewrite zMaxProof in l, H4.
-        
-        clear zMaxProof g0 H7 H6 Heqr. 
-        
+
+        clear zMaxProof g0 H7 H6 Heqr.
+
         intros.
         pose proof fexpEminGtEmax1.
         specialize (H6 ex H2 l).
@@ -5651,7 +5766,7 @@ Proof.
     pose proof bpow_gt_0.
     specialize (H7 radix2 (ex-1)%Z).
     psatz R. psatz R.
-    
+
   }
 Qed.
 
@@ -5660,18 +5775,18 @@ Lemma zlt_le : forall x1 x2, (x1 > x2 -> x1 >= x2)%Z.
   lia.
 Qed.
 
-Lemma exCustomPrec : forall x, (x <= custom_emin ->  custom_prec >=1 -> x - custom_prec  < custom_emin)%Z. 
-  intros. lia. 
-Qed.                    
+Lemma exCustomPrec : forall x, (x <= custom_emin ->  custom_prec >=1 -> x - custom_prec  < custom_emin)%Z.
+  intros. lia.
+Qed.
 
 Lemma zeroLtFloatMax : forall x, (x = 0 -> Rabs x <floatMax)%R .
   intros.  unfold Rabs in *. destruct Rcase_abs; unfold floatMax in *;
                              pose proof bpow_gt_0;
                              specialize (H0 radix2 custom_emax);
                              psatz R.
-Qed.                    
+Qed.
 
-Lemma exHelper : forall x, (x <= custom_emin -> x - custom_prec <custom_emin)%Z. 
+Lemma exHelper : forall x, (x <= custom_emin -> x - custom_prec <custom_emin)%Z.
   intros. unfold custom_prec, custom_emin in *.
   pose proof precGe1.
   lia.
@@ -5680,7 +5795,7 @@ Qed.
 Lemma roundedValLessThanFloatMin: forall ex, ((ex <=custom_emin)%Z -> (bpow radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec ex) <= floatMin))%R.
 Proof.
   intros.
-  unfold FLT_exp. 
+  unfold FLT_exp.
   destruct (Coqlib.zle (3 - custom_emax - custom_prec) (ex-custom_prec)).
   {
     SearchAbout Z.max.
@@ -5688,7 +5803,7 @@ Proof.
     specialize (H0 (ex-custom_prec)%Z (3 - custom_emax - custom_prec)%Z l).
     rewrite H0.
     unfold floatMin.
-    
+
     specialize (exHelper ex H).
     intros.
     pose proof bpow_lt.
@@ -5708,20 +5823,20 @@ Proof.
     apply bpow_le.
     lia.
   }
-Qed.        
+Qed.
 
-Lemma boundUsingRelativeErrorProof : forall lb1 lb2 ub1 ub2 x1 x2, 
+Lemma boundUsingRelativeErrorProof : forall lb1 lb2 ub1 ub2 x1 x2,
                                        (lb1 <= x1 ->
-                                        x1 <= ub1 -> 
+                                        x1 <= ub1 ->
                                         lb2 <= x2 ->
-                                        x2 <= ub2 -> 
+                                        x2 <= ub2 ->
                                         lb1 + lb2 >= 0 ->
                                         (Rabs
                                            (round radix2
                                                   (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
-                                                  (round_mode mode_ZR) (x1 + x2) - 
+                                                  (round_mode mode_ZR) (x1 + x2) -
                                             (x1 + x2)) <
-                                         bpow radix2 (- custom_prec + 1) * Rabs (x1 + x2))%R 
+                                         bpow radix2 (- custom_prec + 1) * Rabs (x1 + x2))%R
                                         ->
                                         0 <=
                                         round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
@@ -5738,21 +5853,21 @@ Proof.
   unfold error in *.
   unfold Rabs in *. destruct Rcase_abs; destruct Rcase_abs;
                     psatz R.
-Qed.                           
+Qed.
 
 
-Lemma boundUsingRelativeErrorProof2 : forall lb1 lb2 ub1 ub2 x1 x2, 
+Lemma boundUsingRelativeErrorProof2 : forall lb1 lb2 ub1 ub2 x1 x2,
                                         (lb1 <= x1 ->
-                                         x1 <= ub1 -> 
+                                         x1 <= ub1 ->
                                          lb2 <= x2 ->
-                                         x2 <= ub2 -> 
+                                         x2 <= ub2 ->
                                          x1 + x2 >= 0 ->
                                          (Rabs
                                             (round radix2
                                                    (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
-                                                   (round_mode mode_ZR) (x1 + x2) - 
+                                                   (round_mode mode_ZR) (x1 + x2) -
                                              (x1 + x2)) <
-                                          bpow radix2 (- custom_prec + 1) * Rabs (x1 + x2))%R 
+                                          bpow radix2 (- custom_prec + 1) * Rabs (x1 + x2))%R
                                          ->
                                          0 <=
                                          round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
@@ -5769,7 +5884,7 @@ Proof.
   unfold error in *.
   unfold Rabs in *. destruct Rcase_abs; destruct Rcase_abs;
                     psatz R.
-Qed.                           
+Qed.
 
 
 Lemma andExtra : forall (p1 p2:Prop), p1  -> p2 ->   p1 /\ p2.
@@ -5777,17 +5892,17 @@ Proof.
   simpl.
   intros.
   intuition.
-Qed.       
+Qed.
 
 Lemma orExtra3 : forall p1 p2 p3 p4: Prop, p1 -> p1 \/ p2 \/ p3 \/ p4.
 Proof.
-  simpl ;intros; intuition. Qed.              
+  simpl ;intros; intuition. Qed.
 
 Lemma diffOR : forall (p1 p2 p3 p4 : Prop), p1 \/ p2 \/ p3 \/ p4 -> p2 \/ p1 \/ p3 \/ p4.
 Proof.
-  
+
   intuition.
-Qed.                                      
+Qed.
 
 Lemma orExtra3_3 : forall p1 p2 p3 p4: Prop, p3 -> p1 \/ p2 \/ p3 \/ p4.
 Proof.
@@ -5797,7 +5912,7 @@ Proof.
 Lemma floatConstValidityProof : forall f, isFloatConstValid f -> None = floatToReal f -> False.
 Proof.
 
-  intros. 
+  intros.
   unfold isFloatConstValid in *.
   destruct f.
   { unfold floatToReal in *.
@@ -5815,9 +5930,9 @@ Proof.
     simpl in *.
     inversion H0.
   }
-Qed.          
+Qed.
 
-Lemma plusResultValidityProof : forall expr1 expr2 fState f, plusResultValidity expr1 expr2 fState -> (Some f = lift2 
+Lemma plusResultValidityProof : forall expr1 expr2 fState f, plusResultValidity expr1 expr2 fState -> (Some f = lift2
                                                                                                                   (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                                                                                                          custom_nan mode_ZR) (eval_NowTerm fState expr1)
                                                                                                                   (eval_NowTerm fState expr2)) -> None = floatToReal f ->False.
@@ -5829,7 +5944,7 @@ Proof.
   apply floatConstValidityProof.
 Qed.
 
-Lemma minusResultValidityProof : forall expr1 expr2 fState f, minusResultValidity expr1 expr2 fState -> (Some f = lift2 
+Lemma minusResultValidityProof : forall expr1 expr2 fState f, minusResultValidity expr1 expr2 fState -> (Some f = lift2
                                                                                                                     (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                                                                                                             custom_nan mode_ZR) (eval_NowTerm fState expr1)
                                                                                                                     (eval_NowTerm fState expr2)) -> None = floatToReal f ->False.
@@ -5841,7 +5956,7 @@ Proof.
   apply floatConstValidityProof.
 Qed.
 
-Lemma multResultValidityProof : forall expr1 expr2 fState f, multResultValidity expr1 expr2 fState -> (Some f = lift2 
+Lemma multResultValidityProof : forall expr1 expr2 fState f, multResultValidity expr1 expr2 fState -> (Some f = lift2
                                                                                                                   (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                                                                                                          custom_nan mode_ZR) (eval_NowTerm fState expr1)
                                                                                                                   (eval_NowTerm fState expr2)) -> None = floatToReal f ->False.
@@ -5851,7 +5966,7 @@ Proof.
   rewrite <- H0 in H.
   revert H H1.
   apply floatConstValidityProof.
-Qed.       
+Qed.
 
 Lemma minusSubNormalPosProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                             Some r1 = floatToReal f1 ->
@@ -5866,7 +5981,7 @@ Lemma minusSubNormalPosProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                                        custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                             (r1 - r2 >= 0)%R ->
                             (r1 - r2 < floatMin)%R ->
-                            o = floatToReal f -> 
+                            o = floatToReal f ->
                             match o with
                               | Some r =>
                                 (0  <= r <= floatMin)%R /\
@@ -5874,7 +5989,7 @@ Lemma minusSubNormalPosProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                                   (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                          custom_nan mode_ZR f1 f2)
                               | None => False
-                            end. 
+                            end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -5892,15 +6007,15 @@ Proof.
     psatz R.
   }
   {
-    pose proof subNormal as subNormalProof. 
+    pose proof subNormal as subNormalProof.
     specialize (subNormalProof (r1-r2)%R r resultMaxValue).
     generalize (el2 radix2 (r1-r2)%R (ln_beta radix2 (r1-r2))).
-    intros ln_beta_premise. 
+    intros ln_beta_premise.
     remember (ln_beta radix2 (r1 - r2)) as ex.
-    
+
     pose proof gt0ImpNE0 as gt0ImpNE0.
     specialize (gt0ImpNE0 (r1-r2)%R r).
-    
+
     specialize (ln_beta_premise gt0ImpNE0).
     pose proof bpow_le as bpow_le.
     specialize (bpow_le radix2 ex custom_emin subNormalProof).
@@ -5912,7 +6027,7 @@ Proof.
     assert (floatToRealRelationForExpr2 := floatToRealProof2).
     apply validFloat2 in floatToRealProof1.
     apply validFloat2 in floatToRealProof2.
-    
+
     specialize (H f1 f2 r1 r2 floatToRealRelationForExpr1 floatToRealRelationForExpr2).
     rewrite <- floatToRealProof1 in H.
     rewrite <- floatToRealProof2 in H.
@@ -5928,9 +6043,9 @@ Proof.
         pose proof zMaxProof as zMaxProof.
         specialize (zMaxProof (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z l).
         rewrite zMaxProof in *.
-        clear zMaxProof.  
+        clear zMaxProof.
         pose proof customEminMinValue as customEminMinValue.
-        
+
         apply Z.ge_le in customEminMinValue.
         pose proof Flocq.Core.Fcore_Raux.bpow_le.
         specialize (H5 radix2 (3 - custom_emax - custom_prec)%Z custom_emin customEminMinValue).
@@ -5938,7 +6053,7 @@ Proof.
         unfold error, custom_emin,custom_emax, custom_prec in *.
         pose proof bpow_gt_0 as bpowGt0_1.
         specialize (bpowGt0_1 radix2 (- prec + 1)%Z)%R.
-        
+
         unfold lofst in *.
         destruct f eqn:f_des.
         {
@@ -5947,7 +6062,7 @@ Proof.
           pose proof bpow_gt_0 as bpow_gt_0_2.
           specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
           split.
-          
+
           psatz R.
           unfold isFloatConstValid.
           rewrite <- plusResultStmt.
@@ -5970,7 +6085,7 @@ Proof.
           unfold FLT_exp in *.
           pose proof bpow_gt_0 as bpow_gt_0_2.
           remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-          
+
           specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
           unfold floatToReal.
           unfold custom_prec, custom_emax in *.
@@ -5983,13 +6098,13 @@ Proof.
           rewrite <- plusResultStmt in *.
           intuition.
         }
-        
+
       }
       {
         assert (g:=g0).
         clear g0.
         pose proof zMaxProof as zMaxProof.
-        
+
         intros.
         apply zlt_le in g.
         apply Z.ge_le in g.
@@ -5999,7 +6114,7 @@ Proof.
         rewrite <- H5 in H0.
         rewrite zMaxProof in *.
         clear zMaxProof H5 g.
-        
+
         intros.
         specialize (exCustomPrec ex subNormalProof custom_precGe1).
         intros.
@@ -6022,7 +6137,7 @@ Proof.
           pose proof bpow_gt_0.
           specialize (H11 radix2 emin).
           psatz R.
-          unfold isFloatConstValid. 
+          unfold isFloatConstValid.
           rewrite <- plusResultStmt.
           intuition.
         }
@@ -6041,7 +6156,7 @@ Proof.
           unfold FLT_exp in *.
           pose proof bpow_gt_0 as bpow_gt_0_2.
           remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-          
+
           specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
           unfold floatToReal.
           unfold custom_prec, custom_emax in *.
@@ -6063,7 +6178,7 @@ Proof.
     }
     {
       destruct H0.
-      { 
+      {
         unfold floatMin in *.
         pose proof bpow_gt_0.
         specialize (H5 radix2 custom_emin).
@@ -6089,7 +6204,7 @@ Proof.
         {
           rewrite <- plusResultStmt in *.
           unfold is_finite in *.
-          intuition.                            
+          intuition.
         }
         {
           split.
@@ -6129,7 +6244,7 @@ Proof.
         {
           rewrite <- plusResultStmt in *.
           unfold is_finite in *.
-          intuition.                            
+          intuition.
         }
         {
           split.
@@ -6145,7 +6260,7 @@ Proof.
     pose proof minusRoundingTruth2.
     pose proof round_0 as round_0.
     specialize (round_0 radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (valid_rnd_ZR)).
-    
+
     pose proof zeroLtFloatMax.
     specialize (H0 (round radix2
                           (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
@@ -6164,7 +6279,7 @@ Proof.
     pose proof bpow_gt_0.
     specialize (H3 radix2 custom_emin).
     rewrite e in *.
-    specialize (H H0).                
+    specialize (H H0).
     pose proof errorGt0.
     unfold lofst in *.
     inversion H10.
@@ -6176,7 +6291,7 @@ Proof.
       simpl in f_des.
       simpl in plusResultStmt.
       rewrite <- plusResultStmt in *.
-      
+
       remember (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                       (round_mode mode_ZR) 0)%R as roundedValue.
       simpl in H4.
@@ -6200,7 +6315,7 @@ Proof.
       simpl in f_des.
       simpl in plusResultStmt.
       rewrite <- plusResultStmt in *.
-      
+
       remember (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                       (round_mode mode_ZR) 0)%R as roundedValue.
       simpl in H4.
@@ -6226,7 +6341,7 @@ Lemma minusSubNormalNegProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                                       custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                             (r1 - r2 > 0 - floatMin)%R ->
                             (r1 - r2 < 0)%R ->
-                            o = floatToReal f -> 
+                            o = floatToReal f ->
                             match o with
                               | Some r =>
                                 (0 - floatMin <= r <= 0)%R /\
@@ -6234,7 +6349,7 @@ Lemma minusSubNormalNegProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                                   (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                          custom_nan mode_ZR f1 f2)
                               | None => False
-                            end. 
+                            end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -6249,23 +6364,23 @@ Proof.
   clear H3 H4 H5 H6 H8 H7 H H0 H9.
   Check Rle_lt_dec.
   generalize (el2 radix2 (r1-r2)%R (ln_beta radix2 (r1-r2))).
-  intros ln_beta_premise. 
+  intros ln_beta_premise.
   remember (ln_beta radix2 (r1 - r2)) as ex.
   assert ((r1 - r2)%R <> R0).
   psatz R.
-  
-  pose proof subNormalNeg as subNormalProof. 
+
+  pose proof subNormalNeg as subNormalProof.
   specialize (subNormalProof (r1-r2)%R sumMaxValue).
   assert (r1 - r2 > - floatMin)%R.
   psatz R.
-  
+
   assert (lt0ImpNE0 := H).
   clear H.
   specialize (ln_beta_premise lt0ImpNE0).
   pose proof bpow_le as bpow_le.
   specialize (bpow_le radix2 ex custom_emin).
   pose proof minusRoundingTruth2.
-  
+
   intros.
   pose proof floatMaxNegProofRounding.
   specialize (H3 (r1 - r2)%R ex ln_beta_premise H0 sumMaxValue).
@@ -6273,7 +6388,7 @@ Proof.
   assert (floatToRealRelationForExpr2 := floatToRealProof2).
   apply validFloat2 in floatToRealProof1.
   apply validFloat2 in floatToRealProof2.
-  
+
   specialize (H f1 f2 r1 r2 floatToRealRelationForExpr1 floatToRealRelationForExpr2).
   rewrite <- floatToRealProof1 in H.
   rewrite <- floatToRealProof2 in H.
@@ -6289,9 +6404,9 @@ Proof.
       pose proof zMaxProof as zMaxProof.
       specialize (zMaxProof (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z l).
       rewrite zMaxProof in *.
-      clear zMaxProof.  
+      clear zMaxProof.
       pose proof customEminMinValue as customEminMinValue.
-      
+
       apply Z.ge_le in customEminMinValue.
       pose proof Flocq.Core.Fcore_Raux.bpow_le.
       specialize (H6 radix2 (3 - custom_emax - custom_prec)%Z custom_emin customEminMinValue).
@@ -6299,7 +6414,7 @@ Proof.
       unfold error, custom_emin,custom_emax, custom_prec in *.
       pose proof bpow_gt_0 as bpowGt0_1.
       specialize (bpowGt0_1 radix2 (- prec + 1)%Z)%R.
-      
+
       unfold lofst in *.
       destruct f eqn:f_des.
       {
@@ -6331,7 +6446,7 @@ Proof.
         unfold FLT_exp in *.
         pose proof bpow_gt_0 as bpow_gt_0_2.
         remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-        
+
         specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
         unfold floatToReal.
         unfold custom_prec, custom_emax in *.
@@ -6352,7 +6467,7 @@ Proof.
       assert (g:=g0).
       clear g0.
       pose proof zMaxProof as zMaxProof.
-      
+
       intros.
       apply zlt_le in g.
       apply Z.ge_le in g.
@@ -6362,7 +6477,7 @@ Proof.
       rewrite <- H6 in H3.
       rewrite zMaxProof in *.
       clear zMaxProof H6 g.
-      
+
       intros.
       pose proof exCustomPrec.
       assert (r1 - r2 > 0 - floatMin)%R.
@@ -6371,7 +6486,7 @@ Proof.
       clear H7.
       rewrite <- Heqex in subNormalProof.
       specialize (exCustomPrec ex subNormalProof custom_precGe1).
-      
+
       intros.
       pose proof bpow_lt.
       specialize (H8 radix2 (ex-custom_prec)%Z custom_emin H7).
@@ -6388,15 +6503,15 @@ Proof.
         pose proof bpow_gt_0 as bpow_gt_0_2.
         specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
         split.
-        
+
         pose proof bpow_gt_0.
         specialize (H13 radix2 emin).
         unfold B2R.
         clear H6 H7 H8 H10. clear H13 floatToRealRelationForExpr1 floatToRealRelationForExpr2.
-        clear Heqex H0 H12 plusResultStmt floatToRealProof1 floatToRealProof2 H5. 
+        clear Heqex H0 H12 plusResultStmt floatToRealProof1 floatToRealProof2 H5.
         clear lt0ImpNE0 H expr1Valid expr2Valid ex ln_beta_premise subNormalProof bpow_le H3 H4 H9.
         psatz R.
-        unfold isFloatConstValid. 
+        unfold isFloatConstValid.
         rewrite <- plusResultStmt.
         intuition.
       }
@@ -6415,7 +6530,7 @@ Proof.
         unfold FLT_exp in *.
         pose proof bpow_gt_0 as bpow_gt_0_2.
         remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-        
+
         specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
         unfold floatToReal.
         unfold custom_prec, custom_emax in *.
@@ -6440,7 +6555,7 @@ Proof.
   }
   {
     destruct H3.
-    { 
+    {
       unfold floatMin in *.
       pose proof bpow_gt_0.
       specialize (H6 radix2 custom_emin).
@@ -6467,7 +6582,7 @@ Proof.
       {
         rewrite <- plusResultStmt in *.
         unfold is_finite in *.
-        intuition.                            
+        intuition.
       }
       {
         split.
@@ -6513,7 +6628,7 @@ Proof.
       {
         rewrite <- plusResultStmt in *.
         unfold is_finite in *.
-        intuition.                            
+        intuition.
       }
       {
         split.
@@ -6522,9 +6637,9 @@ Proof.
         assert (r1 - r2 >0 - bpow radix2 custom_emin)%R.
         psatz R.
         specialize (subNormalProof H13).
-        rewrite <- Heqex in subNormalProof. 
+        rewrite <- Heqex in subNormalProof.
         specialize (bpow_le subNormalProof).
-        clear expr1Valid expr2Valid. 
+        clear expr1Valid expr2Valid.
         clear floatToRealRelationForExpr1 floatToRealRelationForExpr2.
         clear Heqex ln_beta_premise floatToRealProof1 floatToRealProof2 plusResultStmt sumMaxValue.
         clear lowerBoundMinCase.
@@ -6561,7 +6676,7 @@ Lemma subNormalPosProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                             ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                             (r1 + r2 < floatMin)%R ->
                             (((0 - lb1) + (0 - lb2)) * (1 + error) < floatMax)%R->
-                            o = floatToReal f -> 
+                            o = floatToReal f ->
                             match o with
                               | Some r =>
                                 (0  <= r <= floatMin)%R /\
@@ -6569,7 +6684,7 @@ Lemma subNormalPosProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                                   (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                          custom_nan mode_ZR f1 f2)
                               | None => False
-                            end. 
+                            end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -6589,15 +6704,15 @@ Proof.
     psatz R.
   }
   {
-    pose proof subNormal as subNormalProof. 
+    pose proof subNormal as subNormalProof.
     specialize (subNormalProof (r1+r2)%R r resultMaxValue).
     generalize (el2 radix2 (r1+r2)%R (ln_beta radix2 (r1+r2))).
-    intros ln_beta_premise. 
+    intros ln_beta_premise.
     remember (ln_beta radix2 (r1 + r2)) as ex.
-    
+
     pose proof gt0ImpNE0 as gt0ImpNE0.
     specialize (gt0ImpNE0 (r1+r2)%R r).
-    
+
     specialize (ln_beta_premise gt0ImpNE0).
     pose proof bpow_le as bpow_le.
     specialize (bpow_le radix2 ex custom_emin subNormalProof).
@@ -6609,7 +6724,7 @@ Proof.
     assert (floatToRealRelationForExpr2 := floatToRealProof2).
     apply validFloat2 in floatToRealProof1.
     apply validFloat2 in floatToRealProof2.
-    
+
     specialize (H f1 f2 r1 r2 floatToRealRelationForExpr1 floatToRealRelationForExpr2).
     rewrite <- floatToRealProof1 in H.
     rewrite <- floatToRealProof2 in H.
@@ -6625,9 +6740,9 @@ Proof.
         pose proof zMaxProof as zMaxProof.
         specialize (zMaxProof (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z l).
         rewrite zMaxProof in *.
-        clear zMaxProof.  
+        clear zMaxProof.
         pose proof customEminMinValue as customEminMinValue.
-        
+
         apply Z.ge_le in customEminMinValue.
         pose proof Flocq.Core.Fcore_Raux.bpow_le.
         specialize (H5 radix2 (3 - custom_emax - custom_prec)%Z custom_emin customEminMinValue).
@@ -6635,7 +6750,7 @@ Proof.
         unfold error, custom_emin,custom_emax, custom_prec in *.
         pose proof bpow_gt_0 as bpowGt0_1.
         specialize (bpowGt0_1 radix2 (- prec + 1)%Z)%R.
-        
+
         unfold lofst in *.
         destruct f eqn:f_des.
         {
@@ -6644,7 +6759,7 @@ Proof.
           pose proof bpow_gt_0 as bpow_gt_0_2.
           specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
           split.
-          
+
           psatz R.
           unfold isFloatConstValid.
           rewrite <- plusResultStmt.
@@ -6667,7 +6782,7 @@ Proof.
           unfold FLT_exp in *.
           pose proof bpow_gt_0 as bpow_gt_0_2.
           remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-          
+
           specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
           unfold floatToReal.
           unfold custom_prec, custom_emax in *.
@@ -6680,13 +6795,13 @@ Proof.
           rewrite <- plusResultStmt in *.
           intuition.
         }
-        
+
       }
       {
         assert (g:=g0).
         clear g0.
         pose proof zMaxProof as zMaxProof.
-        
+
         intros.
         apply zlt_le in g.
         apply Z.ge_le in g.
@@ -6696,7 +6811,7 @@ Proof.
         rewrite <- H5 in H0.
         rewrite zMaxProof in *.
         clear zMaxProof H5 g.
-        
+
         intros.
         specialize (exCustomPrec ex subNormalProof custom_precGe1).
         intros.
@@ -6719,7 +6834,7 @@ Proof.
           pose proof bpow_gt_0.
           specialize (H10 radix2 emin).
           psatz R.
-          unfold isFloatConstValid. 
+          unfold isFloatConstValid.
           rewrite <- plusResultStmt.
           intuition.
         }
@@ -6738,7 +6853,7 @@ Proof.
           unfold FLT_exp in *.
           pose proof bpow_gt_0 as bpow_gt_0_2.
           remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-          
+
           specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
           unfold floatToReal.
           unfold custom_prec, custom_emax in *.
@@ -6751,7 +6866,7 @@ Proof.
           clear floatToRealProof1.
           clear floatToRealProof2.
           clear r bpow_le gt0ImpNE0 subNormalProof H H4.
-          clear floatMaxBound1 floatMaxBound3. 
+          clear floatMaxBound1 floatMaxBound3.
           psatz R.
           unfold isFloatConstValid.
           rewrite <- plusResultStmt in *.
@@ -6761,7 +6876,7 @@ Proof.
     }
     {
       destruct H0.
-      { 
+      {
         unfold floatMin in *.
         pose proof bpow_gt_0.
         specialize (H5 radix2 custom_emin).
@@ -6787,7 +6902,7 @@ Proof.
         {
           rewrite <- plusResultStmt in *.
           unfold is_finite in *.
-          intuition.                            
+          intuition.
         }
         {
           split.
@@ -6827,7 +6942,7 @@ Proof.
         {
           rewrite <- plusResultStmt in *.
           unfold is_finite in *.
-          intuition.                            
+          intuition.
         }
         {
           split.
@@ -6843,7 +6958,7 @@ Proof.
     pose proof plusRoundingTruth2.
     pose proof round_0 as round_0.
     specialize (round_0 radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (valid_rnd_ZR)).
-    
+
     pose proof zeroLtFloatMax.
     specialize (H0 (round radix2
                           (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
@@ -6862,7 +6977,7 @@ Proof.
     pose proof bpow_gt_0.
     specialize (H3 radix2 custom_emin).
     rewrite e in *.
-    specialize (H H0).                
+    specialize (H H0).
     pose proof errorGt0.
     unfold lofst in *.
     inversion H12.
@@ -6874,7 +6989,7 @@ Proof.
       simpl in f_des.
       simpl in plusResultStmt.
       rewrite <- plusResultStmt in *.
-      
+
       remember (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                       (round_mode mode_ZR) 0)%R as roundedValue.
       simpl in H4.
@@ -6898,7 +7013,7 @@ Proof.
       simpl in f_des.
       simpl in plusResultStmt.
       rewrite <- plusResultStmt in *.
-      
+
       remember (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
                       (round_mode mode_ZR) 0)%R as roundedValue.
       simpl in H4.
@@ -6913,14 +7028,14 @@ Qed.
 
 
 Lemma minusAssistProofGreaterThanFloatMin :
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
     (lb2 <= r2 <= ub2)%R ->
     ((ub1 - lb2) * (1 + error) < floatMax)%R ->
     ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-    (r1 - r2 >= floatMin)%R -> 
+    (r1 - r2 >= floatMin)%R ->
     B2R custom_prec custom_emax
         (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -6938,8 +7053,8 @@ Proof.
     assert (expr2Bound := H2).
     assert (floatMaxBound := H3).
     assert (floatMaxBound2 := H4).
-    clear H H0 H1 H2 H3 H4. 
-  
+    clear H H0 H1 H2 H3 H4.
+
   destruct expr1Bound.
   destruct expr2Bound.
   assert (x1lb := H).
@@ -6975,10 +7090,8 @@ Proof.
   apply minusRoundingTruth2.
 Qed.
 
-Arguments B754_zero _ _ _ : clear implicits.
-Arguments B754_finite _ _ _ _ _ _ : clear implicits.
 Lemma minusAssistProofBetweenZeroAndFloatMin :
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
@@ -6986,7 +7099,7 @@ Lemma minusAssistProofBetweenZeroAndFloatMin :
     ((ub1 - lb2) * (1 + error) < floatMax)%R ->
     ((ub2 - lb1) * (1 + error) < floatMax)%R ->
     ((r1 - r2) >= 0)%R ->
-    (r1 - r2 < floatMin)%R -> 
+    (r1 - r2 < floatMin)%R ->
     B2R custom_prec custom_emax
         (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -7012,23 +7125,23 @@ Proof.
   {
     psatz R.
   }
-  
+
   {
     destruct expr1Bound.
     destruct expr2Bound.
-    pose proof or_introl.                  
+    pose proof or_introl.
     intros.
-    
+
     pose proof subNormal as subNormalProof.
-    apply Rlt_gt in r.     
+    apply Rlt_gt in r.
     specialize (subNormalProof (r1-r2)%R r n).
     generalize (el2 radix2 (r1-r2)%R (ln_beta radix2 (r1-r2))).
-    intros ln_beta_premise. 
+    intros ln_beta_premise.
     remember (ln_beta radix2 (r1 - r2)) as ex.
-    
+
     pose proof gt0ImpNE0 as gt0ImpNE0.
     specialize (gt0ImpNE0 (r1-r2)%R r).
-    
+
     specialize (ln_beta_premise gt0ImpNE0).
     pose proof bpow_le as bpow_le.
     specialize (bpow_le radix2 ex custom_emin subNormalProof).
@@ -7052,10 +7165,10 @@ Proof.
       inversion floatToRealRelationForExpr1.
       destruct f2 eqn:f2_des.
       {
-        
+
         inversion floatToRealRelationForExpr2.
-        remember (B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b))%R.
-        remember (B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b0))%R.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
         unfold B2R in Heqr0, Heqr3.
         subst.
         apply H4.
@@ -7068,11 +7181,11 @@ Proof.
       }
       {
         inversion floatToRealRelationForExpr2.
-        remember (B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b)).
-        remember (B2R custom_prec custom_emax (@B754_finite custom_prec custom_emax b0 m e e0)).
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b)).
+        remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
         unfold B2R in Heqr0, Heqr3.
         subst.
-        apply H4.          
+        apply H4.
       }
     }
     {
@@ -7085,10 +7198,10 @@ Proof.
       inversion floatToRealRelationForExpr1.
       destruct f2 eqn:f2_des.
       {
-        
+
         inversion floatToRealRelationForExpr2.
-        remember (B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b))%R.
-        remember (B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b0))%R.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
         unfold B2R in Heqr0, Heqr3.
         subst.
         apply H4.
@@ -7101,11 +7214,11 @@ Proof.
       }
       {
         inversion floatToRealRelationForExpr2.
-        remember (B2R custom_prec custom_emax (@B754_zero custom_prec custom_emax b)).
-        remember (B2R custom_prec custom_emax (@B754_finite custom_prec custom_emax b0 m e e0)).
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b)).
+        remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
         unfold B2R in Heqr0, Heqr3.
         subst.
-        apply H4.          
+        apply H4.
       }
     }
   }
@@ -7115,13 +7228,13 @@ Proof.
     {
       destruct f2 eqn:f2_des.
       {
-        
+
         inversion floatToRealProof1.
         inversion floatToRealProof2.
         simpl.
         rewrite <- H0.
         rewrite H0.
-        rewrite Rminus_0_r. 
+        rewrite Rminus_0_r.
         pose proof round_0.
         pose proof valid_rnd_ZR.
         specialize (H radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)  (round_mode mode_ZR) H2).
@@ -7130,7 +7243,7 @@ Proof.
         rewrite H.
         destruct Bool.eqb.
         simpl.
-        intuition. 
+        intuition.
         simpl.
         intuition.
 
@@ -7191,7 +7304,7 @@ Proof.
           apply bpow_gt_0.
           apply valid_rnd_ZR.
         }
-        
+
         destruct (Rlt_bool
            (Rabs
               (round radix2
@@ -7208,7 +7321,7 @@ Proof.
           apply H3.
           apply H6.
         }
-        {            
+        {
           intuition.
         }
         }
@@ -7272,7 +7385,7 @@ Proof.
           apply bpow_gt_0.
           apply valid_rnd_ZR.
         }
-        
+
         destruct (Rlt_bool
            (Rabs
               (round radix2
@@ -7289,7 +7402,7 @@ Proof.
           apply H3.
           apply H6.
         }
-        {            
+        {
           intuition.
         }
       }
@@ -7349,7 +7462,7 @@ Proof.
           apply bpow_gt_0.
           apply valid_rnd_ZR.
         }
-        
+
         destruct (Rlt_bool
                     (Rabs
                        (round radix2
@@ -7366,7 +7479,7 @@ Proof.
           apply H3.
           apply H6.
         }
-        {            
+        {
           intuition.
         }
       }
@@ -7375,7 +7488,7 @@ Proof.
 Qed.
 
 Lemma minusAssistProofBetweenNegFloatMinAndZero :
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
@@ -7383,7 +7496,7 @@ Lemma minusAssistProofBetweenNegFloatMinAndZero :
     ((ub1 - lb2) * (1 + error) < floatMax)%R ->
     ((ub2 - lb1) * (1 + error) < floatMax)%R ->
     ((r1 - r2) < 0)%R ->
-    (r1 - r2 > 0 - floatMin)%R -> 
+    (r1 - r2 > 0 - floatMin)%R ->
     B2R custom_prec custom_emax
         (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -7405,12 +7518,12 @@ Proof.
   clear H H0 H1 H2 H3 H4.
   destruct expr1Bound.
   destruct expr2Bound.
-  pose proof or_introl.                  
+  pose proof or_introl.
   intros.
-  
+
   pose proof subNormalNeg as subNormalNegProof.
   assert (r :=  H5).
-  assert (n :=  H6).  
+  assert (n :=  H6).
   clear H5 H6.
   specialize (subNormalNegProof (r1-r2)%R r n).
   generalize (el2 radix2 (r1-r2)%R (ln_beta radix2 (r1-r2))).
@@ -7446,7 +7559,7 @@ Proof.
     inversion floatToRealRelationForExpr1.
     destruct f2 eqn:f2_des.
     {
-      
+
       inversion floatToRealRelationForExpr2.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
@@ -7466,7 +7579,7 @@ Proof.
       remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
       unfold B2R in Heqr0, Heqr3.
       subst.
-      apply H5.          
+      apply H5.
     }
   }
   {
@@ -7479,7 +7592,7 @@ Proof.
     inversion floatToRealRelationForExpr1.
     destruct f2 eqn:f2_des.
     {
-      
+
       inversion floatToRealRelationForExpr2.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
@@ -7499,20 +7612,20 @@ Proof.
       remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
       unfold B2R in Heqr0, Heqr3.
       subst.
-      apply H5.          
+      apply H5.
     }
   }
 Qed.
 
 Lemma minusAssistProofLessThanNegFloatMin :
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
     (lb2 <= r2 <= ub2)%R ->
     ((ub1 - lb2) * (1 + error) < floatMax)%R ->
     ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-    ((r1 - r2) <= 0 - floatMin)%R -> 
+    ((r1 - r2) <= 0 - floatMin)%R ->
     B2R custom_prec custom_emax
         (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -7530,8 +7643,8 @@ Proof.
   assert (expr2Bound := H2).
   assert (floatMaxBound := H3).
   assert (floatMaxBound2 := H4).
-  clear H H0 H1 H2 H3 H4. 
-  
+  clear H H0 H1 H2 H3 H4.
+
   destruct expr1Bound.
   destruct expr2Bound.
   assert (x1lb := H).
@@ -7568,14 +7681,14 @@ Proof.
 Qed.
 
 Lemma assistProofGreaterThanFloatMin :
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
     (lb2 <= r2 <= ub2)%R ->
     ((ub1 + ub2) * (1 + error) < floatMax)%R ->
     ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
-    (r1 + r2 >= floatMin)%R -> 
+    (r1 + r2 >= floatMin)%R ->
     B2R custom_prec custom_emax
         (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -7593,8 +7706,8 @@ Proof.
   assert (expr2Bound := H2).
   assert (floatMaxBound := H3).
   assert (floatMaxBound2 := H4).
-  clear H H0 H1 H2 H3 H4. 
-  
+  clear H H0 H1 H2 H3 H4.
+
   destruct expr1Bound.
   destruct expr2Bound.
   assert (x1lb := H).
@@ -7630,15 +7743,571 @@ Proof.
 Qed.
 
 
+Lemma multAssistProofGreaterThanFloatMin :
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
+    Some r1 = floatToReal f1 ->
+    Some r2 = floatToReal f2 ->
+    (lb1 <= r1 <= ub1)%R ->
+    (lb2 <= r2 <= ub2)%R ->
+    (ub1 * ub2 * (1 + error) < floatMax)%R ->
+    (lb1 * lb2 * (1 + error) < floatMax)%R ->
+    (lb1 * ub2 * (1 + error) > 0 - floatMax)%R ->
+    (lb2 * ub1 * (1 + error) > 0 - floatMax)%R ->
+    (r1 * r2 >= floatMin)%R ->
+    B2R custom_prec custom_emax
+        (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+               custom_nan mode_ZR f1 f2) =
+    round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+          (round_mode mode_ZR)
+          (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2) /\
+    is_finite custom_prec custom_emax
+              (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                     custom_nan mode_ZR f1 f2) = true.
+Proof.
+  intros.
+  assert (floatToRealProof1 := H).
+  assert (floatToRealProof2 := H0).
+  assert (expr1Bound := H1).
+  assert (expr2Bound := H2).
+  assert (floatMaxBound := H3).
+  assert (floatMaxBound2 := H4).
+  assert (floatMaxBound3 := H5).
+  assert (floatMaxBound4 := H6).
+  clear H H0 H1 H2 H3 H4 H5 H6.
+
+  destruct expr1Bound.
+  destruct expr2Bound.
+  assert (x1lb := H).
+  assert (x1ub := H0).
+  assert (x2lb := H1).
+  assert (x2ub := H2).
+  clear H H0 H1 H2.
+  apply Rle_ge in x1lb.
+  apply Rle_ge in x2lb.
+  assert (floatMinCase3 := H7).
+  clear H7.
+  pose proof relative_error as relative_error.
+  specialize (relative_error radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) validFexpProof (custom_emin)%Z custom_prec precThm (round_mode mode_ZR) (valid_rnd_ZR) (r1 * r2)%R).
+  assert (floatMin <= Rabs (r1 * r2)).
+  apply Rabs_ge.
+
+  psatz R.
+  assert (absProof := X).
+  specialize (relative_error absProof).
+  (* relative_error *)
+  pose proof multRoundingTruth3 as multRoundingTruth3.
+  specialize (multRoundingTruth3 f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 ).
+  pose proof orExtra as floatMinPremise.
+  specialize (floatMinPremise (r1 * r2 >= floatMin)%R (r1 * r2 <= 0 - floatMin)%R floatMinCase3).
+  apply Rge_le in x1lb.
+  apply Rge_le in x2lb.
+  specialize (multRoundingTruth3 floatMinPremise x1lb x2lb floatMaxBound).
+  clear X.
+  specialize (multRoundingTruth3 floatMaxBound2 floatMaxBound3 floatMaxBound4 x1ub x2ub).
+  pose proof multRoundingTruth2 as multRoundingTruth2.
+  specialize (multRoundingTruth2 f1 f2 r1 r2 floatToRealProof1 floatToRealProof2
+                                 multRoundingTruth3).
+  apply multRoundingTruth2.
+Qed.
+
+Lemma multAssistProofBetween0AndFloatMin :
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
+    Some r1 = floatToReal f1 ->
+    Some r2 = floatToReal f2 ->
+    (lb1 <= r1 <= ub1)%R ->
+    (lb2 <= r2 <= ub2)%R ->
+    (ub1 * ub2 * (1 + error) < floatMax)%R ->
+    (lb1 * lb2 * (1 + error) < floatMax)%R ->
+    (lb1 * ub2 * (1 + error) > 0 - floatMax)%R ->
+    (lb2 * ub1 * (1 + error) > 0 - floatMax)%R ->
+    (r1 * r2 >= R0)%R ->
+    (r1 * r2 < floatMin)%R ->
+    B2R custom_prec custom_emax
+        (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+               custom_nan mode_ZR f1 f2) =
+    round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+          (round_mode mode_ZR)
+          (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2) /\
+    is_finite custom_prec custom_emax
+              (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                     custom_nan mode_ZR f1 f2) = true.
+Proof.
+  intros.
+  assert (floatToRealProof1 := H).
+  assert (floatToRealProof2 := H0).
+  assert (expr1Bound := H1).
+  assert (expr2Bound := H2).
+  assert (floatMaxBound := H3).
+  assert (floatMaxBound2 := H4).
+  assert (floatMaxBound3 := H5).
+  assert (floatMaxBound4 := H6).
+  clear H H0 H1 H2 H3 H4 H5 H6.
+  (* new thing*)
+  assert (n := H8).
+  clear H8.
+  destruct (Rle_lt_or_eq_dec 0 (r1*r2)%R).
+  {
+    psatz R.
+  }
+
+  {
+    pose proof relErrorBasedOnFloatMinTruthMult as relErrorBasedOnFloatMinTruthMult.
+    specialize (relErrorBasedOnFloatMinTruthMult r1 r2 lb1 lb2 ub1 ub2 ).
+    destruct expr1Bound.
+    destruct expr2Bound.
+    pose proof or_introl.
+    intros.
+
+    pose proof subNormal as subNormalProof.
+    apply Rlt_gt in r.
+    specialize (subNormalProof (r1*r2)%R r n).
+    generalize (el2 radix2 (r1*r2)%R (ln_beta radix2 (r1*r2))).
+    intros ln_beta_premise.
+    remember (ln_beta radix2 (r1 * r2)) as ex.
+
+    pose proof gt0ImpNE0 as gt0ImpNE0.
+    specialize (gt0ImpNE0 (r1*r2)%R r).
+
+    specialize (ln_beta_premise gt0ImpNE0).
+    pose proof bpow_le as bpow_le.
+    specialize (bpow_le radix2 ex custom_emin subNormalProof).
+    pose proof multRoundingTruth2.
+    intros.
+    pose proof floatMaxProofRounding.
+    specialize (H5 (r1 * r2)%R ex ln_beta_premise subNormalProof n r).
+    assert (floatToRealRelationForExpr1 := floatToRealProof1).
+    assert (floatToRealRelationForExpr2 := floatToRealProof2).
+    apply validFloat2 in floatToRealProof1.
+    apply validFloat2 in floatToRealProof2.
+    specialize (H4 f1 f2 r1 r2 floatToRealRelationForExpr1 floatToRealRelationForExpr2).
+    rewrite <- floatToRealProof1 in H4.
+    rewrite <- floatToRealProof2 in H4.
+    destruct H5.
+    specialize (H4 H6).
+    unfold floatToReal in *.
+    unfold isFloatConstValid in *.
+    destruct f1 eqn:f_des.
+    {
+      inversion floatToRealRelationForExpr1.
+      destruct f2 eqn:f2_des.
+      {
+
+        inversion floatToRealRelationForExpr2.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
+        unfold B2R in Heqr0, Heqr3.
+        subst.
+        apply H4.
+      }
+      {
+        inversion floatToRealRelationForExpr2.
+      }
+      {
+        inversion floatToRealRelationForExpr2.
+      }
+      {
+        inversion floatToRealRelationForExpr2.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b)).
+        remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
+        unfold B2R in Heqr0, Heqr3.
+        subst.
+        apply H4.
+      }
+    }
+    {
+      inversion floatToRealRelationForExpr1.
+    }
+    {
+      inversion floatToRealRelationForExpr1.
+    }
+    {
+      inversion floatToRealRelationForExpr1.
+      destruct f2 eqn:f2_des.
+      {
+
+        inversion floatToRealRelationForExpr2.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
+        unfold B2R in Heqr0, Heqr3.
+        subst.
+        apply H4.
+      }
+      {
+        inversion floatToRealRelationForExpr2.
+      }
+      {
+        inversion floatToRealRelationForExpr2.
+      }
+      {
+        inversion floatToRealRelationForExpr2.
+        remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b)).
+        remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
+        unfold B2R in Heqr0, Heqr3.
+        subst.
+        apply H4.
+      }
+    }
+  }
+  {
+    unfold floatToReal in *.
+    destruct f1 eqn:f1_des.
+    {
+      destruct f2 eqn:f2_des.
+      {
+
+        inversion floatToRealProof1.
+        inversion floatToRealProof2.
+        simpl.
+        rewrite <- H0.
+        rewrite H0.
+        rewrite Rmult_0_r.
+        pose proof round_0.
+        pose proof valid_rnd_ZR.
+        specialize (H radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)  (round_mode mode_ZR) H2).
+        unfold round_mode in *.
+        simpl in H.
+        rewrite H.
+        intuition.
+      }
+      {
+        inversion floatToRealProof2.
+      }
+      {
+        inversion floatToRealProof2.
+      }
+      {
+        inversion floatToRealProof1.
+        inversion floatToRealProof2.
+        simpl.
+        rewrite <- H0.
+        rewrite <- H1.
+        rewrite <- e.
+        pose proof round_0.
+        pose proof valid_rnd_ZR.
+        specialize (H radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)  (round_mode mode_ZR) H2).
+        unfold round_mode in *.
+        simpl in H.
+        rewrite H.
+        split.
+        clear -H0 e.
+        psatz R.
+        reflexivity.
+      }
+    }
+    {
+      inversion floatToRealProof1.
+    }
+    {
+      inversion floatToRealProof1.
+    }
+    {
+      destruct f2 eqn:f2_des.
+      {
+        inversion floatToRealProof1.
+        inversion floatToRealProof2.
+        simpl.
+        rewrite <- H0.
+        rewrite <- H1.
+        rewrite <- e.
+        pose proof round_0.
+        pose proof valid_rnd_ZR.
+        specialize (H radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)  (round_mode mode_ZR) H2).
+        unfold round_mode in *.
+        simpl in H.
+        rewrite H.
+        split.
+        psatz R.
+        reflexivity.
+      }
+      {
+        inversion floatToRealProof2.
+      }
+      {
+        inversion floatToRealProof2.
+      }
+      {
+        inversion floatToRealProof1.
+        inversion floatToRealProof2.
+        pose proof Bmult_correct.
+        Set Printing Notations.
+        specialize (H custom_prec custom_emax).
+        specialize (H custom_precGt0 custom_precLtEmax custom_nan ).
+        specialize (H mode_ZR).
+        specialize (H f1 f2).
+        rewrite f1_des, f2_des in *.
+        unfold is_finite in *.
+        assert (true = true).
+        reflexivity.
+        assert ((Rlt_bool
+                   (Rabs
+                      (round radix2
+                             (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                             (round_mode mode_ZR)
+                             (B2R custom_prec custom_emax
+                                  (B754_finite custom_prec custom_emax b m e0 e1) *
+                              B2R custom_prec custom_emax
+                                  (B754_finite custom_prec custom_emax b0 m0 e2 e3))))
+                   (bpow radix2 custom_emax)) = true).
+        apply rltProof2.
+        unfold Rabs.
+        destruct Rcase_abs.
+        {
+          unfold B2R.
+          rewrite <- H0.
+          rewrite <- H1.
+          rewrite <- e.
+          rewrite round_0.
+          pose proof bpow_gt_0.
+          rewrite Ropp_0.
+          apply bpow_gt_0.
+          apply valid_rnd_ZR.
+        }
+        {
+          unfold B2R.
+          rewrite <- H0.
+          rewrite <- H1.
+          rewrite <- e.
+          rewrite round_0.
+          pose proof bpow_gt_0.
+          apply bpow_gt_0.
+          apply valid_rnd_ZR.
+        }
+
+        destruct (Rlt_bool
+                    (Rabs
+                       (round radix2
+                              (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                              (round_mode mode_ZR)
+                              (B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e0 e1) *
+                               B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b0 m0 e2 e3))))
+                    (bpow radix2 custom_emax)) eqn:rlt.
+        {
+          decompose [and] H.
+          split.
+          apply H4.
+          apply H6.
+        }
+        {
+          intuition.
+        }
+      }
+    }
+  }
+Qed.
+
+
+Lemma multAssistProofLessThanNegFloatMin :
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
+    Some r1 = floatToReal f1 ->
+    Some r2 = floatToReal f2 ->
+    (lb1 <= r1 <= ub1)%R ->
+    (lb2 <= r2 <= ub2)%R ->
+    (ub1 * ub2 * (1 + error) < floatMax)%R ->
+    (lb1 * lb2 * (1 + error) < floatMax)%R ->
+    (lb1 * ub2 * (1 + error) > 0 - floatMax)%R ->
+    (lb2 * ub1 * (1 + error) > 0 - floatMax)%R ->
+    (r1 * r2 <= R0 - floatMin)%R ->
+    B2R custom_prec custom_emax
+        (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+               custom_nan mode_ZR f1 f2) =
+    round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+          (round_mode mode_ZR)
+          (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2) /\
+    is_finite custom_prec custom_emax
+              (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                     custom_nan mode_ZR f1 f2) = true.
+Proof.
+  intros.
+  assert (floatToRealProof1 := H).
+  assert (floatToRealProof2 := H0).
+  assert (expr1Bound := H1).
+  assert (expr2Bound := H2).
+  assert (floatMaxBound := H3).
+  assert (floatMaxBound2 := H4).
+  assert (floatMaxBound3 := H5).
+  assert (floatMaxBound4 := H6).
+  clear H H0 H1 H2 H3 H4 H5 H6.
+
+  destruct expr1Bound.
+  destruct expr2Bound.
+  assert (x1lb := H).
+  assert (x1ub := H0).
+  assert (x2lb := H1).
+  assert (x2ub := H2).
+  clear H H0 H1 H2.
+  apply Rle_ge in x1lb.
+  apply Rle_ge in x2lb.
+  assert (floatMinCase3 := H7).
+  clear H7.
+  pose proof relative_error as relative_error.
+  specialize (relative_error radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) validFexpProof (custom_emin)%Z custom_prec precThm (round_mode mode_ZR) (valid_rnd_ZR) (r1 * r2)%R).
+  assert (floatMin <= Rabs (r1 * r2)).
+  apply Rabs_ge.
+  psatz R.
+  assert (absProof := X).
+  specialize (relative_error absProof).
+  (* relative_error *)
+  pose proof multRoundingTruth3 as multRoundingTruth3.
+  specialize (multRoundingTruth3 f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 ).
+  pose proof orExtra2 as floatMinPremise.
+  specialize (floatMinPremise (r1 * r2 >= floatMin)%R (r1 * r2 <= 0 - floatMin)%R floatMinCase3).
+  apply Rge_le in x1lb.
+  apply Rge_le in x2lb.
+  specialize (multRoundingTruth3 floatMinPremise x1lb x2lb floatMaxBound).
+  clear X.
+  specialize (multRoundingTruth3 floatMaxBound2 floatMaxBound3 floatMaxBound4 x1ub x2ub).
+  pose proof multRoundingTruth2 as multRoundingTruth2.
+  specialize (multRoundingTruth2 f1 f2 r1 r2 floatToRealProof1 floatToRealProof2
+                                 multRoundingTruth3).
+  apply multRoundingTruth2.
+Qed.
+
+Lemma multAssistProofGreatherThanNegFloatMin : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2,
+                         Some r1 = floatToReal f1 ->
+                         Some r2 = floatToReal f2 ->
+                         (lb1 <= r1 <= ub1)%R ->
+                         (lb2 <= r2 <= ub2)%R ->
+                         (ub1 * ub2 * (1 + error) < floatMax)%R ->
+                         (lb1 * lb2 * (1 + error) < floatMax)%R ->
+                         (lb1 * ub2 * (1 + error) > 0 - floatMax)%R ->
+                         (lb2 * ub1 * (1 + error) > 0 - floatMax)%R ->
+                         (r1 * r2 < R0)%R ->
+                         (r1 * r2 > R0 - floatMin)%R ->
+                         B2R custom_prec custom_emax
+                             (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                    custom_nan mode_ZR f1 f2) =
+                         round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                               (round_mode mode_ZR)
+                               (B2R custom_prec custom_emax f1 * B2R custom_prec custom_emax f2) /\
+                         is_finite custom_prec custom_emax
+                                   (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                          custom_nan mode_ZR f1 f2) = true.
+Proof.
+  intros.
+  assert (floatToRealProof1 := H).
+  assert (floatToRealProof2 := H0).
+  assert (expr1Bound := H1).
+  assert (expr2Bound := H2).
+  assert (floatMaxBound := H3).
+  assert (floatMaxBound2 := H4).
+  assert (floatMaxBound3 := H5).
+  assert (floatMaxBound4 := H6).
+  clear H H0 H1 H2 H3 H4 H5 H6.
+  destruct expr1Bound.
+  destruct expr2Bound.
+  pose proof or_introl.
+  intros.
+
+  pose proof subNormalNeg as subNormalNegProof.
+  assert (r :=  H7).
+  assert (n :=  H8).
+  clear H7 H8.
+  apply Rlt_gt in r.
+  specialize (subNormalNegProof (r1*r2)%R r n).
+  generalize (el2 radix2 (r1*r2)%R (ln_beta radix2 (r1*r2))).
+  intros ln_beta_premise.
+  assert ((r1 * r2)%R <> R0).
+  psatz R.
+  assert (lt0ImpNE0 := H4).
+  specialize (ln_beta_premise lt0ImpNE0).
+  pose proof bpow_le as bpow_le.
+  remember (ln_beta radix2 (r1 * r2)) as ex.
+  specialize (bpow_le radix2 ex custom_emin).
+  pose proof multRoundingTruth2.
+  intros.
+  pose proof floatMaxNegProofRounding.
+  assert (r1 * r2 > - floatMin)%R.
+  psatz R.
+  apply Rgt_lt in r.
+  specialize (H6 (r1 * r2)%R ex ln_beta_premise H7 r).
+  assert (floatToRealRelationForExpr1 := floatToRealProof1).
+  assert (floatToRealRelationForExpr2 := floatToRealProof2).
+  apply validFloat2 in floatToRealProof1.
+  apply validFloat2 in floatToRealProof2.
+  specialize (H5 f1 f2 r1 r2 floatToRealRelationForExpr1 floatToRealRelationForExpr2).
+  rewrite <- floatToRealProof1 in H5.
+  rewrite <- floatToRealProof2 in H5.
+  clear H7.
+  destruct H6.
+  specialize (H5 H7).
+  unfold floatToReal in *.
+  unfold isFloatConstValid in *.
+  destruct f1 eqn:f_des.
+  {
+    inversion floatToRealRelationForExpr1.
+    destruct f2 eqn:f2_des.
+    {
+
+      inversion floatToRealRelationForExpr2.
+      remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
+      remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
+      unfold B2R in Heqr0, Heqr3.
+      subst.
+      apply H5.
+    }
+    {
+      inversion floatToRealRelationForExpr2.
+    }
+    {
+      inversion floatToRealRelationForExpr2.
+    }
+    {
+      inversion floatToRealRelationForExpr2.
+      remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b)).
+      remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
+      unfold B2R in Heqr0, Heqr3.
+      subst.
+      apply H5.
+    }
+  }
+  {
+    inversion floatToRealRelationForExpr1.
+  }
+  {
+    inversion floatToRealRelationForExpr1.
+  }
+  {
+    inversion floatToRealRelationForExpr1.
+    destruct f2 eqn:f2_des.
+    {
+
+      inversion floatToRealRelationForExpr2.
+      remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
+      remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
+      unfold B2R in Heqr0, Heqr3.
+      subst.
+      apply H5.
+    }
+    {
+      inversion floatToRealRelationForExpr2.
+    }
+    {
+      inversion floatToRealRelationForExpr2.
+    }
+    {
+      inversion floatToRealRelationForExpr2.
+      remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b)).
+      remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
+      unfold B2R in Heqr0, Heqr3.
+      subst.
+      apply H5.
+    }
+  }
+Qed.
+
+
+
 Lemma assistProofLessThanNegFloatMin :
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
     (lb2 <= r2 <= ub2)%R ->
     ((ub1 + ub2) * (1 + error) < floatMax)%R ->
     ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
-    (r1 + r2 <= R0 - floatMin)%R -> 
+    (r1 + r2 <= R0 - floatMin)%R ->
     B2R custom_prec custom_emax
         (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -7656,8 +8325,8 @@ Proof.
   assert (expr2Bound := H2).
   assert (floatMaxBound := H3).
   assert (floatMaxBound2 := H4).
-  clear H H0 H1 H2 H3 H4. 
-  
+  clear H H0 H1 H2 H3 H4.
+
   destruct expr1Bound.
   destruct expr2Bound.
   assert (x1lb := H).
@@ -7692,15 +8361,15 @@ Proof.
   apply plusRoundingTruth2.
 Qed.
 
-Lemma assistProofBetween0AndFloatMin : 
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+Lemma assistProofBetween0AndFloatMin :
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
     (lb2 <= r2 <= ub2)%R ->
     ((ub1 + ub2) * (1 + error) < floatMax)%R ->
     ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
-    (r1 + r2 >= R0)%R -> 
+    (r1 + r2 >= R0)%R ->
     (r1 + r2 < floatMin)%R ->
     B2R custom_prec custom_emax
         (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
@@ -7727,25 +8396,25 @@ Proof.
   {
     psatz R.
   }
-  
+
   {
     pose proof relErrorBasedOnFloatMinTruthPlus as relErrorBasedOnFloatMinTruthPlus.
-    specialize (relErrorBasedOnFloatMinTruthPlus r1 r2 lb1 lb2 ub1 ub2 ).               
+    specialize (relErrorBasedOnFloatMinTruthPlus r1 r2 lb1 lb2 ub1 ub2 ).
     destruct expr1Bound.
     destruct expr2Bound.
-    pose proof or_introl.                  
+    pose proof or_introl.
     intros.
-    
+
     pose proof subNormal as subNormalProof.
-    apply Rlt_gt in r.     
+    apply Rlt_gt in r.
     specialize (subNormalProof (r1+r2)%R r n).
     generalize (el2 radix2 (r1+r2)%R (ln_beta radix2 (r1+r2))).
-    intros ln_beta_premise. 
+    intros ln_beta_premise.
     remember (ln_beta radix2 (r1 + r2)) as ex.
-    
+
     pose proof gt0ImpNE0 as gt0ImpNE0.
     specialize (gt0ImpNE0 (r1+r2)%R r).
-    
+
     specialize (ln_beta_premise gt0ImpNE0).
     pose proof bpow_le as bpow_le.
     specialize (bpow_le radix2 ex custom_emin subNormalProof).
@@ -7769,7 +8438,7 @@ Proof.
       inversion floatToRealRelationForExpr1.
       destruct f2 eqn:f2_des.
       {
-        
+
         inversion floatToRealRelationForExpr2.
         remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
         remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
@@ -7789,7 +8458,7 @@ Proof.
         remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
         unfold B2R in Heqr0, Heqr3.
         subst.
-        apply H4.          
+        apply H4.
       }
     }
     {
@@ -7802,7 +8471,7 @@ Proof.
       inversion floatToRealRelationForExpr1.
       destruct f2 eqn:f2_des.
       {
-        
+
         inversion floatToRealRelationForExpr2.
         remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
         remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
@@ -7822,7 +8491,7 @@ Proof.
         remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
         unfold B2R in Heqr0, Heqr3.
         subst.
-        apply H4.          
+        apply H4.
       }
     }
   }
@@ -7832,13 +8501,13 @@ Proof.
     {
       destruct f2 eqn:f2_des.
       {
-        
+
         inversion floatToRealProof1.
         inversion floatToRealProof2.
         simpl.
         rewrite <- H0.
         rewrite H0.
-        rewrite Rplus_0_r. 
+        rewrite Rplus_0_r.
         pose proof round_0.
         pose proof valid_rnd_ZR.
         specialize (H radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)  (round_mode mode_ZR) H2).
@@ -7847,7 +8516,7 @@ Proof.
         rewrite H.
         destruct Bool.eqb.
         simpl.
-        intuition. 
+        intuition.
         simpl.
         intuition.
 
@@ -7871,8 +8540,8 @@ Proof.
         unfold round_mode in *.
         simpl in H.
         rewrite H.
-        split. 
-        clear -H0 e.           
+        split.
+        clear -H0 e.
         psatz R.
         reflexivity.
       }
@@ -7898,7 +8567,7 @@ Proof.
         unfold round_mode in *.
         simpl in H.
         rewrite H.
-        split. 
+        split.
         psatz R.
         reflexivity.
       }
@@ -7958,7 +8627,7 @@ Proof.
           apply bpow_gt_0.
           apply valid_rnd_ZR.
         }
-        
+
         destruct (Rlt_bool
                     (Rabs
                        (round radix2
@@ -7975,7 +8644,7 @@ Proof.
           apply H3.
           apply H6.
         }
-        {            
+        {
           intuition.
         }
       }
@@ -7983,15 +8652,15 @@ Proof.
   }
 Qed.
 
-Lemma assistProof : 
-  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2, 
+Lemma assistProof :
+  forall f1 f2 lb1 lb2 ub1 ub2 r1 r2,
     Some r1 = floatToReal f1 ->
     Some r2 = floatToReal f2 ->
     (lb1 <= r1 <= ub1)%R ->
     (lb2 <= r2 <= ub2)%R ->
     ((ub1 + ub2) * (1 + error) < floatMax)%R ->
     ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
-    (r1 + r2 >= R0)%R -> 
+    (r1 + r2 >= R0)%R ->
     B2R custom_prec custom_emax
         (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                custom_nan mode_ZR f1 f2) =
@@ -8010,23 +8679,23 @@ Proof.
   assert (floatMaxBound := H3).
   assert (floatMaxBound2 := H4).
   clear H H0 H1 H2 H3 H4.
-  
+
   destruct (Rge_dec (r1+r2)%R floatMin).
   {
     pose proof assistProofGreaterThanFloatMin.
     specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 r).
     apply H.
   }
-  
+
   {
     apply Rnot_ge_lt in n.
     pose proof assistProofBetween0AndFloatMin.
     specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 H5 n).
-    apply H. 
+    apply H.
   }
 Qed.
 
-Lemma minusFourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusFourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -8034,11 +8703,11 @@ Lemma minusFourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      isFloatConstValid f1 ->
                      isFloatConstValid f2 ->
                      (lb1 <= r1 <= ub1)%R ->
-                     (lb2 <= r2 <= ub2)%R ->                    
-                     (lb1 - ub2 <= 0 - floatMin)%R -> 
+                     (lb2 <= r2 <= ub2)%R ->
+                     (lb1 - ub2 <= 0 - floatMin)%R ->
                      ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                      ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bminus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
@@ -8048,7 +8717,7 @@ Lemma minusFourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                            (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                   custom_nan mode_ZR f1 f2)
                        | None => False
-                     end. 
+                     end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -8065,8 +8734,8 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2. 
-  
+  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2.
+
   assert (B2R custom_prec custom_emax
               (Bminus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -8112,7 +8781,7 @@ Proof.
     }
   }
 
-  destruct o. 
+  destruct o.
   split.
   destruct f eqn:f_des.
   {
@@ -8133,7 +8802,7 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 - r2)%R).
     {
       destruct (Rle_dec floatMin (r1 - r2)%R).
@@ -8189,7 +8858,7 @@ Proof.
       {
         apply Rnot_le_gt in n.
         pose proof minusSubNormalPosProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -8213,7 +8882,7 @@ Proof.
       destruct (Rlt_dec (R0 - floatMin) (r1 - r2)%R).
       {
         pose proof minusSubNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -8306,7 +8975,7 @@ Proof.
 Qed.
 
 
-Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -8314,12 +8983,12 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      isFloatConstValid f1 ->
                      isFloatConstValid f2 ->
                      (lb1 <= r1 <= ub1)%R ->
-                     (lb2 <= r2 <= ub2)%R ->                    
+                     (lb2 <= r2 <= ub2)%R ->
                      (lb1 < ub2)%R ->
-                     (lb1 - ub2 > 0 - floatMin)%R -> 
+                     (lb1 - ub2 > 0 - floatMin)%R ->
                      ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                      ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bminus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
@@ -8329,7 +8998,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                            (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                   custom_nan mode_ZR f1 f2)
                        | None => False
-                     end. 
+                     end.
   Proof.
   intros.
   assert (expr1Valid := H3).
@@ -8393,8 +9062,8 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   split.
   destruct f eqn:f_des.
   {
@@ -8402,7 +9071,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
     rewrite <- plusResultStmt in H.
     simpl in H.
     inversion resultInReal.
-    unfold floatMin. 
+    unfold floatMin.
     pose proof bpow_gt_0.
     specialize (H0 radix2 custom_emin).
     psatz R.
@@ -8421,13 +9090,13 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
     destruct H.
     rewrite H.
     unfold floatToReal in *.
-    
+
     destruct (Rgt_dec 0 (r1-r2)%R).
     {
       assert (r1 - r2 >= R0 - floatMin)%R.
       psatz R.
       pose proof minusSubNormalNegProof.
-      
+
       rewrite <- f_des in plusResultStmt.
       assert (floatToReal f = floatToReal f).
       reflexivity.
@@ -8436,7 +9105,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
       specialize (H4 f1 f2 r1 r2 lb1 lb2 ub1 ub2 f (floatToReal f) floatToRealProof1 floatToRealProof2 validFloatProof1 validFloatProof2 expr1Valid expr2Valid expr1Bound expr2Bound plusResultStmt H6).
       assert (r1 - r2 < 0)%R.
       psatz R.
-     
+
       specialize (H4 H8 H5).
       remember (floatToReal f).
       rewrite f_des in Heqo.
@@ -8499,7 +9168,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -8522,7 +9191,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
         {
@@ -8541,7 +9210,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -8564,7 +9233,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
           {
             inversion floatToRealProof2.
@@ -8580,7 +9249,7 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -8603,13 +9272,13 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
       }
       apply Rnot_ge_lt in n0.
       pose proof minusSubNormalPosProof.
-      
+
       rewrite <- f_des in plusResultStmt.
       apply Rle_ge in n.
       assert (floatToReal f = floatToReal f).
@@ -8624,8 +9293,8 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
       rewrite <- H.
       psatz R.
     }
-  } 
-  { 
+  }
+  {
     destruct H.
     unfold is_finite in H0.
     destruct ( Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
@@ -8645,10 +9314,10 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
     rewrite <- plusResultStmt in H0.
     intuition.
     inversion resultInReal.
-  }  
-Qed. 
+  }
+Qed.
 
-Lemma minusFirstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusFirstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -8656,11 +9325,11 @@ Lemma minusFirstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      isFloatConstValid f1 ->
                      isFloatConstValid f2 ->
                      (lb1 <= r1 <= ub1)%R ->
-                     (lb2 <= r2 <= ub2)%R ->                    
-                     (lb1 - ub2 >= floatMin)%R -> 
+                     (lb2 <= r2 <= ub2)%R ->
+                     (lb1 - ub2 >= floatMin)%R ->
                      ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                      ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bminus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
@@ -8670,7 +9339,7 @@ Lemma minusFirstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                            (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                   custom_nan mode_ZR f1 f2)
                        | None => False
-                     end. 
+                     end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -8687,8 +9356,8 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2. 
-  
+  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2.
+
   assert (B2R custom_prec custom_emax
               (Bminus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -8706,9 +9375,9 @@ Proof.
   psatz R.
   specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 H0).
   apply H.
-  
-  
-  destruct o. 
+
+
+  destruct o.
   split.
   {
     pose proof relErrorBasedOnFloatMinTruthMinus as relErrorBasedOnFloatMinTruthMinus.
@@ -8750,7 +9419,7 @@ Proof.
     unfold error in *.
     destruct f eqn:f_des.
     {
-      
+
       unfold Rabs in *.
       inversion resultInReal.
       unfold floatMin in *.
@@ -8786,7 +9455,7 @@ Proof.
              end;
       psatz R.
     }
-  }  
+  }
   {
     destruct H.
     unfold is_finite in H0.
@@ -8809,7 +9478,7 @@ Proof.
   }
 Qed.
 
-Lemma minusSecondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusSecondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -8817,12 +9486,12 @@ Lemma minusSecondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      isFloatConstValid f1 ->
                      isFloatConstValid f2 ->
                      (lb1 <= r1 <= ub1)%R ->
-                     (lb2 <= r2 <= ub2)%R ->                    
+                     (lb2 <= r2 <= ub2)%R ->
                      (lb1 >= ub2)%R ->
-                     (lb1 - ub2 < floatMin)%R -> 
+                     (lb1 - ub2 < floatMin)%R ->
                      ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                      ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bminus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
@@ -8832,7 +9501,7 @@ Lemma minusSecondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                            (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                   custom_nan mode_ZR f1 f2)
                        | None => False
-                     end. 
+                     end.
 Proof.
   Proof.
   intros.
@@ -8851,7 +9520,7 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H3 H4 H5 H6 H9 H10 H12 H H0 H7 H8 H11 H1 H2. 
+  clear H3 H4 H5 H6 H9 H10 H12 H H0 H7 H8 H11 H1 H2.
   assert (B2R custom_prec custom_emax
               (Bminus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -8864,7 +9533,7 @@ Proof.
                     (Bminus custom_prec custom_emax custom_precGt0
                            custom_precLtEmax custom_nan mode_ZR f1 f2) =
           true).
-  
+
   destruct (Rge_dec (r1 - r2)%R R0).
   {
     destruct (Rge_dec (r1 - r2)%R floatMin).
@@ -8883,8 +9552,8 @@ Proof.
   {
     psatz R.
   }
-  
-  destruct o. 
+
+  destruct o.
   split.
   destruct f eqn:f_des.
   {
@@ -8908,7 +9577,7 @@ Proof.
     destruct H.
     rewrite H.
     unfold floatToReal in *.
-    
+
     destruct (Rgt_dec 0 (r1-r2)%R).
     {
       psatz R.
@@ -8963,7 +9632,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -8986,7 +9655,7 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
         {
@@ -9005,7 +9674,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -9028,7 +9697,7 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
           {
             inversion floatToRealProof2.
@@ -9044,7 +9713,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -9067,18 +9736,18 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
       }
       apply Rnot_ge_lt in n0.
       pose proof minusSubNormalPosProof.
-      
+
       rewrite <- f_des in plusResultStmt.
       apply Rle_ge in n.
       assert (floatToReal f = floatToReal f).
       reflexivity.
-      
+
       specialize (H3 f1 f2 r1 r2 lb1 lb2 ub1 ub2 f (floatToReal f) floatToRealProof1 floatToRealProof2 validFloatProof1 validFloatProof2 expr1Valid expr2Valid expr1Bound expr2Bound plusResultStmt n n0 H4).
       remember (floatToReal f).
       rewrite f_des in Heqo.
@@ -9089,8 +9758,8 @@ Proof.
       rewrite <- H.
       psatz R.
     }
-  } 
-  { 
+  }
+  {
     destruct H.
     unfold is_finite in H0.
     destruct ( Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
@@ -9110,10 +9779,10 @@ Proof.
     rewrite <- plusResultStmt in H0.
     intuition.
     inversion resultInReal.
-  }  
+  }
 Qed.
 
-Lemma minusFirstProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusFirstProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -9121,18 +9790,18 @@ Lemma minusFirstProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      isFloatConstValid f1 ->
                      isFloatConstValid f2 ->
                      (lb1 <= r1 <= ub1)%R ->
-                     (lb2 <= r2 <= ub2)%R ->                    
-                     (ub1 - lb2 >= floatMin)%R -> 
+                     (lb2 <= r2 <= ub2)%R ->
+                     (ub1 - lb2 >= floatMin)%R ->
                      ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                      ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bminus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
                        | Some r =>
-                         (r <= (ub1 - lb2) * (1 + error))%R 
+                         (r <= (ub1 - lb2) * (1 + error))%R
                        | None => False
-                     end. 
+                     end.
 Proof.
   Proof.
   intros.
@@ -9183,7 +9852,7 @@ Proof.
     apply Rnot_le_gt in n.
     apply Rgt_lt in n.
     destruct (Rlt_dec (R0 - floatMin) (r1 - r2)%R).
-    { 
+    {
       pose proof minusAssistProofBetweenNegFloatMinAndZero.
       apply Rlt_gt in r.
       specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 n r).
@@ -9197,8 +9866,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     simpl in H.
@@ -9218,7 +9887,7 @@ Proof.
   {
     inversion resultInReal.
   }
-  {    
+  {
     destruct (Rle_dec 0 (r1 - r2)%R).
     {
       destruct (Rle_dec floatMin (r1 - r2)%R).
@@ -9274,7 +9943,7 @@ Proof.
       {
         apply Rnot_le_gt in n.
         pose proof minusSubNormalPosProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -9298,7 +9967,7 @@ Proof.
       destruct (Rlt_dec (R0 - floatMin) (r1 - r2)%R).
       {
         pose proof minusSubNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -9384,7 +10053,7 @@ Proof.
   }
 Qed.
 
-Lemma minusSecondProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusSecondProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -9394,17 +10063,17 @@ Lemma minusSecondProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      (lb1 <= r1 <= ub1)%R ->
                      (lb2 <= r2 <= ub2)%R ->
                      (ub1 >= lb2)%R ->
-                     (ub1 - lb2 < floatMin)%R -> 
+                     (ub1 - lb2 < floatMin)%R ->
                      ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                      ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bminus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
                        | Some r =>
-                         (r <= floatMin)%R 
+                         (r <= floatMin)%R
                        | None => False
-                     end. 
+                     end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -9469,8 +10138,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     simpl in H.
@@ -9491,7 +10160,7 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 - r2)%R).
     {
       destruct (Rle_dec floatMin (r1 - r2)%R).
@@ -9501,7 +10170,7 @@ Proof.
       {
         apply Rnot_le_gt in n.
         pose proof minusSubNormalPosProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -9517,7 +10186,7 @@ Proof.
         inversion resultInReal.
         destruct H0.
         pose proof errorGt0.
-        apply H3.   
+        apply H3.
       }
     }
     {
@@ -9525,7 +10194,7 @@ Proof.
       destruct (Rlt_dec (R0 - floatMin) (r1 - r2)%R).
       {
         pose proof minusSubNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -9614,7 +10283,7 @@ Proof.
   }
 Qed.
 
-Lemma minusThirdProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusThirdProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                              Some r1 = floatToReal f1 ->
                              Some r2 = floatToReal f2 ->
                              validFloat f1 ->
@@ -9624,19 +10293,19 @@ Lemma minusThirdProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                              (lb1 <= r1 <= ub1)%R ->
                              (lb2 <= r2 <= ub2)%R ->
                              (ub1 < lb2)%R ->
-                             (ub1 - lb2 > R0 - floatMin)%R -> 
+                             (ub1 - lb2 > R0 - floatMin)%R ->
                              ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                              ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                             o = floatToReal f -> 
+                             o = floatToReal f ->
                              f = Bminus custom_prec custom_emax custom_precGt0
                                         custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                              match o with
                                | Some r =>
-                                 (r <= R0)%R 
+                                 (r <= R0)%R
                                | None => False
-                             end. 
+                             end.
 Proof.
-  Proof.                         
+  Proof.
   intros.
   assert (expr1Valid := H3).
   assert (expr2Valid := H4).
@@ -9700,8 +10369,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     simpl in H.
@@ -9722,18 +10391,18 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 - r2)%R).
     {
       psatz R.
     }
     {
-      
+
       apply Rnot_le_gt in n.
       destruct (Rlt_dec (R0 - floatMin) (r1 - r2)%R).
       {
         pose proof minusSubNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -9748,7 +10417,7 @@ Proof.
         destruct H0.
         inversion resultInReal.
         destruct H0.
-        apply H3.   
+        apply H3.
       }
       {
         apply Rnot_lt_ge in n0.
@@ -9819,7 +10488,7 @@ Proof.
   }
 Qed.
 
-Lemma minusFourthProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma minusFourthProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                              Some r1 = floatToReal f1 ->
                              Some r2 = floatToReal f2 ->
                              validFloat f1 ->
@@ -9828,17 +10497,17 @@ Lemma minusFourthProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                              isFloatConstValid f2 ->
                              (lb1 <= r1 <= ub1)%R ->
                              (lb2 <= r2 <= ub2)%R ->
-                             (ub1 - lb2 <= R0 - floatMin)%R -> 
+                             (ub1 - lb2 <= R0 - floatMin)%R ->
                              ((ub1 - lb2) * (1 + error) < floatMax)%R ->
                              ((ub2 - lb1) * (1 + error) < floatMax)%R ->
-                             o = floatToReal f -> 
+                             o = floatToReal f ->
                              f = Bminus custom_prec custom_emax custom_precGt0
                                         custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                              match o with
                                | Some r =>
-                                 (r <= (ub1 - lb2)* (1 - error))%R 
+                                 (r <= (ub1 - lb2)* (1 - error))%R
                                | None => False
-                             end. 
+                             end.
 Proof.
   intros.
   assert (ub1 <= lb2)%R.
@@ -9907,8 +10576,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o.  
+
+  destruct o.
   destruct f eqn:f_des.
   {
     pose proof relative_error as relative_error.
@@ -9950,7 +10619,7 @@ Proof.
     clear plusResultStmt HeqroundedValue floatMaxBound floatMaxBound2 floatToRealProof1 floatToRealProof2  resultInReal   H0 H H1 H6.
     unfold floatMin in *.
     destruct Rcase_abs; destruct Rcase_abs;
-    
+
     repeat match goal with
              | H : @eq R _ _ |- _ => revert H
              | H : @Rle _ _ |- _ => revert H
@@ -10033,7 +10702,7 @@ Proof.
   }
 Qed.
 
-Lemma firstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma firstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -10041,13 +10710,13 @@ Lemma firstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      isFloatConstValid f1 ->
                      isFloatConstValid f2 ->
                      (lb1 <= r1 <= ub1)%R ->
-                     (lb2 <= r2 <= ub2)%R ->                    
+                     (lb2 <= r2 <= ub2)%R ->
                      (lb1 + lb2 >= 0)%R ->
-                     (lb1 + lb2 < floatMin)%R -> 
+                     (lb1 + lb2 < floatMin)%R ->
                      ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                      ((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R ->
 
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bplus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
@@ -10057,7 +10726,7 @@ Lemma firstProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                            (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                   custom_nan mode_ZR f1 f2)
                        | None => False
-                     end. 
+                     end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -10088,13 +10757,13 @@ Proof.
                     (Bplus custom_prec custom_emax custom_precGt0
                            custom_precLtEmax custom_nan mode_ZR f1 f2) =
           true).
-  
+
   pose proof assistProof.
   assert (r1 + r2 >= R0)%R.
   psatz R.
   specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 H0).
   apply H.
-  destruct o. 
+  destruct o.
   split.
   destruct f eqn:f_des.
   {
@@ -10118,7 +10787,7 @@ Proof.
     destruct H.
     rewrite H.
     unfold floatToReal in *.
-    
+
     destruct (Rgt_dec 0 (r1+r2)%R).
     {
       psatz R.
@@ -10173,7 +10842,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -10196,7 +10865,7 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
         {
@@ -10215,7 +10884,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -10238,7 +10907,7 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
           {
             inversion floatToRealProof2.
@@ -10254,7 +10923,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -10277,18 +10946,18 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
       }
       apply Rnot_ge_lt in n0.
       pose proof subNormalPosProof.
-      
+
       rewrite <- f_des in plusResultStmt.
       apply Rle_ge in n.
       assert (floatToReal f = floatToReal f).
       reflexivity.
-      
+
       specialize (H3 f1 f2 r1 r2 lb1 lb2 ub1 ub2 f (floatToReal f) floatToRealProof1 floatToRealProof2 validFloatProof1 validFloatProof2 expr1Valid expr2Valid expr1Bound expr2Bound plusResultStmt n floatMaxBound n0 floatMaxBound2 H4).
       remember (floatToReal f).
       rewrite f_des in Heqo.
@@ -10299,8 +10968,8 @@ Proof.
       rewrite <- H.
       psatz R.
     }
-  } 
-  { 
+  }
+  {
     destruct H.
     unfold is_finite in H0.
     destruct ( Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
@@ -10320,11 +10989,313 @@ Proof.
     rewrite <- plusResultStmt in H0.
     intuition.
     inversion resultInReal.
-  }  
+  }
 Qed.
 
+Lemma firstProofMult : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
+                     Some r1 = floatToReal f1 ->
+                     Some r2 = floatToReal f2 ->
+                     validFloat f1 ->
+                     validFloat f2 ->
+                     isFloatConstValid f1 ->
+                     isFloatConstValid f2 ->
+                     (lb1 <= r1 <= ub1)%R ->
+                     (lb2 <= r2 <= ub2)%R ->
+                     (lb1 * lb2 < lb1 * ub2)%R ->
+                     (lb1 * lb2 < lb2 * ub1)%R ->
+                     (lb1 * lb2 <= ub1 * ub2)%R->
+                     (lb1 * lb2 >= floatMin)%R ->
+                     ((ub1 * ub2) * (1 + error) < floatMax)%R ->
 
-Lemma assistProofNeg : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2, 
+                     o = floatToReal f ->
+                     f = Bmult custom_prec custom_emax custom_precGt0
+                               custom_precLtEmax custom_nan mode_ZR f1 f2 ->
+                     match o with
+                       | Some r =>
+                         ((lb1 * lb2) * (1 - error) <= r)%R /\
+                         isFloatConstValid
+                           (Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f1 f2)
+                       | None => False
+                     end.
+Proof.
+  intros.
+  assert (expr1Valid := H3).
+  assert (expr2Valid := H4).
+  assert (expr1Bound := H5).
+  assert (expr2Bound := H6).
+  assert (bound1 := H7).
+  assert (bound2 := H8).
+  assert (bound3 := H9).
+  assert (lowerBoundMinVal := H10).
+  assert (floatMaxBound := H11).
+  assert ((0 - lb1) * (0 - lb2) * (1 + error) < floatMax)%R.
+  pose proof errorGt0.
+  unfold floatMax in *.
+  pose proof bpow_gt_0.
+  specialize (H15 radix2 custom_emax).
+  psatz R.
+  assert (floatMaxBound2 := H14).
+  assert (plusResultStmt := H13).
+  assert (floatToRealProof1 := H).
+  assert (floatToRealProof2 := H0).
+  assert (resultInReal := H12).
+  assert (validFloatProof1 := H1).
+  assert (validFloatProof2 := H2).
+  unfold isFloatConstValid.
+  clear H3 H4 H5 H6 H7 H8 H9 H10 H11 H14 H13 H H0 H12 H1 H2.
+  assert (B2R custom_prec custom_emax
+              (Bmult custom_prec custom_emax custom_precGt0
+                     custom_precLtEmax custom_nan mode_ZR f1 f2) =
+          round radix2
+                (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                (round_mode mode_ZR)
+                (B2R custom_prec custom_emax f1 *
+                 B2R custom_prec custom_emax f2) /\
+          is_finite custom_prec custom_emax
+                    (Bmult custom_prec custom_emax custom_precGt0
+                           custom_precLtEmax custom_nan mode_ZR f1 f2) =
+          true).
+
+  assert (r1 + r2 >= R0)%R.
+  clear -expr1Bound expr2Bound bound1 bound2 bound3.
+  destruct expr1Bound, expr2Bound.
+  z3 solve_dbg. admit.
+  destruct (Rle_dec floatMin (r1 + r2)%R).
+  Admitted. (*
+  psatz R.
+  specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 H0).
+  apply H.
+  destruct o.
+  split.
+  destruct f eqn:f_des.
+  {
+    simpl in H.
+    rewrite <- plusResultStmt in H.
+    simpl in H.
+    inversion resultInReal.
+    reflexivity.
+  }
+  {
+    inversion resultInReal.
+  }
+  {
+    inversion resultInReal.
+  }
+  {
+    rewrite <- plusResultStmt in H.
+    inversion resultInReal.
+    simpl in *.
+    pose proof relErrorBasedOnFloatMinTruthPlus.
+    destruct H.
+    rewrite H.
+    unfold floatToReal in *.
+
+    destruct (Rgt_dec 0 (r1+r2)%R).
+    {
+      psatz R.
+    }
+    {
+      apply Rnot_gt_le in n.
+      destruct (Rge_dec (r1 + r2)%R floatMin).
+      {
+        pose proof relative_error as relative_error.
+        specialize (relative_error radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) validFexpProof (custom_emin)%Z custom_prec precThm (round_mode mode_ZR) (valid_rnd_ZR) (r1 + r2)%R).
+        assert (bpow radix2 custom_emin <= Rabs (r1 + r2))%R.
+        unfold Rabs.
+        destruct Rcase_abs.
+        {
+          psatz R.
+        }
+        {
+          unfold floatMin in *.
+          apply Rge_le in r0.
+          apply r0.
+        }
+        assert (X := H3).
+        clear H3.
+        specialize (relative_error X).
+        unfold Rabs in relative_error.
+        destruct f1 eqn:f1_des.
+        {
+          destruct f2 eqn:f2_des.
+          {
+            inversion floatToRealProof1.
+            inversion floatToRealProof2.
+            simpl.
+            pose proof round_0 as round_0.
+            specialize (round_0 radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) (valid_rnd_ZR)).
+            unfold round_mode in *.
+            rewrite Rplus_0_r.
+            simpl in *.
+            rewrite round_0.
+            reflexivity.
+          }
+          {
+            inversion floatToRealProof2.
+          }
+          {
+            inversion floatToRealProof2.
+          }
+          {
+            inversion floatToRealProof1.
+            inversion floatToRealProof2.
+            simpl.
+            rewrite <- H4.
+            rewrite <- H5.
+            destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
+            psatz R.
+
+            unfold round_mode in *.
+            remember (3 - custom_emax - custom_prec)%Z as z.
+            simpl in Heqz.
+            rewrite Heqz in *.
+            pose proof powLe1.
+            specialize (H3 (-custom_prec + 1)%Z).
+            assert ((- custom_prec + 1 <= 0)%Z).
+            simpl.
+            lia.
+            specialize (H3 H6).
+            clear floatMaxBound2.
+            psatz R.
+            unfold round_mode in *.
+            remember (3 - custom_emax - custom_prec)%Z as z.
+            simpl in Heqz.
+            rewrite Heqz in *.
+            pose proof powLe1.
+            specialize (H3 (-custom_prec + 1)%Z).
+            assert ((- custom_prec + 1 <= 0)%Z).
+            simpl.
+            lia.
+            specialize (H3 H6).
+            psatz R.
+          }
+        }
+        {
+          inversion floatToRealProof1.
+        }
+        {
+          inversion floatToRealProof1.
+        }
+        {
+          destruct f2 eqn:f2_des.
+          {
+            inversion floatToRealProof1.
+            inversion floatToRealProof2.
+            simpl.
+            rewrite <- H4.
+            rewrite <- H5.
+            destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
+            psatz R.
+
+            unfold round_mode in *.
+            remember (3 - custom_emax - custom_prec)%Z as z.
+            simpl in Heqz.
+            rewrite Heqz in *.
+            pose proof powLe1.
+            specialize (H3 (-custom_prec + 1)%Z).
+            assert ((- custom_prec + 1 <= 0)%Z).
+            simpl.
+            lia.
+            specialize (H3 H6).
+            clear floatMaxBound2.
+            psatz R.
+            unfold round_mode in *.
+            remember (3 - custom_emax - custom_prec)%Z as z.
+            simpl in Heqz.
+            rewrite Heqz in *.
+            pose proof powLe1.
+            specialize (H3 (-custom_prec + 1)%Z).
+            assert ((- custom_prec + 1 <= 0)%Z).
+            simpl.
+            lia.
+            specialize (H3 H6).
+            psatz R.
+          }
+          {
+            inversion floatToRealProof2.
+          }
+          {
+            inversion floatToRealProof2.
+          }
+          {
+            inversion floatToRealProof1.
+            inversion floatToRealProof2.
+            simpl.
+            rewrite <- H4.
+            rewrite <- H5.
+            destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
+            psatz R.
+
+            unfold round_mode in *.
+            remember (3 - custom_emax - custom_prec)%Z as z.
+            simpl in Heqz.
+            rewrite Heqz in *.
+            pose proof powLe1.
+            specialize (H3 (-custom_prec + 1)%Z).
+            assert ((- custom_prec + 1 <= 0)%Z).
+            simpl.
+            lia.
+            specialize (H3 H6).
+            clear floatMaxBound2.
+            psatz R.
+            unfold round_mode in *.
+            remember (3 - custom_emax - custom_prec)%Z as z.
+            simpl in Heqz.
+            rewrite Heqz in *.
+            pose proof powLe1.
+            specialize (H3 (-custom_prec + 1)%Z).
+            assert ((- custom_prec + 1 <= 0)%Z).
+            simpl.
+            lia.
+            specialize (H3 H6).
+            psatz R.
+          }
+        }
+      }
+      apply Rnot_ge_lt in n0.
+      pose proof subNormalPosProof.
+
+      rewrite <- f_des in plusResultStmt.
+      apply Rle_ge in n.
+      assert (floatToReal f = floatToReal f).
+      reflexivity.
+
+      specialize (H3 f1 f2 r1 r2 lb1 lb2 ub1 ub2 f (floatToReal f) floatToRealProof1 floatToRealProof2 validFloatProof1 validFloatProof2 expr1Valid expr2Valid expr1Bound expr2Bound plusResultStmt n floatMaxBound n0 floatMaxBound2 H4).
+      remember (floatToReal f).
+      rewrite f_des in Heqo.
+      unfold floatToReal in Heqo.
+      rewrite Heqo in H3.
+      simpl in H3.
+      destruct H3.
+      rewrite <- H.
+      psatz R.
+    }
+  }
+  {
+    destruct H.
+    unfold is_finite in H0.
+    destruct ( Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                     custom_nan mode_ZR f1 f2);
+      intuition.
+  }
+  {
+    unfold floatToReal in resultInReal.
+    destruct f eqn:f_des.
+    inversion resultInReal.
+    destruct H.
+    unfold is_finite in H0.
+    rewrite <- plusResultStmt in H0.
+    intuition.
+    destruct H.
+    unfold is_finite in H0.
+    rewrite <- plusResultStmt in H0.
+    intuition.
+    inversion resultInReal.
+  }
+Qed.
+*)
+Lemma assistProofNeg : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2,
                          Some r1 = floatToReal f1 ->
                          Some r2 = floatToReal f2 ->
                          (lb1 <= r1 <= ub1)%R ->
@@ -10353,14 +11324,14 @@ Proof.
   clear H H0 H1 H2 H3 H4.
   destruct expr1Bound.
   destruct expr2Bound.
-  pose proof or_introl.                  
+  pose proof or_introl.
   intros.
-  
+
   pose proof subNormalNeg as subNormalNegProof.
   assert (r :=  H5).
-  assert (n :=  H6).  
+  assert (n :=  H6).
   clear H5 H6.
-  apply Rlt_gt in r.     
+  apply Rlt_gt in r.
   specialize (subNormalNegProof (r1+r2)%R r n).
   generalize (el2 radix2 (r1+r2)%R (ln_beta radix2 (r1+r2))).
   intros ln_beta_premise.
@@ -10395,7 +11366,7 @@ Proof.
     inversion floatToRealRelationForExpr1.
     destruct f2 eqn:f2_des.
     {
-      
+
       inversion floatToRealRelationForExpr2.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
@@ -10415,7 +11386,7 @@ Proof.
       remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
       unfold B2R in Heqr0, Heqr3.
       subst.
-      apply H5.          
+      apply H5.
     }
   }
   {
@@ -10428,7 +11399,7 @@ Proof.
     inversion floatToRealRelationForExpr1.
     destruct f2 eqn:f2_des.
     {
-      
+
       inversion floatToRealRelationForExpr2.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b))%R.
       remember (B2R custom_prec custom_emax (B754_zero custom_prec custom_emax b0))%R.
@@ -10448,7 +11419,7 @@ Proof.
       remember (B2R custom_prec custom_emax (B754_finite custom_prec custom_emax b0 m e e0)).
       unfold B2R in Heqr0, Heqr3.
       subst.
-      apply H5.          
+      apply H5.
     }
   }
 Qed.
@@ -10469,7 +11440,7 @@ Lemma subNormalNegProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                             (r1 + r2 < 0)%R ->
                             ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                             (((0 - lb1) + (0 - lb2)) * (1 + error) < floatMax)%R->
-                            o = floatToReal f -> 
+                            o = floatToReal f ->
                             match o with
                               | Some r =>
                                 (0 - floatMin <= r <= 0)%R /\
@@ -10477,7 +11448,7 @@ Lemma subNormalNegProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                                   (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                          custom_nan mode_ZR f1 f2)
                               | None => False
-                            end. 
+                            end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -10494,23 +11465,23 @@ Proof.
   clear H3 H4 H5 H6 H10 H11 H8 H7 H H0 H9.
   Check Rle_lt_dec.
   generalize (el2 radix2 (r1+r2)%R (ln_beta radix2 (r1+r2))).
-  intros ln_beta_premise. 
+  intros ln_beta_premise.
   remember (ln_beta radix2 (r1 + r2)) as ex.
   assert ((r1 + r2)%R <> R0).
   psatz R.
-  
-  pose proof subNormalNeg as subNormalProof. 
+
+  pose proof subNormalNeg as subNormalProof.
   specialize (subNormalProof (r1+r2)%R sumMaxValue).
   assert (r1 + r2 > - floatMin)%R.
   psatz R.
-  
+
   assert (lt0ImpNE0 := H).
   clear H.
   specialize (ln_beta_premise lt0ImpNE0).
   pose proof bpow_le as bpow_le.
   specialize (bpow_le radix2 ex custom_emin).
   pose proof plusRoundingTruth2.
-  
+
   intros.
   pose proof floatMaxNegProofRounding.
   specialize (H3 (r1 + r2)%R ex ln_beta_premise H0 sumMaxValue).
@@ -10518,7 +11489,7 @@ Proof.
   assert (floatToRealRelationForExpr2 := floatToRealProof2).
   apply validFloat2 in floatToRealProof1.
   apply validFloat2 in floatToRealProof2.
-  
+
   specialize (H f1 f2 r1 r2 floatToRealRelationForExpr1 floatToRealRelationForExpr2).
   rewrite <- floatToRealProof1 in H.
   rewrite <- floatToRealProof2 in H.
@@ -10534,9 +11505,9 @@ Proof.
       pose proof zMaxProof as zMaxProof.
       specialize (zMaxProof (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z l).
       rewrite zMaxProof in *.
-      clear zMaxProof.  
+      clear zMaxProof.
       pose proof customEminMinValue as customEminMinValue.
-      
+
       apply Z.ge_le in customEminMinValue.
       pose proof Flocq.Core.Fcore_Raux.bpow_le.
       specialize (H6 radix2 (3 - custom_emax - custom_prec)%Z custom_emin customEminMinValue).
@@ -10544,7 +11515,7 @@ Proof.
       unfold error, custom_emin,custom_emax, custom_prec in *.
       pose proof bpow_gt_0 as bpowGt0_1.
       specialize (bpowGt0_1 radix2 (- prec + 1)%Z)%R.
-      
+
       unfold lofst in *.
       destruct f eqn:f_des.
       {
@@ -10576,7 +11547,7 @@ Proof.
         unfold FLT_exp in *.
         pose proof bpow_gt_0 as bpow_gt_0_2.
         remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-        
+
         specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
         unfold floatToReal.
         unfold custom_prec, custom_emax in *.
@@ -10597,7 +11568,7 @@ Proof.
       assert (g:=g0).
       clear g0.
       pose proof zMaxProof as zMaxProof.
-      
+
       intros.
       apply zlt_le in g.
       apply Z.ge_le in g.
@@ -10607,7 +11578,7 @@ Proof.
       rewrite <- H6 in H3.
       rewrite zMaxProof in *.
       clear zMaxProof H6 g.
-      
+
       intros.
       pose proof exCustomPrec.
       assert (r1 + r2 > 0 - floatMin)%R.
@@ -10616,7 +11587,7 @@ Proof.
       clear H7.
       rewrite <- Heqex in subNormalProof.
       specialize (exCustomPrec ex subNormalProof custom_precGe1).
-      
+
       intros.
       pose proof bpow_lt.
       specialize (H8 radix2 (ex-custom_prec)%Z custom_emin H7).
@@ -10633,15 +11604,15 @@ Proof.
         pose proof bpow_gt_0 as bpow_gt_0_2.
         specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
         split.
-        
+
         pose proof bpow_gt_0.
         specialize (H13 radix2 emin).
         unfold B2R.
         clear H6 H7 H8 H10. clear H13 floatToRealRelationForExpr1 floatToRealRelationForExpr2.
-        clear Heqex H0 H12 plusResultStmt floatToRealProof1 floatToRealProof2 H5. 
+        clear Heqex H0 H12 plusResultStmt floatToRealProof1 floatToRealProof2 H5.
         clear lt0ImpNE0 H floatMaxBound1 floatMaxBound3 expr1Valid expr2Valid ex ln_beta_premise subNormalProof bpow_le H3 H4 H9.
         psatz R.
-        unfold isFloatConstValid. 
+        unfold isFloatConstValid.
         rewrite <- plusResultStmt.
         intuition.
       }
@@ -10660,7 +11631,7 @@ Proof.
         unfold FLT_exp in *.
         pose proof bpow_gt_0 as bpow_gt_0_2.
         remember (round radix2 (fun e1 : Z => Z.max (e1 - prec) (3 - emax - prec)) (round_mode mode_ZR) (r1 + r2)) as roundedValue.
-        
+
         specialize (bpow_gt_0_2 radix2 (3-emax-prec)%Z).
         unfold floatToReal.
         unfold custom_prec, custom_emax in *.
@@ -10685,7 +11656,7 @@ Proof.
   }
   {
     destruct H3.
-    { 
+    {
       unfold floatMin in *.
       pose proof bpow_gt_0.
       specialize (H6 radix2 custom_emin).
@@ -10712,7 +11683,7 @@ Proof.
       {
         rewrite <- plusResultStmt in *.
         unfold is_finite in *.
-        intuition.                            
+        intuition.
       }
       {
         split.
@@ -10758,7 +11729,7 @@ Proof.
       {
         rewrite <- plusResultStmt in *.
         unfold is_finite in *.
-        intuition.                            
+        intuition.
       }
       {
         split.
@@ -10767,9 +11738,9 @@ Proof.
         assert (r1 + r2 >0 - bpow radix2 custom_emin)%R.
         psatz R.
         specialize (subNormalProof H13).
-        rewrite <- Heqex in subNormalProof. 
+        rewrite <- Heqex in subNormalProof.
         specialize (bpow_le subNormalProof).
-        clear expr1Valid expr2Valid. 
+        clear expr1Valid expr2Valid.
         clear floatToRealRelationForExpr1 floatToRealRelationForExpr2.
         clear Heqex ln_beta_premise floatToRealProof1 floatToRealProof2 plusResultStmt sumMaxValue.
         clear lowerBoundMinCase floatMaxBound3 floatMaxBound1.
@@ -10791,7 +11762,7 @@ Proof.
 Qed.
 
 
-Lemma firstProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma firstProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                        Some r1 = floatToReal f1 ->
                        Some r2 = floatToReal f2 ->
                        validFloat f1 ->
@@ -10804,14 +11775,14 @@ Lemma firstProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                        ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                        ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
 
-                       o = floatToReal f -> 
+                       o = floatToReal f ->
                        f = Bplus custom_prec custom_emax custom_precGt0
                                  custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                        match o with
                          | Some r =>
                            (r <= (ub1 + ub2) * (1 + error))%R
                          | None => False
-                       end. 
+                       end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -10866,8 +11837,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     simpl in H.
@@ -10888,7 +11859,7 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 + r2)%R).
     {
       destruct (Rle_dec floatMin (r1 + r2)%R).
@@ -10944,7 +11915,7 @@ Proof.
       {
         apply Rnot_le_gt in n.
         pose proof subNormalPosProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -10968,7 +11939,7 @@ Proof.
       destruct (Rlt_dec (R0 - floatMin) (r1 + r2)%R).
       {
         pose proof subNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -11056,7 +12027,7 @@ Qed.
 
 
 
-Lemma secondProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma secondProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                         Some r1 = floatToReal f1 ->
                         Some r2 = floatToReal f2 ->
                         validFloat f1 ->
@@ -11065,20 +12036,20 @@ Lemma secondProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                         isFloatConstValid f2 ->
                         (lb1 <= r1 <= ub1)%R ->
                         (lb2 <= r2 <= ub2)%R ->
-                        
+
                         (ub1 + ub2 >= 0)%R ->
                         (ub1 + ub2 < floatMin)%R ->
                         ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                         ((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R ->
 
-                        o = floatToReal f -> 
+                        o = floatToReal f ->
                         f = Bplus custom_prec custom_emax custom_precGt0
                                   custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                         match o with
                           | Some r =>
                             (r <= floatMin)%R
                           | None => False
-                        end. 
+                        end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -11134,8 +12105,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     simpl in H.
@@ -11156,7 +12127,7 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 + r2)%R).
     {
       destruct (Rle_dec floatMin (r1 + r2)%R).
@@ -11166,7 +12137,7 @@ Proof.
       {
         apply Rnot_le_gt in n.
         pose proof subNormalPosProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -11181,7 +12152,7 @@ Proof.
         destruct H0.
         inversion resultInReal.
         destruct H0.
-        apply H3.   
+        apply H3.
       }
     }
     {
@@ -11189,7 +12160,7 @@ Proof.
       destruct (Rlt_dec (R0 - floatMin) (r1 + r2)%R).
       {
         pose proof subNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -11278,7 +12249,7 @@ Proof.
   }
 Qed.
 
-Lemma thirdProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma thirdProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                        Some r1 = floatToReal f1 ->
                        Some r2 = floatToReal f2 ->
                        validFloat f1 ->
@@ -11292,15 +12263,15 @@ Lemma thirdProofUb : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                        ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                        ((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R ->
 
-                       o = floatToReal f -> 
+                       o = floatToReal f ->
                        f = Bplus custom_prec custom_emax custom_precGt0
                                  custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                        match o with
                          | Some r =>
                            (r <= 0)%R
                          | None => False
-                       end. 
-Proof.                         
+                       end.
+Proof.
   intros.
   assert (expr1Valid := H3).
   assert (expr2Valid := H4).
@@ -11355,8 +12326,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     simpl in H.
@@ -11377,18 +12348,18 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 + r2)%R).
     {
       psatz R.
     }
     {
-      
+
       apply Rnot_le_gt in n.
       destruct (Rlt_dec (R0 - floatMin) (r1 + r2)%R).
       {
         pose proof subNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -11403,7 +12374,7 @@ Proof.
         destruct H0.
         inversion resultInReal.
         destruct H0.
-        apply H3.   
+        apply H3.
       }
       {
         apply Rnot_lt_ge in n0.
@@ -11474,7 +12445,7 @@ Proof.
   }
 Qed.
 
-Lemma fourthProofUb :  forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma fourthProofUb :  forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                          Some r1 = floatToReal f1 ->
                          Some r2 = floatToReal f2 ->
                          validFloat f1 ->
@@ -11487,15 +12458,15 @@ Lemma fourthProofUb :  forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                          ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                          ((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R ->
 
-                         o = floatToReal f -> 
+                         o = floatToReal f ->
                          f = Bplus custom_prec custom_emax custom_precGt0
                                    custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                          match o with
                            | Some r =>
                              (r <= (ub1 + ub2) * (1 - error))%R
                            | None => False
-                         end. 
-Proof.                         
+                         end.
+Proof.
   intros.
   assert (expr1Valid := H3).
   assert (expr2Valid := H4).
@@ -11511,7 +12482,7 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H3 H4 H5 H6 H8 H9 H7 H11 H H0 H10 H1 H2. 
+  clear H3 H4 H5 H6 H8 H9 H7 H11 H H0 H10 H1 H2.
   assert (B2R custom_prec custom_emax
               (Bplus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -11549,8 +12520,8 @@ Proof.
       apply H.
     }
   }
-  
-  destruct o. 
+
+  destruct o.
   destruct f eqn:f_des.
   {
     pose proof relative_error as relative_error.
@@ -11674,7 +12645,7 @@ Proof.
   }
 Qed.
 
-Lemma secondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma secondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                       Some r1 = floatToReal f1 ->
                       Some r2 = floatToReal f2 ->
                       validFloat f1 ->
@@ -11684,11 +12655,11 @@ Lemma secondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                       (lb1 <= r1 <= ub1)%R ->
                       (lb2 <= r2 <= ub2)%R ->
                       (lb1 + lb2 < 0)%R ->
-                      (lb1 + lb2 >  R0 - floatMin)%R -> 
+                      (lb1 + lb2 >  R0 - floatMin)%R ->
                       ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                       ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
 
-                      o = floatToReal f -> 
+                      o = floatToReal f ->
                       f = Bplus custom_prec custom_emax custom_precGt0
                                 custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                       match o with
@@ -11698,7 +12669,7 @@ Lemma secondProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                             (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                    custom_nan mode_ZR f1 f2)
                         | None => False
-                      end. 
+                      end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -11716,7 +12687,7 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H1 H2 H3 H4 H5 H6 H9 H10 H12 H H0 H8 H7 H12. 
+  clear H1 H2 H3 H4 H5 H6 H9 H10 H12 H H0 H8 H7 H12.
   Check relative_error.
   Check Bplus_correct.
   Check relative_error.
@@ -11747,8 +12718,8 @@ Proof.
     specialize (H f1 f2 r1 r2 lb1 lb2 ub1 ub2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 n H0).
     apply H.
   }
-  
-  destruct o. 
+
+  destruct o.
   split.
   destruct f eqn:f_des.
   {
@@ -11756,7 +12727,7 @@ Proof.
     rewrite <- plusResultStmt in H.
     simpl in H.
     inversion resultInReal.
-    unfold floatMin. 
+    unfold floatMin.
     pose proof bpow_gt_0.
     specialize (H0 radix2 custom_emin).
     psatz R.
@@ -11775,13 +12746,13 @@ Proof.
     destruct H.
     rewrite H.
     unfold floatToReal in *.
-    
+
     destruct (Rgt_dec 0 (r1+r2)%R).
     {
       assert (r1 + r2 >= R0 - floatMin)%R.
       psatz R.
       pose proof subNormalNegProof.
-      
+
       rewrite <- f_des in plusResultStmt.
       assert (floatToReal f = floatToReal f).
       reflexivity.
@@ -11852,7 +12823,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -11875,7 +12846,7 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
         {
@@ -11894,7 +12865,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -11917,7 +12888,7 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
           {
             inversion floatToRealProof2.
@@ -11933,7 +12904,7 @@ Proof.
             rewrite <- H5.
             destruct Rcase_abs in relative_error. destruct Rcase_abs in relative_error.
             psatz R.
-            
+
             unfold round_mode in *.
             remember (3 - custom_emax - custom_prec)%Z as z.
             simpl in Heqz.
@@ -11956,13 +12927,13 @@ Proof.
             simpl.
             lia.
             specialize (H3 H6).
-            psatz R.             
+            psatz R.
           }
         }
       }
       apply Rnot_ge_lt in n0.
       pose proof subNormalPosProof.
-      
+
       rewrite <- f_des in plusResultStmt.
       apply Rle_ge in n.
       assert (floatToReal f = floatToReal f).
@@ -11977,8 +12948,8 @@ Proof.
       rewrite <- H.
       psatz R.
     }
-  } 
-  { 
+  }
+  {
     destruct H.
     unfold is_finite in H0.
     destruct ( Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
@@ -11998,13 +12969,13 @@ Proof.
     rewrite <- plusResultStmt in H0.
     intuition.
     inversion resultInReal.
-  }  
-Qed. 
+  }
+Qed.
 
 
 
 
-Lemma thirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma thirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      Some r1 = floatToReal f1 ->
                      Some r2 = floatToReal f2 ->
                      validFloat f1 ->
@@ -12017,7 +12988,7 @@ Lemma thirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                      ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                      ((0 - lb1 + (0 - lb2)) * (1 + error) <  floatMax)%R ->
 
-                     o = floatToReal f -> 
+                     o = floatToReal f ->
                      f = Bplus custom_prec custom_emax custom_precGt0
                                custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                      match o with
@@ -12027,7 +12998,7 @@ Lemma thirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                            (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                   custom_nan mode_ZR f1 f2)
                        | None => False
-                     end. 
+                     end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -12044,8 +13015,8 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2.  
-  
+  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2.
+
   assert (B2R custom_prec custom_emax
               (Bplus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -12063,9 +13034,9 @@ Proof.
   psatz R.
   specialize (H f1 f2 lb1 lb2 ub1 ub2 r1 r2 floatToRealProof1 floatToRealProof2 expr1Bound expr2Bound floatMaxBound floatMaxBound2 H0).
   apply H.
-  
-  
-  destruct o. 
+
+
+  destruct o.
   split.
   {
     pose proof relErrorBasedOnFloatMinTruthPlus as relErrorBasedOnFloatMinTruthPlus.
@@ -12101,7 +13072,7 @@ Proof.
     unfold error in *.
     destruct f eqn:f_des.
     {
-      
+
       unfold Rabs in *.
       inversion resultInReal.
       unfold floatMin in *.
@@ -12137,7 +13108,7 @@ Proof.
              end;
       psatz R.
     }
-  }  
+  }
   {
     destruct H.
     unfold is_finite in H0.
@@ -12160,7 +13131,7 @@ Proof.
   }
 Qed.
 
-Lemma fourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o, 
+Lemma fourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                       Some r1 = floatToReal f1 ->
                       Some r2 = floatToReal f2 ->
                       validFloat f1 ->
@@ -12173,7 +13144,7 @@ Lemma fourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                       ((ub1 + ub2) * (1 + error) < floatMax)%R ->
                       ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R ->
 
-                      o = floatToReal f -> 
+                      o = floatToReal f ->
                       f = Bplus custom_prec custom_emax custom_precGt0
                                 custom_precLtEmax custom_nan mode_ZR f1 f2 ->
                       match o with
@@ -12183,7 +13154,7 @@ Lemma fourthProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
                             (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
                                    custom_nan mode_ZR f1 f2)
                         | None => False
-                      end. 
+                      end.
 Proof.
   intros.
   assert (expr1Valid := H3).
@@ -12200,8 +13171,8 @@ Proof.
   assert (validFloatProof1 := H1).
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
-  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2. 
-  
+  clear H3 H4 H5 H6 H8 H9 H11 H H0 H7 H10 H1 H2.
+
   assert (B2R custom_prec custom_emax
               (Bplus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -12237,10 +13208,10 @@ Proof.
       apply H.
     }
   }
-  
 
 
-  destruct o. 
+
+  destruct o.
   split.
   destruct f eqn:f_des.
   {
@@ -12261,7 +13232,7 @@ Proof.
     inversion resultInReal.
   }
   {
-    
+
     destruct (Rle_dec 0 (r1 + r2)%R).
     {
       destruct (Rle_dec floatMin (r1 + r2)%R).
@@ -12317,7 +13288,7 @@ Proof.
       {
         apply Rnot_le_gt in n.
         pose proof subNormalPosProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -12341,7 +13312,7 @@ Proof.
       destruct (Rlt_dec (R0 - floatMin) (r1 + r2)%R).
       {
         pose proof subNormalNegProof.
-        
+
         rewrite <- f_des in plusResultStmt.
         assert (floatToReal f = floatToReal f).
         reflexivity.
@@ -12435,24 +13406,33 @@ Qed.
 
 (* The main lemma - correctness for floating-point bounds *)
 Require Import ExtLib.Tactics.
-Lemma bound_proof' : 
+Lemma bound_proof' :
   forall (expr:NowTerm) (fState:fstate),
     boundDef' expr fState.
 Proof.
-  unfold boundDef'. 
+  unfold boundDef'.
+  intros.
+  induction expr.
+(*
   intros.
   Print eval_NowTerm.
   remember (eval_NowTerm fState (expr)). destruct o; trivial.
+  revert Heqo; revert f.
+  induction expr.
   eapply Forall_forall. intros.
-  unfold denote_singleBoundTermNew. 
   intros. remember (floatToReal f).
   revert Heqo. revert Heqo0. revert f. revert H. revert H0. revert x. revert o.
   induction expr.
   (*remember (traceFromState st) as tr.*)
-  
-  {  
-    simpl in *.    
+*)
+  {
+    remember (eval_NowTerm fState (VarNowN v)). destruct o; trivial.
+    eapply Forall_forall. intros.
+    unfold denote_singleBoundTermNew.
+    intros. remember (floatToReal f).
+    simpl in *.
     intuition.
+
     rewrite <- H1 in *.
     simpl in *.
     symmetry in Heqo.
@@ -12462,7 +13442,7 @@ Proof.
     red in H0.
     rewrite Heqo in H0.
     simpl in *.
-    destruct o; trivial.   
+    destruct o; trivial.
     {
       destruct f; try congruence; inversion Heqo0.
       - simpl. psatz R.
@@ -12475,8 +13455,11 @@ Proof.
   }
 
   {
+    remember (eval_NowTerm fState (NatN n)). destruct o; trivial.
+    eapply Forall_forall. intros.
+    unfold denote_singleBoundTermNew.
+    intros. remember (floatToReal f).
     simpl in *.
-    
     intros.
     destruct H.
     {
@@ -12490,27 +13473,27 @@ Proof.
       specialize (premise (floatMin <= INR n)%R (INR n >= 0)%R (INR n * (1 + error) < floatMax)%R H H2 H3).
       pose proof orExtra as orExtra1.
       specialize (orExtra1 ((floatMin <= INR n)%R /\
-                            (INR n >= 0)%R /\ (INR n * (1 + error) < floatMax)%R) 
+                            (INR n >= 0)%R /\ (INR n * (1 + error) < floatMax)%R)
                            ((floatMin <=0 - INR n)%R /\
                             (INR n < 0)%R /\ ((0 - INR n) * (1 + error) < floatMax)%R) premise).
       pose proof natRoundingTruth as natRoundingTruth.
       specialize (natRoundingTruth n orExtra1).
       pose proof natRoundingTruth2 as natRoundingTruth2.
       specialize (natRoundingTruth2 f n  Heqo natRoundingTruth).
-      
+
       pose proof conjoin as premise2.
       specialize (premise2 (floatMin <= INR n)%R (INR n >= 0)%R H H2).
       pose proof orExtra as orExtra2.
-      specialize (orExtra2 ((floatMin <= INR n)%R /\ (INR n >= 0)%R) 
+      specialize (orExtra2 ((floatMin <= INR n)%R /\ (INR n >= 0)%R)
                            ((floatMin <= 0 - INR n)%R /\ (INR n < 0)%R) premise2).
-      
+
       unfold floatToReal in *.
       unfold nat_to_float in *.
       destruct f eqn:f_des.
       {
         inversion Heqo0.
         inversion Heqo.
-        unfold Fappli_IEEE_extra.b64_of_Z in H4.    
+        unfold Fappli_IEEE_extra.b64_of_Z in H4.
         rewrite <- H4 in natRoundingTruth2 at 1.
         simpl.
         unfold B2R in natRoundingTruth2.
@@ -12518,31 +13501,31 @@ Proof.
         rewrite H1.
         clear natRoundingTruth2.
         clear natRoundingTruth.
-        clear H3.        
+        clear H3.
         clear H1.
         pose proof relErrorTruthNat as relErrorTruthNat.
-        
+
         specialize (relErrorTruthNat n orExtra2).
-        
+
         intros.
         rewrite natToReal.
         remember (round radix2
                         (FLT_exp (3 - custom_emax  - custom_prec)
-                                 custom_prec) (round_mode mode_ZR) 
+                                 custom_prec) (round_mode mode_ZR)
                         (INR n)) as roundedValue.
         clear HeqroundedValue.
         clear H5.
         clear premise premise2 orExtra2.
         simpl in H0.
         destruct H0.
-        
+
         clear Heqo0 Heqo f_des orExtra1 H H4.
         unfold Rabs in *.
-        
+
         pose proof errorGt0 as errorGt0.
         pose proof errorLessThan1 as errorLessThan1.
         unfold error in *.
-        
+
         destruct Rcase_abs;
           destruct Rcase_abs;
           repeat match goal with
@@ -12578,12 +13561,12 @@ Proof.
         intuition.
         intuition.
         inversion Heqo.
-        
+
       }
       {
         inversion Heqo0.
         inversion Heqo.
-        unfold Fappli_IEEE_extra.b64_of_Z in *.  
+        unfold Fappli_IEEE_extra.b64_of_Z in *.
         rewrite <- H4 in natRoundingTruth2 at 1.
         unfold B2R in natRoundingTruth2.
         decompose [and] natRoundingTruth2.
@@ -12593,22 +13576,22 @@ Proof.
         rewrite natRoundingTruth2.
         clear natRoundingTruth2.
         clear natRoundingTruth.
-        
+
         clear H1.
         pose proof relErrorTruthNat as relErrorTruthNat.
         specialize (relErrorTruthNat n orExtra2).
-        
+
         rewrite natToReal.
         remember (round radix2
                         (FLT_exp (3 - custom_emax  - custom_prec)
-                                 custom_prec) (round_mode mode_ZR) 
+                                 custom_prec) (round_mode mode_ZR)
                         (INR n)) as roundedValue.
         clear HeqroundedValue.
         clear H5.
         clear premise premise2 orExtra2.
         clear Heqo0 Heqo f_des e0 orExtra1 H H0 H3 H4.
         unfold Rabs in *.
-        
+
         pose proof errorGt0 as errorGt0.
         pose proof errorLessThan1 as errorLessThan1.
         unfold error in *.
@@ -12622,7 +13605,7 @@ Proof.
                    | H :@ Rgt _ _ |- _ => revert H
                    | H : @Rge _ _ |- _ => revert H
                  end;
-          psatz R. 
+          psatz R.
       }
     }
     {
@@ -12638,27 +13621,27 @@ Proof.
         specialize (premise (floatMin <= 0 - INR n)%R  (INR n < 0)%R ((0 - INR n) * (1 + error) < floatMax)%R H H2 H3).
         pose proof orExtra2 as orExtra1.
         specialize (orExtra1 ((floatMin <= INR n)%R /\
-                              (INR n >= 0)%R /\ (INR n * (1 + error) < floatMax)%R) 
+                              (INR n >= 0)%R /\ (INR n * (1 + error) < floatMax)%R)
                              ((floatMin <= 0 - INR n)%R /\
                               (INR n < 0)%R /\ ((0 - INR n) * (1 + error) < floatMax)%R) premise).
         pose proof natRoundingTruth as natRoundingTruth.
         specialize (natRoundingTruth n orExtra1).
         pose proof natRoundingTruth2 as natRoundingTruth2.
         specialize (natRoundingTruth2 f n  Heqo natRoundingTruth).
-        
+
         pose proof conjoin as premise2.
         specialize (premise2 (floatMin <= 0 - INR n)%R (INR n < 0)%R H H2).
         pose proof orExtra2 as orExtra2.
-        specialize (orExtra2 ((floatMin <= INR n)%R /\ (INR n >= 0)%R) 
+        specialize (orExtra2 ((floatMin <= INR n)%R /\ (INR n >= 0)%R)
                              ((floatMin <=0 - INR n)%R /\ (INR n < 0)%R) premise2).
-        
+
         unfold floatToReal in *.
         unfold nat_to_float in *.
         destruct f eqn:f_des.
         {
           inversion Heqo0.
           inversion Heqo.
-          unfold Fappli_IEEE_extra.b64_of_Z in H4.    
+          unfold Fappli_IEEE_extra.b64_of_Z in H4.
           rewrite <- H4 in natRoundingTruth2 at 1.
           simpl.
           unfold B2R in natRoundingTruth2.
@@ -12666,31 +13649,31 @@ Proof.
           rewrite H1.
           clear natRoundingTruth2.
           clear natRoundingTruth.
-          clear H3.        
+          clear H3.
           clear H1.
           pose proof relErrorTruthNat as relErrorTruthNat.
-          
+
           specialize (relErrorTruthNat n orExtra2).
-          
+
           intros.
           rewrite natToReal.
           remember (round radix2
                           (FLT_exp (3 - custom_emax  - custom_prec)
-                                   custom_prec) (round_mode mode_ZR) 
+                                   custom_prec) (round_mode mode_ZR)
                           (INR n)) as roundedValue.
           clear HeqroundedValue.
           clear H5.
           clear premise premise2 orExtra2.
           simpl in H0.
           destruct H0.
-          
+
           clear Heqo0 Heqo f_des orExtra1 H H4.
           unfold Rabs in *.
-          
+
           pose proof errorGt0 as errorGt0.
           pose proof errorLessThan1 as errorLessThan1.
           unfold error in *.
-          
+
           destruct Rcase_abs;
             destruct Rcase_abs;
             repeat match goal with
@@ -12726,12 +13709,12 @@ Proof.
           intuition.
           intuition.
           inversion Heqo.
-          
+
         }
         {
           inversion Heqo0.
           inversion Heqo.
-          unfold Fappli_IEEE_extra.b64_of_Z in *.  
+          unfold Fappli_IEEE_extra.b64_of_Z in *.
           rewrite <- H4 in natRoundingTruth2 at 1.
           unfold B2R in natRoundingTruth2.
           decompose [and] natRoundingTruth2.
@@ -12741,22 +13724,22 @@ Proof.
           rewrite natRoundingTruth2.
           clear natRoundingTruth2.
           clear natRoundingTruth.
-          
+
           clear H1.
           pose proof relErrorTruthNat as relErrorTruthNat.
           specialize (relErrorTruthNat n orExtra2).
-          
+
           rewrite natToReal.
           remember (round radix2
                           (FLT_exp (3 - custom_emax  - custom_prec)
-                                   custom_prec) (round_mode mode_ZR) 
+                                   custom_prec) (round_mode mode_ZR)
                           (INR n)) as roundedValue.
           clear HeqroundedValue.
           clear H5.
           clear premise premise2 orExtra2.
           clear Heqo0 Heqo f_des e0 orExtra1 H H0 H3 H4.
           unfold Rabs in *.
-          
+
           pose proof errorGt0 as errorGt0.
           pose proof errorLessThan1 as errorLessThan1.
           unfold error in *.
@@ -12770,16 +13753,22 @@ Proof.
                      | H :@ Rgt _ _ |- _ => revert H
                      | H : @Rge _ _ |- _ => revert H
                    end;
-            psatz R. 
+            psatz R.
         }
       }
       {
         intuition.
       }
     }
+
   }
-  
-  { simpl in *. 
+
+  {
+    remember (eval_NowTerm fState (FloatN f)). destruct o; trivial.
+    eapply Forall_forall. intros.
+    unfold denote_singleBoundTermNew.
+    intros. remember (floatToReal f).
+    simpl in *.
     intros.
     destruct H.
     {
@@ -12791,20 +13780,20 @@ Proof.
       unfold isFloatConstValid in *.
       destruct f.
       {
-        simpl in *. 
+        simpl in *.
         rewrite H1 in *.
         inversion Heqo0.
         simpl in *.
         intuition.
       }
       {
-        inversion Heqo0.       
+        inversion Heqo0.
         subst.
         intuition.
       }
       {
         inversion Heqo0.
-        subst. 
+        subst.
         intuition.
       }
       {
@@ -12817,461 +13806,653 @@ Proof.
       intuition.
     }
   }
-  { 
-    
+  {
+
     simpl in *.
-    intros.   
-    eapply In_cross_In in H.
-    
-    simpl in H.
-    forward_reason.
-    destruct H2.
+    intros.
+    unfold lift2.
+    forward.
+    eapply Forall_forall.
+    intros.
+    eapply In_cross_In in H1.
+    forward_reason. destruct H1. destruct H3.
+    eapply Forall_forall in IHexpr1; [ | eassumption ].
+    eapply Forall_forall in IHexpr2; [ | eassumption ].
+    simpl in H4.
+    destruct H4.
     {
+
       unfold simpleBound in *.
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
-      clear H5.
-(*      
       destruct H5.
-      destruct H5.
-      destruct H5.
-      destruct H6.
-      destruct H6.
-*)      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H9 H5).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H10 H6).
-      inversion H7.
-      inversion H8.
-      rewrite <- H11 in *.
-      rewrite <- H12 in *.
-      assert (floatToRealProof1 := H11).
-      assert (floatToRealProof2 := H12).
-      rewrite <- H5 in *.
-      rewrite <- H6 in *.
+      specialize (IHexpr1 H2).
+      specialize (IHexpr2 H4).
+      assert (validFloat f).
+      destruct (floatToReal f).
+      {
+        destruct IHexpr1.
+        unfold isFloatConstValid in *.
+        destruct f.
+        unfold validFloat.
+        simpl.
+        exists R0.
+        reflexivity.
+        intuition.
+        intuition.
+        unfold validFloat.
+        unfold floatToReal.
+        exists ((B2R custom_prec custom_emax
+           (B754_finite custom_prec custom_emax b m e e0))).
+        reflexivity.
+      }
+      {
+        intuition.
+      }
+      assert (validFloat f0).
+      destruct (floatToReal f0).
+      {
+        destruct IHexpr2.
+        unfold isFloatConstValid in *.
+        destruct f0.
+        unfold validFloat.
+        simpl.
+        exists R0.
+        reflexivity.
+        intuition.
+        intuition.
+        unfold validFloat.
+        unfold floatToReal.
+        exists ((B2R custom_prec custom_emax
+           (B754_finite custom_prec custom_emax b m e e0))).
+        reflexivity.
+      }
+      {
+        intuition.
+      }
       assert (validFloatArg1 := H7).
       assert (validFloatArg2 := H8).
-      clear H9 H10 H5 H6 H0 H2 H H1 H7 H11 H12 H6.  
+      destruct H7.
+      destruct H8.
+      rewrite <- H7 in *.
+      rewrite <- H8 in *.
+      assert (floatToRealProof1 := H7).
+      assert (floatToRealProof2 := H8).
+
+      destruct IHexpr1.
+      destruct IHexpr2.
       unfold lofst in *.
       pose proof thirdProof.
       pose proof firstProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
       remember (lb x0 fState) as lb1.
       remember (lb x1 fState) as lb2.
       remember (ub x0 fState) as ub1.
       remember (ub x1 fState) as ub2.
-      apply Rle_ge in H3.
-      
-      
-      specialize (H x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H2 H6 H1 H5 H3 H4).
-      specialize (H0 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H2 H6 H1 H5).
-      
+      apply Rle_ge in H5.
+
+      specialize (H13 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H10 H12 H9 H11 H5 H6).
+      specialize (H14 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H10 H12 H9 H11).
+
       assert (ub1 + ub2 >= floatMin)%R.
       psatz R.
       assert ( ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R).
       pose proof bpow_gt_0.
-      specialize (H9 radix2 custom_emax).
+      specialize (H16 radix2 custom_emax).
       pose proof errorGt0.
       unfold floatMin in *.
       pose proof bpow_gt_0.
-      specialize (H11 radix2 custom_emin).
+      specialize (H18 radix2 custom_emin).
       psatz R.
-      inversion Heqo.
       unfold float_plus in *.
-      specialize (H H9 Heqo0 H11).
-      specialize (H0 H7 H4 H9 Heqo0 H11).
-      
-      
-      destruct o.
+      assert (floatToReal
+          (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+             custom_nan mode_ZR f f0) =
+        floatToReal
+          (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+             custom_nan mode_ZR f f0)).
+      intuition.
+      assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                    custom_nan mode_ZR f f0 =
+              Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                    custom_nan mode_ZR f f0).
+      intuition.
+      specialize (H13 H16 H17 H18).
+      specialize (H14 H15 H6 H16 H17 H18).
+      destruct (floatToReal
+                  (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                         custom_nan mode_ZR f f0)).
       {
         destruct f eqn:f_des.
         {
-          inversion Heqo.
-          destruct H.
+          destruct H13.
           split.
           psatz R.
-          rewrite H12.
-          apply H10.
+          apply H19.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo.
-          destruct H.
+          destruct H13.
           split.
           psatz R.
-          rewrite H12.
-          apply H10.
+          apply H19.
         }
       }
       {
-        inversion Heqo.
         intuition.
       }
     }
     {
-      destruct H2.
+      destruct H4.
       {
         unfold simpleBound15 in *.
-        rewrite <- H2 in *.
-        clear H2.
+        rewrite <- H4 in *.
+        clear H4.
         simpl in *.
-        destruct H0.
         destruct H2.
-        destruct H3.
         destruct H4.
         destruct H5.
         destruct H6.
         destruct H7.
-        destruct H7.
-        destruct H7.
-        destruct H8.
-        destruct H8.
-        
-        forward_reason.
-        assert (floatToReal x2 = floatToReal x2).
-        intuition.
-        assert (floatToReal x3 = floatToReal x3).
-        intuition.
-        specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-        specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H12 H8).
-        inversion H9.
-        inversion H10.
-        rewrite <- H13 in *.
-        rewrite <- H14 in *.
-        assert (floatToRealProof1 := H13).
-        assert (floatToRealProof2 := H14).
-        rewrite <- H7 in *.
-        rewrite <- H8 in *.
-        assert (validFloatArg1 := H9).
-        assert (validFloatArg2 := H10).
-        clear H11 H12 H7 H8 H0 H2 H H1 H9 H13 H14 H8.  
-        unfold lofst in *.
-        pose proof firstProof.
-        pose proof firstProofUb.
+
+          specialize (IHexpr1 H2).
+      specialize (IHexpr2 H4).
+      assert (validFloat f).
+      destruct (floatToReal f).
+      {
         destruct IHexpr1.
+        unfold isFloatConstValid in *.
+        destruct f.
+        unfold validFloat.
+        simpl.
+        exists R0.
+        reflexivity.
+        intuition.
+        intuition.
+        unfold validFloat.
+        unfold floatToReal.
+        exists ((B2R custom_prec custom_emax
+           (B754_finite custom_prec custom_emax b m e e0))).
+        reflexivity.
+      }
+      {
+        intuition.
+      }
+      assert (validFloat f0).
+      destruct (floatToReal f0).
+      {
         destruct IHexpr2.
-        remember (lb x0 fState) as lb1.
-        remember (lb x1 fState) as lb2.
-        remember (ub x0 fState) as ub1.
-        remember (ub x1 fState) as ub2.
-        
-        
-        specialize (H x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H2 H8 H1 H7 H6 H3 H5).
-        apply Rle_ge in H4.
-        specialize (H0 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H2 H8 H1 H7 H4 H5).
-        
-        
-        assert ( ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R).
-        pose proof bpow_gt_0.
-        specialize (H9 radix2 custom_emax).
-        pose proof errorGt0.
-        unfold floatMin in *.
-        pose proof bpow_gt_0.
-        specialize (H12 radix2 custom_emin).
-        clear -H6 H9 H11 H12.
-        psatz R.
-        inversion Heqo.
-        unfold float_plus in *.
-        specialize (H H9 Heqo0 H12).
-        specialize (H0 H9 Heqo0 H12).
-        
-        
-        destruct o.
+        unfold isFloatConstValid in *.
+        destruct f0.
+        unfold validFloat.
+        simpl.
+        exists R0.
+        reflexivity.
+        intuition.
+        intuition.
+        unfold validFloat.
+        unfold floatToReal.
+        exists ((B2R custom_prec custom_emax
+           (B754_finite custom_prec custom_emax b m e e0))).
+        reflexivity.
+      }
+      {
+        intuition.
+      }
+      assert (validFloatArg1 := H9).
+      assert (validFloatArg2 := H10).
+      destruct H9.
+      destruct H10.
+      rewrite <- H9 in *.
+      rewrite <- H10 in *.
+      assert (floatToRealProof1 := H9).
+      assert (floatToRealProof2 := H10).
+
+      destruct IHexpr1.
+      destruct IHexpr2.
+      unfold lofst in *.
+      pose proof firstProof.
+      pose proof firstProofUb.
+      remember (lb x0 fState) as lb1.
+      remember (lb x1 fState) as lb2.
+      remember (ub x0 fState) as ub1.
+      remember (ub x1 fState) as ub2.
+
+      specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H8 H5 H7).
+      specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2  H12 H14 H11 H13).
+
+      assert (ub1 + ub2 >= floatMin)%R.
+      psatz R.
+      assert ( ((0 - lb1 + (0 - lb2)) * (1 + error) < bpow radix2 custom_emax)%R).
+      pose proof bpow_gt_0.
+      specialize (H18 radix2 custom_emax).
+      pose proof errorGt0.
+      unfold floatMin in *.
+      pose proof bpow_gt_0.
+      specialize (H20 radix2 custom_emin).
+      psatz R.
+      unfold float_plus in *.
+      assert (floatToReal
+          (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+             custom_nan mode_ZR f f0) =
+        floatToReal
+          (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+             custom_nan mode_ZR f f0)).
+      intuition.
+      assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                    custom_nan mode_ZR f f0 =
+              Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                    custom_nan mode_ZR f f0).
+      intuition.
+      specialize (H15 H18 H19 H20).
+      specialize (H16 H17 H7 H18 H19 H20).
+      destruct (floatToReal
+                  (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                         custom_nan mode_ZR f f0)).
         {
           destruct f eqn:f_des.
           {
-            inversion Heqo.
-            destruct H.
+            destruct H15.
             split.
             psatz R.
-            rewrite H12.
-            apply H11.
+            apply H21.
           }
           {
-            inversion Heqo0.
+            intuition.
           }
           {
-            inversion Heqo0.
+            intuition.
           }
           {
-            inversion Heqo.
-            destruct H.
+            destruct H15.
             split.
             psatz R.
-            rewrite H12.
-            apply H11.
+            apply H21.
           }
         }
         {
-          inversion Heqo.
           intuition.
         }
       }
-      { 
-        destruct H2.
+      {
+        destruct H4.
         {
           unfold simpleBound16 in *.
-          rewrite <- H2 in *.
-          clear H2.
+          rewrite <- H4 in *.
+          clear H4.
           simpl in *.
-          destruct H0.
           destruct H2.
-          destruct H3.
           destruct H4.
           destruct H5.
           destruct H6.
           destruct H7.
           destruct H8.
-          destruct H8.
-          destruct H8.
-          destruct H9.
-          destruct H9.
-          inversion Heqo.   
-          forward_reason. 
-          assert (floatToReal x2 = floatToReal x2).
-          intuition.
-          assert (floatToReal x3 = floatToReal x3).
-          intuition.
-          specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H12 H8).
-          specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H14 H9).
-          inversion H10.
-          inversion H11.
-          rewrite <- H15 in *.
-          rewrite <- H16 in *.
-          assert (floatToRealProof1 := H15).
-          assert (floatToRealProof2 := H16).
-          rewrite <- H8 in *.
-          rewrite <- H9 in *.
+
+          specialize (IHexpr1 H2).
+          specialize (IHexpr2 H4).
+          assert (validFloat f).
+          destruct (floatToReal f).
+          {
+            destruct IHexpr1.
+            unfold isFloatConstValid in *.
+            destruct f.
+            unfold validFloat.
+            simpl.
+            exists R0.
+            reflexivity.
+            intuition.
+            intuition.
+            unfold validFloat.
+            unfold floatToReal.
+            exists ((B2R custom_prec custom_emax
+                         (B754_finite custom_prec custom_emax b m e e0))).
+            reflexivity.
+          }
+          {
+            intuition.
+          }
+          assert (validFloat f0).
+          destruct (floatToReal f0).
+          {
+            destruct IHexpr2.
+            unfold isFloatConstValid in *.
+            destruct f0.
+            unfold validFloat.
+            simpl.
+            exists R0.
+            reflexivity.
+            intuition.
+            intuition.
+            unfold validFloat.
+            unfold floatToReal.
+            exists ((B2R custom_prec custom_emax
+                         (B754_finite custom_prec custom_emax b m e e0))).
+            reflexivity.
+          }
+          {
+            intuition.
+          }
           assert (validFloatArg1 := H10).
           assert (validFloatArg2 := H11).
-          clear H12 H14 H8 H9.
+          destruct H10.
+          destruct H11.
+          rewrite <- H10 in *.
+          rewrite <- H11 in *.
+          assert (floatToRealProof1 := H10).
+          assert (floatToRealProof2 := H11).
+
+
+          destruct IHexpr1.
+          destruct IHexpr2.
           unfold lofst in *.
           pose proof secondProof.
           pose proof firstProofUb.
-          destruct IHexpr1.
-          destruct IHexpr2.
           remember (lb x0 fState) as lb1.
           remember (lb x1 fState) as lb2.
           remember (ub x0 fState) as ub1.
           remember (ub x1 fState) as ub2.
-          
-          specialize (H8 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H14 H18 H12 H17 H7 H3 H5 H6 Heqo0).
-          specialize (H9 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H14 H18 H12 H17 H4 H5 H6 Heqo0).
-          inversion Heqo.
+          assert (floatToReal
+                    (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                           custom_nan mode_ZR f f0) =
+                  floatToReal
+                    (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                           custom_nan mode_ZR f f0)).
+          intuition.
+          assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                        custom_nan mode_ZR f f0 =
+                  Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                        custom_nan mode_ZR f f0).
+          intuition.
+          specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H9 H5 H7 H8).
           unfold float_plus in *.
-          specialize (H8 H20).
-          specialize (H9 H20).
-          
-          destruct o.
+          specialize (H16 H18 H19).
+          specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H6 H7 H8).
+          unfold float_plus in *.
+          specialize (H17 H18 H19).
+
+          destruct (floatToReal
+                  (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                         custom_nan mode_ZR f f0)).
           {
-            inversion Heqo0.
             destruct f eqn:f_des.
             {
-              inversion Heqo.
-              destruct H8.
+              destruct H16.
               split.
               psatz R.
-              rewrite H20.
-              apply H19.
+              apply H20.
             }
             {
-              inversion Heqo0.
+              intuition.
             }
             {
-              inversion Heqo0.
+              intuition.
             }
             {
-              inversion Heqo.
-              destruct H8.
+              destruct H16.
               split.
               psatz R.
-              rewrite H20.
-              apply H19.
+              apply H20.
             }
           }
           {
-            inversion Heqo.
             intuition.
           }
         }
         {
-          destruct H2.
+          destruct H4.
           {
             unfold simpleBound17 in *.
-            rewrite <- H2 in *.
-            clear H2.
+            rewrite <- H4 in *.
+            clear H4.
             simpl in *.
-            destruct H0.
             destruct H2.
-            destruct H3.
             destruct H4.
             destruct H5.
             destruct H6.
             destruct H7.
-            destruct H7.
-            destruct H7.
-            destruct H8.
-            destruct H8.
-            inversion Heqo.
-            
-            forward_reason.
-            assert (floatToReal x2 = floatToReal x2).
-            intuition.
-            assert (floatToReal x3 = floatToReal x3).
-            intuition.
-            specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-            specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-            inversion H9.
-            inversion H10.
-            rewrite <- H14 in *.
-            rewrite <- H15 in *.
-            assert (floatToRealProof1 := H14).
-            assert (floatToRealProof2 := H15).
-            rewrite <- H7 in *.
-            rewrite <- H8 in *.
+
+            specialize (IHexpr1 H2).
+            specialize (IHexpr2 H4).
+            assert (validFloat f).
+            destruct (floatToReal f).
+            {
+              destruct IHexpr1.
+              unfold isFloatConstValid in *.
+              destruct f.
+              unfold validFloat.
+              simpl.
+              exists R0.
+              reflexivity.
+              intuition.
+              intuition.
+              unfold validFloat.
+              unfold floatToReal.
+              exists ((B2R custom_prec custom_emax
+                           (B754_finite custom_prec custom_emax b m e e0))).
+              reflexivity.
+            }
+            {
+              intuition.
+            }
+            assert (validFloat f0).
+            destruct (floatToReal f0).
+            {
+              destruct IHexpr2.
+              unfold isFloatConstValid in *.
+              destruct f0.
+              unfold validFloat.
+              simpl.
+              exists R0.
+              reflexivity.
+              intuition.
+              intuition.
+              unfold validFloat.
+              unfold floatToReal.
+              exists ((B2R custom_prec custom_emax
+                           (B754_finite custom_prec custom_emax b m e e0))).
+              reflexivity.
+            }
+            {
+              intuition.
+            }
             assert (validFloatArg1 := H9).
             assert (validFloatArg2 := H10).
+            destruct H9.
+            destruct H10.
+            rewrite <- H9 in *.
+            rewrite <- H10 in *.
+            assert (floatToRealProof1 := H9).
+            assert (floatToRealProof2 := H10).
+
+            destruct IHexpr1.
+            destruct IHexpr2.
             unfold lofst in *.
             pose proof fourthProof.
             pose proof firstProofUb.
-            destruct IHexpr1.
-            destruct IHexpr2.
             remember (lb x0 fState) as lb1.
             remember (lb x1 fState) as lb2.
             remember (ub x0 fState) as ub1.
             remember (ub x1 fState) as ub2.
-            inversion Heqo.
+
+            specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H7 H8).
+
+            specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2  H12 H14 H11 H13 H6 H7 H8).
             unfold float_plus in *.
-            specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H5 H6 Heqo0 H23).
-            specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H4 H5 H6 Heqo0 H23). 
-            unfold float_plus in *.
-            
-            destruct o.
-            {
-              inversion Heqo0.
-              
+            assert (floatToReal
+                      (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                             custom_nan mode_ZR f f0) =
+                    floatToReal
+                      (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                             custom_nan mode_ZR f f0)).
+            intuition.
+            assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                          custom_nan mode_ZR f f0 =
+                    Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                          custom_nan mode_ZR f f0).
+            intuition.
+            specialize (H15 H17 H18).
+            specialize (H16 H17 H18).
+
+            destruct (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
+          {
+
+
               destruct f eqn:f_des.
               {
-                destruct H16.
+                destruct H15.
                 split.
                 psatz R.
-                apply H22.
+                apply H19.
               }
               {
-                inversion Heqo0.
+                intuition.
               }
               {
-                inversion Heqo0.
+                intuition.
               }
               {
-                
-                destruct H16.
+                destruct H15.
                 split.
                 psatz R.
-                apply H22.
+                apply H19.
               }
             }
-            { 
-              
+            {
               intuition.
             }
           }
           {
-            destruct H2.
+            destruct H4.
             {
               unfold simpleBound18 in *.
-              rewrite <- H2 in *.
-              clear H2.
+              rewrite <- H4 in *.
+              clear H4.
               simpl in *.
-              destruct H0.
               destruct H2.
-              destruct H3.
               destruct H4.
               destruct H5.
               destruct H6.
               destruct H7.
               destruct H8.
-              destruct H8.
-              destruct H8.
-              destruct H9.
-              destruct H9.
-              inversion Heqo.
-              
-              forward_reason.
-              assert (floatToReal x2 = floatToReal x2).
-              intuition.
-              assert (floatToReal x3 = floatToReal x3).
-              intuition.
-              specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H12 H8).
-              specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H14 H9).
-              inversion H10.
-              inversion H11.
-              rewrite <- H15 in *.
-              rewrite <- H16 in *.
-              assert (floatToRealProof1 := H15).
-              assert (floatToRealProof2 := H16).
-              rewrite <- H8 in *.
-              rewrite <- H9 in *.
+
+              specialize (IHexpr1 H2).
+              specialize (IHexpr2 H4).
+              assert (validFloat f).
+              destruct (floatToReal f).
+              {
+                destruct IHexpr1.
+                unfold isFloatConstValid in *.
+                destruct f.
+                unfold validFloat.
+                simpl.
+                exists R0.
+                reflexivity.
+                intuition.
+                intuition.
+                unfold validFloat.
+                unfold floatToReal.
+                exists ((B2R custom_prec custom_emax
+                             (B754_finite custom_prec custom_emax b m e e0))).
+                reflexivity.
+              }
+              {
+                intuition.
+              }
+              assert (validFloat f0).
+              destruct (floatToReal f0).
+              {
+                destruct IHexpr2.
+                unfold isFloatConstValid in *.
+                destruct f0.
+                unfold validFloat.
+                simpl.
+                exists R0.
+                reflexivity.
+                intuition.
+                intuition.
+                unfold validFloat.
+                unfold floatToReal.
+                exists ((B2R custom_prec custom_emax
+                             (B754_finite custom_prec custom_emax b m e e0))).
+                reflexivity.
+              }
+              {
+                intuition.
+              }
               assert (validFloatArg1 := H10).
               assert (validFloatArg2 := H11).
+              destruct H10.
+              destruct H11.
+              rewrite <- H10 in *.
+              rewrite <- H11 in *.
+              assert (floatToRealProof1 := H10).
+              assert (floatToRealProof2 := H11).
+
+              destruct IHexpr1.
+              destruct IHexpr2.
               unfold lofst in *.
               pose proof firstProof.
               pose proof secondProofUb.
-              destruct IHexpr1.
-              destruct IHexpr2.
               remember (lb x0 fState) as lb1.
               remember (lb x1 fState) as lb2.
               remember (ub x0 fState) as ub1.
               remember (ub x1 fState) as ub2.
-              inversion Heqo.
-              unfold float_plus in *.
               assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
               pose proof bpow_gt_0.
               unfold floatMax in *.
               pose proof errorGt0.
-              specialize (H23 radix2 custom_emax).
+              specialize (H18 radix2 custom_emax).
               psatz R.
-              specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H4 H3 H7 H23 Heqo0 H24).
-              specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H6 H5 H7 H23 Heqo0 H24).
+              specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H6 H5 H9 H18).
+
+              specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H8 H7 H9 H18).
               unfold float_plus in *.
-              
-              destruct o.
+              assert (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0) =
+                      floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
+              intuition.
+              assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                            custom_nan mode_ZR f f0 =
+                      Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                            custom_nan mode_ZR f f0).
+              intuition.
+              specialize (H16 H19 H20).
+              specialize (H17 H19 H20).
+
+              destruct (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
               {
-                inversion Heqo0.
-                
                 destruct f eqn:f_des.
                 {
-                  destruct H17.
+                  destruct H16.
                   split.
                   psatz R.
-                  apply H25.
+                  apply H21.
                 }
                 {
-                  inversion Heqo0.
+                  intuition.
                 }
                 {
-                  inversion Heqo0.
+                  intuition.
                 }
                 {
-                  destruct H17.
+                  destruct H16.
                   split.
                   psatz R.
-                  apply H25.
+                  apply H21.
                 }
               }
               {
@@ -13279,175 +14460,263 @@ Proof.
               }
             }
             {
-              
-              destruct H2.
+
+              destruct H4.
               {
                 unfold simpleBound19 in *.
-                rewrite <- H2 in *.
-                clear H2.
-                simpl in *.
-                destruct H0.
-                destruct H2.
-                destruct H3.
-                destruct H4.
-                destruct H5.
-                destruct H6.
-                destruct H7.
-                destruct H8.
-                destruct H9.
-                destruct H9.
-                destruct H9.
-                destruct H10.
-                destruct H10.
-                inversion Heqo.
-                
-                forward_reason.
-                assert (floatToReal x2 = floatToReal x2).
-                intuition.
-                assert (floatToReal x3 = floatToReal x3).
-                intuition.
-                specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H13 H9).
-                specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H15 H10).
-                inversion H11.
-                inversion H12.
-                rewrite <- H16 in *.
-                rewrite <- H17 in *.
-                assert (floatToRealProof1 := H16).
-                assert (floatToRealProof2 := H17).
-                rewrite <- H9 in *.
-                rewrite <- H10 in *.
-                assert (validFloatArg1 := H11).
-                assert (validFloatArg2 := H12).
-                unfold lofst in *.
-                pose proof secondProof.
-                pose proof secondProofUb.
+                rewrite <- H4 in *.
+                clear H4.
+
+              simpl in *.
+              destruct H2.
+              destruct H4.
+              destruct H5.
+              destruct H6.
+              destruct H7.
+              destruct H8.
+              destruct H9.
+
+              specialize (IHexpr1 H2).
+              specialize (IHexpr2 H4).
+              assert (validFloat f).
+              destruct (floatToReal f).
+              {
                 destruct IHexpr1.
+                unfold isFloatConstValid in *.
+                destruct f.
+                unfold validFloat.
+                simpl.
+                exists R0.
+                reflexivity.
+                intuition.
+                intuition.
+                unfold validFloat.
+                unfold floatToReal.
+                exists ((B2R custom_prec custom_emax
+                             (B754_finite custom_prec custom_emax b m e e0))).
+                reflexivity.
+              }
+              {
+                intuition.
+              }
+              assert (validFloat f0).
+              destruct (floatToReal f0).
+              {
                 destruct IHexpr2.
-                remember (lb x0 fState) as lb1.
-                remember (lb x1 fState) as lb2.
-                remember (ub x0 fState) as ub1.
-                remember (ub x1 fState) as ub2.
-                inversion Heqo.
-                unfold float_plus in *.
-                assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
-                pose proof bpow_gt_0.
-                unfold floatMax in *.
-                pose proof errorGt0.
-                specialize (H24 radix2 custom_emax).
-                psatz R.
-                specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H21 H23 H20 H22 H4 H3 H7 H8 Heqo0 H25).
-                specialize (H19 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H21 H23 H20 H22 H6 H5 H7 H8 Heqo0 H25). 
-                unfold float_plus in *.
-                
-                destruct o.
+                unfold isFloatConstValid in *.
+                destruct f0.
+                unfold validFloat.
+                simpl.
+                exists R0.
+                reflexivity.
+                intuition.
+                intuition.
+                unfold validFloat.
+                unfold floatToReal.
+                exists ((B2R custom_prec custom_emax
+                             (B754_finite custom_prec custom_emax b m e e0))).
+                reflexivity.
+              }
+              {
+                intuition.
+              }
+              assert (validFloatArg1 := H11).
+              assert (validFloatArg2 := H12).
+              destruct H11.
+              destruct H12.
+              rewrite <- H11 in *.
+              rewrite <- H12 in *.
+              assert (floatToRealProof1 := H11).
+              assert (floatToRealProof2 := H12).
+
+              destruct IHexpr1.
+              destruct IHexpr2.
+              unfold lofst in *.
+              pose proof secondProof.
+              pose proof secondProofUb.
+              remember (lb x0 fState) as lb1.
+              remember (lb x1 fState) as lb2.
+              remember (ub x0 fState) as ub1.
+              remember (ub x1 fState) as ub2.
+              assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
+              pose proof bpow_gt_0.
+              unfold floatMax in *.
+              pose proof errorGt0.
+              specialize (H19 radix2 custom_emax).
+              psatz R.
+              specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H14 H16 H13 H15 H6 H5 H9 H19).
+
+              specialize (H18 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H14 H16 H13 H15 H8 H7 H9 H10).
+              unfold float_plus in *.
+              assert (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0) =
+                      floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
+              intuition.
+              assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                            custom_nan mode_ZR f f0 =
+                      Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                            custom_nan mode_ZR f f0).
+              intuition.
+              specialize (H17 H20 H21).
+              specialize (H18 H20 H21).
+
+              destruct (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
+
                 {
-                  inversion Heqo0.
-                  
+
                   destruct f eqn:f_des.
                   {
-                    destruct H18.
+                    destruct H17.
                     split.
                     psatz R.
-                    apply H26.
+                    apply H22.
                   }
                   {
-                    inversion Heqo0.
+                    intuition.
                   }
                   {
-                    inversion Heqo0.
+                    intuition.
                   }
                   {
-                    destruct H18.
+                    destruct H17.
                     split.
                     psatz R.
-                    apply H26.
+                    apply H22.
                   }
                 }
                 {
                   intuition.
                 }
               }
-              {  
-                destruct H2.
+              {
+                destruct H4.
                 {
                   unfold simpleBound20 in *.
-                  rewrite <- H2 in *.
-                  clear H2.
+                  rewrite <- H4 in *.
+                  clear H4.
                   simpl in *.
-                  destruct H0.
                   destruct H2.
-                  destruct H3.
                   destruct H4.
                   destruct H5.
                   destruct H6.
                   destruct H7.
                   destruct H8.
-                  destruct H8.
-                  destruct H8.
-                  destruct H9.
-                  destruct H9.
-                  inversion Heqo.
-                  
-                  forward_reason.
-                  assert (floatToReal x2 = floatToReal x2).
-                  intuition.
-                  assert (floatToReal x3 = floatToReal x3).
-                  intuition.
-                  specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H12 H8).
-                  specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H14 H9).
-                  inversion H10.
-                  inversion H11.
-                  rewrite <- H15 in *.
-                  rewrite <- H16 in *.
-                  assert (floatToRealProof1 := H15).
-                  assert (floatToRealProof2 := H16).
-                  rewrite <- H8 in *.
-                  rewrite <- H9 in *.
-                  assert (validFloatArg1 := H10).
-                  assert (validFloatArg2 := H11).
-                  unfold lofst in *.
-                  pose proof fourthProof.
-                  pose proof secondProofUb.
-                  destruct IHexpr1.
-                  destruct IHexpr2.
-                  remember (lb x0 fState) as lb1.
-                  remember (lb x1 fState) as lb2.
-                  remember (ub x0 fState) as ub1.
-                  remember (ub x1 fState) as ub2.
-                  inversion Heqo.
-                  unfold float_plus in *.
-                  assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
-                  pose proof bpow_gt_0.
-                  unfold floatMax in *.
-                  pose proof errorGt0.
-                  specialize (H23 radix2 custom_emax).
-                  psatz R.
-                  specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H3 H7 H4 Heqo0 H24).
-                  specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H6 H5 H7 H23 Heqo0 H24).
-                  unfold float_plus in *.
-                  
-                  destruct o.
+                   specialize (IHexpr1 H2).
+              specialize (IHexpr2 H4).
+              assert (validFloat f).
+              destruct (floatToReal f).
+              {
+                destruct IHexpr1.
+                unfold isFloatConstValid in *.
+                destruct f.
+                unfold validFloat.
+                simpl.
+                exists R0.
+                reflexivity.
+                intuition.
+                intuition.
+                unfold validFloat.
+                unfold floatToReal.
+                exists ((B2R custom_prec custom_emax
+                             (B754_finite custom_prec custom_emax b m e e0))).
+                reflexivity.
+              }
+              {
+                intuition.
+              }
+              assert (validFloat f0).
+              destruct (floatToReal f0).
+              {
+                destruct IHexpr2.
+                unfold isFloatConstValid in *.
+                destruct f0.
+                unfold validFloat.
+                simpl.
+                exists R0.
+                reflexivity.
+                intuition.
+                intuition.
+                unfold validFloat.
+                unfold floatToReal.
+                exists ((B2R custom_prec custom_emax
+                             (B754_finite custom_prec custom_emax b m e e0))).
+                reflexivity.
+              }
+              {
+                intuition.
+              }
+              assert (validFloatArg1 := H10).
+              assert (validFloatArg2 := H11).
+              destruct H10.
+              destruct H11.
+              rewrite <- H10 in *.
+              rewrite <- H11 in *.
+              assert (floatToRealProof1 := H10).
+              assert (floatToRealProof2 := H11).
+
+              destruct IHexpr1.
+              destruct IHexpr2.
+              unfold lofst in *.
+              pose proof fourthProof.
+              pose proof secondProofUb.
+              remember (lb x0 fState) as lb1.
+              remember (lb x1 fState) as lb2.
+              remember (ub x0 fState) as ub1.
+              remember (ub x1 fState) as ub2.
+              assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
+              pose proof bpow_gt_0.
+              unfold floatMax in *.
+              pose proof errorGt0.
+              specialize (H18 radix2 custom_emax).
+              psatz R.
+              specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H5 H9 H6).
+
+              specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H8 H7 H9 H6).
+              unfold float_plus in *.
+              assert (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0) =
+                      floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
+              intuition.
+              assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                            custom_nan mode_ZR f f0 =
+                      Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                            custom_nan mode_ZR f f0).
+              intuition.
+              specialize (H16 H19 H20).
+              specialize (H17 H19 H20).
+
+              destruct (floatToReal
+                        (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                               custom_nan mode_ZR f f0)).
+
                   {
-                    inversion Heqo0.
-                    
+
                     destruct f eqn:f_des.
                     {
-                      destruct H17.
+                      destruct H16.
                       split.
                       psatz R.
-                      apply H25.
+                      apply H21.
                     }
                     {
-                      inversion Heqo0.
+                      intuition.
                     }
                     {
-                      inversion Heqo0.
+                      intuition.
                     }
                     {
-                      destruct H17.
+                      destruct H16.
                       split.
                       psatz R.
-                      apply H25.
+                      apply H21.
                     }
                   }
                   {
@@ -13455,92 +14724,136 @@ Proof.
                   }
                 }
                 {
-                  destruct H2.
+                  destruct H4.
                   {
-                    unfold simpleBound20 in *.
-                    rewrite <- H2 in *.
-                    clear H2.
+                    unfold simpleBound21 in *.
+                    rewrite <- H4 in *.
+                    clear H4.
                     simpl in *.
-                    destruct H0.
                     destruct H2.
-                    destruct H3.
                     destruct H4.
                     destruct H5.
                     destruct H6.
                     destruct H7.
                     destruct H8.
-                    destruct H8.
-                    destruct H8.
-                    destruct H9.
-                    destruct H9.
-                    inversion Heqo.
-                    
-                    forward_reason.
-                    assert (floatToReal x2 = floatToReal x2).
-                    intuition.
-                    assert (floatToReal x3 = floatToReal x3).
-                    intuition.
-                    specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H12 H8).
-                    specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H14 H9).
-                    inversion H10.
-                    inversion H11.
-                    rewrite <- H15 in *.
-                    rewrite <- H16 in *.
-                    assert (floatToRealProof1 := H15).
-                    assert (floatToRealProof2 := H16).
-                    rewrite <- H8 in *.
-                    rewrite <- H9 in *.
+                    specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
                     assert (validFloatArg1 := H10).
                     assert (validFloatArg2 := H11).
+                    destruct H10.
+                    destruct H11.
+                    rewrite <- H10 in *.
+                    rewrite <- H11 in *.
+                    assert (floatToRealProof1 := H10).
+                    assert (floatToRealProof2 := H11).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
                     unfold lofst in *.
                     pose proof secondProof.
                     pose proof thirdProofUb.
-                    destruct IHexpr1.
-                    destruct IHexpr2.
                     remember (lb x0 fState) as lb1.
                     remember (lb x1 fState) as lb2.
                     remember (ub x0 fState) as ub1.
                     remember (ub x1 fState) as ub2.
-                    inversion Heqo.
-                    unfold float_plus in *.
                     assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
                     pose proof bpow_gt_0.
                     unfold floatMax in *.
                     pose proof errorGt0.
-                    specialize (H23 radix2 custom_emax).
+                    specialize (H18 radix2 custom_emax).
                     psatz R.
                     assert (((ub1 + ub2) * (1 + error) < floatMax)%R).
                     pose proof bpow_gt_0.
                     unfold floatMax in *.
                     pose proof errorGt0.
-                    specialize (H25 radix2 custom_emax).
+                    specialize (H19 radix2 custom_emax).
                     psatz R.
-                    specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H3 H4 H25 H23 Heqo0 H24).
-                    specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H5 H7 H25 H23 Heqo0 H24).
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H5 H6 H19 H8).
+
+                    specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H7 H9 H19 H8).
                     unfold float_plus in *.
-                    
-                    destruct o.
+                    assert (floatToReal
+                              (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H16 H20 H21).
+                    specialize (H17 H20 H21).
+
+                    destruct (floatToReal
+                                (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
+
+
                     {
-                      inversion Heqo0.
-                      
+
                       destruct f eqn:f_des.
                       {
-                        destruct H17.
+                        destruct H16.
                         split.
                         psatz R.
-                        apply H26.
+                        apply H22.
                       }
                       {
-                        inversion Heqo0.
+                        intuition.
                       }
                       {
-                        inversion Heqo0.
+                        intuition.
                       }
                       {
-                        destruct H17.
+                        destruct H16.
                         split.
                         psatz R.
-                        apply H26.
+                        apply H22.
                       }
                     }
                     {
@@ -13548,91 +14861,133 @@ Proof.
                     }
                   }
                   {
-                    destruct H2.
+                    destruct H4.
                     {
                       unfold simpleBound22 in *.
-                      rewrite <- H2 in *.
-                      clear H2.
+                      rewrite <- H4 in *.
+                      clear H4.
                       simpl in *.
-                      destruct H0.
                       destruct H2.
-                      destruct H3.
                       destruct H4.
                       destruct H5.
                       destruct H6.
                       destruct H7.
-                      destruct H7.
-                      destruct H7.
-                      destruct H8.
-                      destruct H8.
-                      inversion Heqo.
-                      
-                      forward_reason.
-                      assert (floatToReal x2 = floatToReal x2).
-                      intuition.
-                      assert (floatToReal x3 = floatToReal x3).
-                      intuition.
-                      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7). 
-                      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-                      inversion H9.
-                      inversion H10.
-                      rewrite <- H14 in *.
-                      rewrite <- H15 in *.
-                      assert (floatToRealProof1 := H14).
-                      assert (floatToRealProof2 := H15).
-                      rewrite <- H7 in *.
-                      rewrite <- H8 in *.
-                      assert (validFloatArg1 := H9).
-                      assert (validFloatArg2 := H10).
-                      unfold lofst in *.
-                      pose proof fourthProof.
-                      pose proof thirdProofUb.
+                      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
                       destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
                       destruct IHexpr2.
-                      remember (lb x0 fState) as lb1.
-                      remember (lb x1 fState) as lb2.
-                      remember (ub x0 fState) as ub1.
-                      remember (ub x1 fState) as ub2.
-                      inversion Heqo.
-                      unfold float_plus in *.
-                      assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
-                      pose proof bpow_gt_0.
-                      unfold floatMax in *.
-                      pose proof errorGt0.
-                      specialize (H22 radix2 custom_emax).
-                      psatz R.
-                      assert (((ub1 + ub2) * (1 + error) < floatMax)%R).
-                      pose proof bpow_gt_0.
-                      unfold floatMax in *.
-                      pose proof errorGt0.
-                      specialize (H24 radix2 custom_emax).
-                      psatz R.
-                      specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H24 H22 Heqo0 H23). 
-                      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H5 H6 H24 H22 Heqo0 H23). 
-                      unfold float_plus in *.
-                      
-                      destruct o.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H9).
+                    assert (validFloatArg2 := H10).
+                    destruct H9.
+                    destruct H10.
+                    rewrite <- H9 in *.
+                    rewrite <- H10 in *.
+                    assert (floatToRealProof1 := H9).
+                    assert (floatToRealProof2 := H10).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof fourthProof.
+                    pose proof thirdProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    assert (((0 - lb1 + (0 - lb2)) * (1 + error) < floatMax)%R).
+                    pose proof bpow_gt_0.
+                    unfold floatMax in *.
+                    pose proof errorGt0.
+                    specialize (H17 radix2 custom_emax).
+                    psatz R.
+                    assert (((ub1 + ub2) * (1 + error) < floatMax)%R).
+                    pose proof bpow_gt_0.
+                    unfold floatMax in *.
+                    pose proof errorGt0.
+                    specialize (H18 radix2 custom_emax).
+                    psatz R.
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H18 H6).
+
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H7 H8 H18 H17).
+                    unfold float_plus in *.
+                    assert (floatToReal
+                              (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H15 H19 H20).
+                    specialize (H16 H19 H20).
+
+                    destruct (floatToReal
+                                (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
                       {
-                        inversion Heqo0.
-                        
+
                         destruct f eqn:f_des.
                         {
-                          destruct H16.
+                          destruct H15.
                           split.
                           psatz R.
-                          apply H25.
+                          apply H21.
                         }
                         {
-                          inversion Heqo0.
+                          intuition.
                         }
                         {
-                          inversion Heqo0.
+                          intuition.
                         }
                         {
-                          destruct H16.
+                          destruct H15.
                           split.
                           psatz R.
-                          apply H25.
+                          apply H21.
                         }
                       }
                       {
@@ -13640,89 +14995,132 @@ Proof.
                       }
                     }
                     {
-                      destruct H2.
+                      destruct H4.
                       {
-                        unfold simpleBound20 in *.
-                        rewrite <- H2 in *.
-                        clear H2.
+                        unfold simpleBound23 in *.
+                        rewrite <- H4 in *.
+                        clear H4.
                         simpl in *.
-                        destruct H0.
                         destruct H2.
-                        destruct H3.
                         destruct H4.
                         destruct H5.
                         destruct H6.
-                        destruct H6.
-                        destruct H6.
-                        destruct H7.
-                        destruct H7.
-                        
-                        inversion Heqo.
-                        
-                        forward_reason.
-                        assert (floatToReal x2 = floatToReal x2).
-                        intuition.
-                        assert (floatToReal x3 = floatToReal x3).
-                        intuition.
-                        specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H10 H6). 
-                        specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H12 H7).
-                        inversion H8.
-                        inversion H9.
-                        rewrite <- H13 in *.
-                        rewrite <- H14 in *.
-                        assert (floatToRealProof1 := H13).
-                        assert (floatToRealProof2 := H14).
-                        rewrite <- H6 in *.
-                        rewrite <- H7 in *.
-                        assert (validFloatArg1 := H8).
-                        assert (validFloatArg2 := H9).
-                        unfold lofst in *.
-                        pose proof fourthProof.
-                        pose proof fourthProofUb.
-                        destruct IHexpr1.
-                        destruct IHexpr2.
-                        remember (lb x0 fState) as lb1.
-                        remember (lb x1 fState) as lb2.
-                        remember (ub x0 fState) as ub1.
-                        remember (ub x1 fState) as ub2.
-                        inversion Heqo.
-                        unfold float_plus in *.
-                        unfold floatMin in *.
-                        
-                        assert (((ub1 + ub2) * (1 + error) < floatMax)%R).
-                        pose proof bpow_gt_0.
-                        unfold floatMax in *.
-                        pose proof errorGt0.
-                        specialize (H21 radix2 custom_emax).
-                        pose proof bpow_gt_0.
-                        specialize (H24 radix2 custom_emin).
-                        psatz R.
-                        specialize (H15 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o  floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H18 H20 H17 H19 H3 H21 H4 Heqo0 H22). 
-                        specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H18 H20 H17 H19 H5 H21 H4 Heqo0 H22). 
-                        unfold float_plus in *.
-                        
-                        destruct o.
+                         specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H8).
+                    assert (validFloatArg2 := H9).
+                    destruct H8.
+                    destruct H9.
+                    rewrite <- H8 in *.
+                    rewrite <- H9 in *.
+                    assert (floatToRealProof1 := H8).
+                    assert (floatToRealProof2 := H9).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof fourthProof.
+                    pose proof fourthProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_plus in *.
+                    unfold floatMin in *.
+
+                    assert (((ub1 + ub2) * (1 + error) < floatMax)%R).
+                    pose proof bpow_gt_0.
+                    unfold floatMax in *.
+                    pose proof errorGt0.
+                    specialize (H16 radix2 custom_emax).
+                    pose proof bpow_gt_0.
+                    specialize (H18 radix2 custom_emin).
+                    psatz R.
+                    specialize (H14 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H11 H13 H10 H12 H5 H16 H6).
+
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_plus f f0) (floatToReal (float_plus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2  H11 H13 H10 H12 H7 H16 H6).
+                    unfold float_plus in *.
+                    assert (floatToReal
+                              (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H14 H17 H18).
+                    specialize (H15 H17 H18).
+
+                    destruct (floatToReal
+                                (Bplus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
+
                         {
-                          inversion Heqo0.
-                          
+
                           destruct f eqn:f_des.
                           {
-                            destruct H15.
+                            destruct H14.
                             split.
                             psatz R.
-                            apply H23.
+                            apply H19.
                           }
                           {
-                            inversion Heqo0.
+                            intuition.
                           }
                           {
-                            inversion Heqo0.
+                            intuition.
                           }
                           {
-                            destruct H15.
+                            destruct H14.
                             split.
                             psatz R.
-                            apply H23.
+                            apply H19.
                           }
                         }
                         {
@@ -13733,99 +15131,149 @@ Proof.
                         intuition.
                       }
                     }
-                  }        
-                  
+                  }
+
   }}}                }}          }}}
-  {    
+  {
+
     simpl in *.
     intros.
-    eapply In_cross_In in H.
-    simpl in H.
-    forward_reason.
-    destruct H2.
+    unfold lift2.
+    forward.
+    eapply Forall_forall.
+    intros.
+    eapply In_cross_In in H1.
+    forward_reason. destruct H1. destruct H3.
+    eapply Forall_forall in IHexpr1; [ | eassumption ].
+    eapply Forall_forall in IHexpr2; [ | eassumption ].
+    simpl in H4.
+    destruct H4.
     {
       unfold simpleBound2 in *.
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
-      destruct H5.
-      destruct H5.
-      destruct H6.
-      destruct H6.
-      
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H9 H5).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H11 H6).
-      inversion H7.
-      inversion H8.
-      rewrite <- H12 in *.
-      rewrite <- H13 in *.
-      assert (floatToRealProof1 := H12).
-      assert (floatToRealProof2 := H13).
-      rewrite <- H5 in *.
-      rewrite <- H6 in *.
-      assert (validFloatArg1 := H7).
-      assert (validFloatArg2 := H8).
-      unfold lofst in *.
-      pose proof minusFirstProof.
-      pose proof minusFirstProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      assert (((ub2 - lb1) * (1 + error) < floatMax)%R).
-      
-      pose proof bpow_gt_0.
-      unfold floatMax in *.
-      pose proof errorGt0.
-      specialize (H20 radix2 custom_emax).
-      pose proof bpow_gt_0.
-      specialize (H23 radix2 custom_emin).
-      psatz R.
-      assert (ub1 - lb2 >= bpow radix2 custom_emin)%R.
-      psatz R.
-      unfold float_minus in *.
-      specialize (H14 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H17 H19 H16 H18 H3 H4 H20 Heqo0 H21). 
-      specialize (H15 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H17 H19 H16 H18 H22 H4 H20 Heqo0 H21).
-      destruct o.
+       specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H7).
+                    assert (validFloatArg2 := H8).
+                    destruct H7.
+                    destruct H8.
+                    rewrite <- H7 in *.
+                    rewrite <- H8 in *.
+                    assert (floatToRealProof1 := H7).
+                    assert (floatToRealProof2 := H8).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusFirstProof.
+                    pose proof minusFirstProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_plus in *.
+                    unfold floatMin in *.
+                    assert (((ub2 - lb1) * (1 + error) < floatMax)%R).
+
+                    pose proof bpow_gt_0.
+                    unfold floatMax in *.
+                    pose proof errorGt0.
+                    specialize (H15 radix2 custom_emax).
+                    pose proof bpow_gt_0.
+                    specialize (H17 radix2 custom_emin).
+                    psatz R.
+                    assert (ub1 - lb2 >= bpow radix2 custom_emin)%R.
+                    psatz R.
+                    specialize (H13 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H10 H12 H9 H11 H5 H6 H15).
+
+                    specialize (H14 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H10 H12 H9 H11 H16 H6 H15).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H13 H17 H18).
+                    specialize (H14 H17 H18).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
-          destruct H14.
+          destruct H13.
           split.
           psatz R.
-          apply H23.
+          apply H19.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H14.
+          destruct H13.
           split.
           psatz R.
-          apply H23.
+          apply H19.
         }
       }
       {
@@ -13833,90 +15281,133 @@ Proof.
       }
     }
     {
-      destruct H2.
+      destruct H4.
     {
-      unfold simpleBound2 in *.
-      rewrite <- H2 in *.
-      clear H2.
+      unfold simpleBoundM3 in *.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7.
-      destruct H7.
-      destruct H8.
-      destruct H8.
-      
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-      inversion H9.
-      inversion H10.
-      rewrite <- H14 in *.
-      rewrite <- H15 in *.
-      assert (floatToRealProof1 := H14).
-      assert (floatToRealProof2 := H15).
-      rewrite <- H7 in *.
-      rewrite <- H8 in *.
-      assert (validFloatArg1 := H9).
-      assert (validFloatArg2 := H10).
-      unfold lofst in *.
-      pose proof minusSecondProof.
-      pose proof minusFirstProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      assert (((ub2 - lb1) * (1 + error) < floatMax)%R).
-      
-      pose proof bpow_gt_0.
-      unfold floatMax in *.
-      pose proof errorGt0.
-      specialize (H22 radix2 custom_emax).
-      pose proof bpow_gt_0.
-      specialize (H25 radix2 custom_emin).
-      psatz R.
-      unfold float_minus in *.
-      specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H4 H6 H22 Heqo0 H23). 
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H5 H6 H22 Heqo0 H23). 
-      destruct o.
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H9).
+                    assert (validFloatArg2 := H10).
+                    destruct H9.
+                    destruct H10.
+                    rewrite <- H9 in *.
+                    rewrite <- H10 in *.
+                    assert (floatToRealProof1 := H9).
+                    assert (floatToRealProof2 := H10).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusSecondProof.
+                    pose proof minusFirstProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+                    assert (((ub2 - lb1) * (1 + error) < floatMax)%R).
+
+                    pose proof bpow_gt_0.
+                    unfold floatMax in *.
+                    pose proof errorGt0.
+                    specialize (H17 radix2 custom_emax).
+                    pose proof bpow_gt_0.
+                    specialize (H19 radix2 custom_emin).
+                    psatz R.
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H6 H8 H17).
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H7 H8 H17).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H15 H18 H19).
+                    specialize (H16 H18 H19).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
+
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H24.
+          apply H20.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H24.
+          apply H20.
         }
       }
       {
@@ -13924,91 +15415,133 @@ Proof.
       }
     }
     {
-      destruct H2.
+      destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7.
-      destruct H7.
-      destruct H8.
-      destruct H8.
-      
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-      inversion H9.
-      inversion H10.
-      rewrite <- H14 in *.
-      rewrite <- H15 in *.
-      assert (floatToRealProof1 := H14).
-      assert (floatToRealProof2 := H15).
-      rewrite <- H7 in *.
-      rewrite <- H8 in *.
-      assert (validFloatArg1 := H9).
-      assert (validFloatArg2 := H10).
-      unfold lofst in *.
-      pose proof minusSecondProof.
-      pose proof minusSecondProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      assert (((ub2 - lb1) * (1 + error) < floatMax)%R).
-      
-      pose proof bpow_gt_0.
-      unfold floatMax in *.
-      pose proof errorGt0.
-      specialize (H22 radix2 custom_emax).
-      pose proof bpow_gt_0.
-      specialize (H25 radix2 custom_emin).
-      psatz R.
-      unfold float_minus in *.
-      specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H4 H6 H22 Heqo0 H23).
-      assert (ub1 >= lb2)%R.
-      psatz R.
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H24 H5 H6 H22 Heqo0 H23). 
-      destruct o.
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H9).
+                    assert (validFloatArg2 := H10).
+                    destruct H9.
+                    destruct H10.
+                    rewrite <- H9 in *.
+                    rewrite <- H10 in *.
+                    assert (floatToRealProof1 := H9).
+                    assert (floatToRealProof2 := H10).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusSecondProof.
+                    pose proof minusSecondProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+                    assert (((ub2 - lb1) * (1 + error) < floatMax)%R).
+
+                    pose proof bpow_gt_0.
+                    unfold floatMax in *.
+                    pose proof errorGt0.
+                    specialize (H17 radix2 custom_emax).
+                    pose proof bpow_gt_0.
+                    specialize (H19 radix2 custom_emin).
+                    psatz R.
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H6 H8 H17).
+                    assert (ub1 >= lb2)%R.
+                    psatz R.
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H18 H7 H8 H17).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H15 H19 H20).
+                    specialize (H16 H19 H20).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
       }
       {
@@ -14016,83 +15549,252 @@ Proof.
       }
     }
     {
-       destruct H2.
+       destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
       destruct H8.
-      destruct H8.
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H10).
+                    assert (validFloatArg2 := H11).
+                    destruct H10.
+                    destruct H11.
+                    rewrite <- H10 in *.
+                    rewrite <- H11 in *.
+                    assert (floatToRealProof1 := H10).
+                    assert (floatToRealProof2 := H11).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusThirdProof.
+                    pose proof minusFirstProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H5 H6 H9 H8).
+                    specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H7 H9 H8).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H16 H18 H19).
+                    specialize (H17 H18 H19).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                       custom_nan mode_ZR f f0)).
+
+
+      {
+
+        destruct f eqn:f_des.
+        {
+          destruct H16.
+          split.
+          psatz R.
+          apply H20.
+        }
+        {
+          intuition.
+        }
+        {
+          intuition.
+        }
+        {
+          destruct H16.
+          split.
+          psatz R.
+          apply H20.
+        }
+      }
+      {
+        intuition.
+      }
+    }
+    {
+      destruct H4.
+    {
+      rewrite <- H4 in *.
+      clear H4.
+      simpl in *.
+      destruct H2.
+      destruct H4.
+      destruct H5.
+      destruct H6.
+      destruct H7.
       destruct H8.
       destruct H9.
-      destruct H9.
-      
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H12 H8).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H14 H9).
-      inversion H10.
-      inversion H11.
-      rewrite <- H15 in *.
-      rewrite <- H16 in *.
-      assert (floatToRealProof1 := H15).
-      assert (floatToRealProof2 := H16).
-      rewrite <- H8 in *.
-      rewrite <- H9 in *.
-      assert (validFloatArg1 := H10).
-      assert (validFloatArg2 := H11).
-      unfold lofst in *.
-      pose proof minusThirdProof.
-      pose proof minusFirstProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H3 H4 H7 H6 Heqo0 H24).
-      assert (ub1 >= lb2)%R.
-      psatz R.
-      specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H5  H7 H6 Heqo0 H24). 
-      destruct o.
+
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H11).
+                    assert (validFloatArg2 := H12).
+                    destruct H11.
+                    destruct H12.
+                    rewrite <- H11 in *.
+                    rewrite <- H12 in *.
+                    assert (floatToRealProof1 := H11).
+                    assert (floatToRealProof2 := H12).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusThirdProof.
+                    pose proof minusSecondProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+                    specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H14 H16 H13 H15 H5 H7 H10 H9).
+                    specialize (H18 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H14 H16 H13 H15 H6 H8 H10 H9).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H17 H19 H20).
+                    specialize (H18 H19 H20).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                        custom_nan mode_ZR f f0)).
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
           destruct H17.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
           destruct H17.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
       }
       {
@@ -14100,81 +15802,126 @@ Proof.
       }
     }
     {
-      destruct H2.
+      destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H8.
-      destruct H9.
-      destruct H9.
-      destruct H9.
-      destruct H10.
-      destruct H10.
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H13 H9). 
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H15 H10).
-      inversion H11.
-      inversion H12.
-      rewrite <- H16 in *.
-      rewrite <- H17 in *.
-      assert (floatToRealProof1 := H16).
-      assert (floatToRealProof2 := H17).
-      rewrite <- H9 in *.
-      rewrite <- H10 in *.
-      assert (validFloatArg1 := H11).
-      assert (validFloatArg2 := H12).
-      unfold lofst in *.
-      pose proof minusThirdProof.
-      pose proof minusSecondProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
-      specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H21 H23 H20 H22 H3 H5 H8 H7 Heqo0 H25). 
-      specialize (H19 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H21 H23 H20 H22 H4 H6 H8 H7 Heqo0 H25).
-      destruct o.
+
+
+
+       specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H9).
+                    assert (validFloatArg2 := H10).
+                    destruct H9.
+                    destruct H10.
+                    rewrite <- H9 in *.
+                    rewrite <- H10 in *.
+                    assert (floatToRealProof1 := H9).
+                    assert (floatToRealProof2 := H10).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusFourthProof.
+                    pose proof minusFirstProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H8 H7).
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H6 H8 H7).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H15 H17 H18).
+                    specialize (H16 H17 H18).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                        custom_nan mode_ZR f f0)).
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
-          destruct H18.
+          destruct H15.
           split.
           psatz R.
-          apply H24.
+          apply H19.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H18.
+          destruct H15.
           split.
           psatz R.
-          apply H24.
+          apply H19.
         }
       }
       {
@@ -14182,79 +15929,126 @@ Proof.
       }
     }
     {
-      destruct H2.
+      destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7.
-      destruct H7.
       destruct H8.
-      destruct H8.
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-      inversion H9.
-      inversion H10.
-      rewrite <- H14 in *.
-      rewrite <- H15 in *.
-      assert (floatToRealProof1 := H14).
-      assert (floatToRealProof2 := H15).
-      rewrite <- H7 in *.
-      rewrite <- H8 in *.
-      assert (validFloatArg1 := H9).
-      assert (validFloatArg2 := H10).
-      unfold lofst in *.
-      pose proof minusFourthProof.
-      pose proof minusFirstProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
-      specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H6 H5 Heqo0 H23).
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H4 H6 H5 Heqo0 H23).
-      destruct o.
+
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H10).
+                    assert (validFloatArg2 := H11).
+                    destruct H10.
+                    destruct H11.
+                    rewrite <- H10 in *.
+                    rewrite <- H11 in *.
+                    assert (floatToRealProof1 := H10).
+                    assert (floatToRealProof2 := H11).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusFourthProof.
+                    pose proof minusSecondProofUb.
+
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H13 H15 H12 H14 H6 H9 H8).
+                    specialize (H17 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2  H13 H15 H12 H14 H5 H7 H9 H8).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H16 H18 H19).
+                    specialize (H17 H18 H19).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                        custom_nan mode_ZR f f0)).
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
           destruct H16.
           split.
           psatz R.
-          apply H22.
+          apply H20.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
           destruct H16.
           split.
           psatz R.
-          apply H22.
+          apply H20.
         }
       }
       {
@@ -14262,345 +16056,407 @@ Proof.
       }
     }
     {
-      destruct H2.
+      destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H8.
-      destruct H8.
-      destruct H8.
-      destruct H9.
-      destruct H9.
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H12 H8).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H14 H9).
-      inversion H10.
-      inversion H11.
-      rewrite <- H15 in *.
-      rewrite <- H16 in *.
-      assert (floatToRealProof1 := H15).
-      assert (floatToRealProof2 := H16).
-      rewrite <- H8 in *.
-      rewrite <- H9 in *.
-      assert (validFloatArg1 := H10).
-      assert (validFloatArg2 := H11).
-      unfold lofst in *.
-      pose proof minusFourthProof.
-      pose proof minusSecondProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H4 H7 H6 Heqo0 H24). 
-      specialize (H18 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H20 H22 H19 H21 H3 H5 H7 H6 Heqo0 H24).
-      destruct o.
-      {
-        inversion Heqo0.
-        
-        destruct f eqn:f_des.
-        {
-          destruct H17.
-          split.
-          psatz R.
-          apply H23.
-        }
-        {
-          inversion Heqo0.
-        }
-        {
-          inversion Heqo0.
-        }
-        {
-          destruct H17.
-          split.
-          psatz R.
-          apply H23.
-        }
-      }
-      {
-        intuition.
-      }
-    }
-    {
-      destruct H2.
-    {
-      rewrite <- H2 in *.
-      clear H2.
-      simpl in *.
-      destruct H0.
-      destruct H2.
-      destruct H3.
-      destruct H4.
-      destruct H5.
-      destruct H6.
-      destruct H7.
-      destruct H7.
-      destruct H7.
-      destruct H8.
-      destruct H8.
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-      inversion H9.
-      inversion H10.
-      rewrite <- H14 in *.
-      rewrite <- H15 in *.
-      assert (floatToRealProof1 := H14).
-      assert (floatToRealProof2 := H15).
-      rewrite <- H7 in *.
-      rewrite <- H8 in *.
-      assert (validFloatArg1 := H9).
-      assert (validFloatArg2 := H10).
-      unfold lofst in *.
-      pose proof minusThirdProof.
-      pose proof minusThirdProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
+
+
+
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H9).
+                    assert (validFloatArg2 := H10).
+                    destruct H9.
+                    destruct H10.
+                    rewrite <- H9 in *.
+                    rewrite <- H10 in *.
+                    assert (floatToRealProof1 := H9).
+                    assert (floatToRealProof2 := H10).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusThirdProof.
+                    pose proof minusThirdProofUb.
+
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+
       assert (lb1 < ub2)%R.
       psatz R.
       assert ((ub1 - lb2) * (1 + error) < floatMax)%R.
       unfold floatMax in *.
       pose proof bpow_gt_0.
-      specialize (H24 radix2 custom_emax).
+      specialize (H18 radix2 custom_emax).
       pose proof errorGt0.
       psatz R.
-      specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H22 H4 H24 H6 Heqo0 H23).
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H5 H24 H6 Heqo0 H23).
-      destruct o.
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H17 H6 H18 H8).
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H7 H18 H8).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H15 H19 H20).
+                    specialize (H16 H19 H20).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                        custom_nan mode_ZR f f0)).
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
       }
       {
         intuition.
       }
     }
-    
+
     {
-      destruct H2.
+      destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7.
-      destruct H7.
-      destruct H8.
-      destruct H8.
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H11 H7).
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H13 H8).
-      inversion H9.
-      inversion H10.
-      rewrite <- H14 in *.
-      rewrite <- H15 in *.
-      assert (floatToRealProof1 := H14).
-      assert (floatToRealProof2 := H15).
-      rewrite <- H7 in *.
-      rewrite <- H8 in *.
-      assert (validFloatArg1 := H9).
-      assert (validFloatArg2 := H10).
-      unfold lofst in *.
-      pose proof minusFourthProof.
+
+      specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H9).
+                    assert (validFloatArg2 := H10).
+                    destruct H9.
+                    destruct H10.
+                    rewrite <- H9 in *.
+                    rewrite <- H10 in *.
+                    assert (floatToRealProof1 := H9).
+                    assert (floatToRealProof2 := H10).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                     pose proof minusFourthProof.
       pose proof minusThirdProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+
       assert (lb1 < ub2)%R.
       psatz R.
       assert ((ub1 - lb2) * (1 + error) < floatMax)%R.
       unfold floatMax in *.
       pose proof bpow_gt_0.
-      specialize (H24 radix2 custom_emax).
+      specialize (H18 radix2 custom_emax).
       pose proof errorGt0.
       psatz R.
-      specialize (H16 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H4 H24 H6 Heqo0 H23). 
-      specialize (H17 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H19 H21 H18 H20 H3 H5 H24 H6 Heqo0 H23).
-      destruct o.
-      {
-        inversion Heqo0.
-        
+                    specialize (H15 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H6 H18 H8).
+                    specialize (H16 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H12 H14 H11 H13 H5 H7 H18 H8).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H15 H19 H20).
+                    specialize (H16 H19 H20).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                        custom_nan mode_ZR f f0)).
+                    {
+
         destruct f eqn:f_des.
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H16.
+          destruct H15.
           split.
           psatz R.
-          apply H25.
+          apply H21.
         }
       }
       {
         intuition.
       }
     }
+
     {
-      destruct H2.
+      destruct H4.
     {
-      rewrite <- H2 in *.
-      clear H2.
+      rewrite <- H4 in *.
+      clear H4.
       simpl in *.
-      destruct H0.
       destruct H2.
-      destruct H3.
       destruct H4.
       destruct H5.
-      destruct H5.
-      destruct H5.
-      destruct H6.
-      destruct H6.
-      inversion Heqo.
-      
-      forward_reason.
-      assert (floatToReal x2 = floatToReal x2).
-      intuition.
-      assert (floatToReal x3 = floatToReal x3).
-      intuition.
-      specialize (IHexpr1 (floatToReal x2) _ H0 H x2 H9 H5). 
-      specialize (IHexpr2 (floatToReal x3) _ H2 H1 x3 H11 H6).
-      inversion H7.
-      inversion H8.
-      rewrite <- H12 in *.
-      rewrite <- H13 in *.
-      assert (floatToRealProof1 := H12).
-      assert (floatToRealProof2 := H13).
-      rewrite <- H5 in *.
-      rewrite <- H6 in *.
-      assert (validFloatArg1 := H7).
-      assert (validFloatArg2 := H8).
-      unfold lofst in *.
-      pose proof minusFourthProof.
-      pose proof minusFourthProofUb.
-      destruct IHexpr1.
-      destruct IHexpr2.
-      remember (lb x0 fState) as lb1.
-      remember (lb x1 fState) as lb2.
-      remember (ub x0 fState) as ub1.
-      remember (ub x1 fState) as ub2.
-      inversion Heqo.
-      unfold float_plus in *.
-      unfold floatMin in *.
-      
-      unfold float_minus in *.
-      assert (lb1 - ub2 <= R0 - bpow radix2 custom_emin)%R.
+
+
+       specialize (IHexpr1 H2).
+                    specialize (IHexpr2 H4).
+                    assert (validFloat f).
+                    destruct (floatToReal f).
+                    {
+                      destruct IHexpr1.
+                      unfold isFloatConstValid in *.
+                      destruct f.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloat f0).
+                    destruct (floatToReal f0).
+                    {
+                      destruct IHexpr2.
+                      unfold isFloatConstValid in *.
+                      destruct f0.
+                      unfold validFloat.
+                      simpl.
+                      exists R0.
+                      reflexivity.
+                      intuition.
+                      intuition.
+                      unfold validFloat.
+                      unfold floatToReal.
+                      exists ((B2R custom_prec custom_emax
+                                   (B754_finite custom_prec custom_emax b m e e0))).
+                      reflexivity.
+                    }
+                    {
+                      intuition.
+                    }
+                    assert (validFloatArg1 := H7).
+                    assert (validFloatArg2 := H8).
+                    destruct H7.
+                    destruct H8.
+                    rewrite <- H7 in *.
+                    rewrite <- H8 in *.
+                    assert (floatToRealProof1 := H7).
+                    assert (floatToRealProof2 := H8).
+
+                    destruct IHexpr1.
+                    destruct IHexpr2.
+                    unfold lofst in *.
+                    pose proof minusFourthProof.
+                    pose proof minusFourthProofUb.
+                    remember (lb x0 fState) as lb1.
+                    remember (lb x1 fState) as lb2.
+                    remember (ub x0 fState) as ub1.
+                    remember (ub x1 fState) as ub2.
+                    unfold float_minus in *.
+                    unfold floatMin in *.
+
+
+                     assert (lb1 - ub2 <= R0 - bpow radix2 custom_emin)%R.
       psatz R.
       assert ((ub1 - lb2) * (1 + error) < floatMax)%R.
       unfold floatMax in *.
       pose proof bpow_gt_0.
-      specialize (H22 radix2 custom_emax).
+      specialize (H16 radix2 custom_emax).
       pose proof errorGt0.
       pose proof bpow_gt_0.
-      specialize (H24 radix2 custom_emin).
+      specialize (H18 radix2 custom_emin).
       psatz R.
-      specialize (H14 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H17 H19 H16 H18 H20 H22 H4 Heqo0 H21). 
-      specialize (H15 x2 x3 x4 x5 lb1 lb2 ub1 ub2 f o floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H17 H19 H16 H18 H3 H22 H4 Heqo0 H21).
-      destruct o.
+                    specialize (H13 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2 H10 H12 H9 H11 H15 H16 H6).
+                    specialize (H14 f f0 x2 x3 lb1 lb2 ub1 ub2 (float_minus f f0) (floatToReal (float_minus f f0)) floatToRealProof1 floatToRealProof2 validFloatArg1 validFloatArg2  H10 H12 H9 H11 H5 H16 H6).
+                    unfold float_minus in *.
+                    assert (floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0) =
+                            floatToReal
+                              (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                     custom_nan mode_ZR f f0)).
+                    intuition.
+                    assert (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                  custom_nan mode_ZR f f0 =
+                            Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                   custom_nan mode_ZR f f0).
+                    intuition.
+                    specialize (H13 H17 H18).
+                    specialize (H14 H17 H18).
+
+                    destruct (floatToReal
+                                (Bminus custom_prec custom_emax custom_precGt0 custom_precLtEmax
+                                        custom_nan mode_ZR f f0)).
+
+
       {
-        inversion Heqo0.
-        
+
         destruct f eqn:f_des.
         {
-          destruct H14.
+          destruct H13.
           split.
           psatz R.
-          apply H23.
+          apply H19.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          inversion Heqo0.
+          intuition.
         }
         {
-          destruct H14.
+          destruct H13.
           split.
           psatz R.
-          apply H23.
+          apply H19.
         }
       }
       {
@@ -14614,13 +16470,13 @@ Proof.
     }
     }
                     }
-                  }        
+                  }
     } }}}}
     (*admit*)
   {
     admit.
   }
-Admitted.
+  Admitted.
 (*
     simpl in *.
     intros.
@@ -14640,12 +16496,12 @@ Admitted.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7. 
+      destruct H7.
       destruct H8.
       destruct H7.
       destruct H8.
       inversion Heqo.
-      
+
       forward_reason.
       assert (floatToReal x2 = floatToReal x2).
       intuition.
@@ -14666,7 +16522,7 @@ Admitted.
       assert (validFloatArg1 := H9).
       assert (validFloatArg2 := H10).
       clear H11 H12 H8 H0 H2 H H1 H9 H10 H13 H15 H7.
-      
+
       unfold float_mult in *.
       destruct f eqn:f_des.
       {
@@ -14681,7 +16537,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -14692,19 +16548,19 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
          pose proof conjoin2 as conjoin2.
         specialize (conjoin2 (floatMin <= lb1 * lb2)%R (lb1 >= 0)%R (lb2 >= 0)%R).
-        
+
         specialize (conjoin2 floatMinCase resultGe1 resultGe2).
         clear floatMinCase.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R)  ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\(lb1 >= 0)%R /\ (ub2 < 0)%R )  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ).
         remember  (Rabs
@@ -14712,8 +16568,8 @@ Admitted.
                                            (FLT_exp
                                               (3 - custom_emax - custom_prec)
                                               custom_prec)
-                                           (round_mode mode_ZR) 
-                                           (x4 * x5) - 
+                                           (round_mode mode_ZR)
+                                           (x4 * x5) -
                                          x4 * x5) <
                                       bpow radix2 (- custom_prec + 1) *
                                       Rabs (x4 * x5))%R.
@@ -14791,8 +16647,8 @@ Admitted.
             {
               split.
               {
-                
-                clear -r r0 resultGe1 resultGe2 H0 H2.  
+
+                clear -r r0 resultGe1 resultGe2 H0 H2.
                 repeat match goal with
                        | H : @eq R _ _ |- _ => revert H
                        | H : @Rle _ _ |- _ => revert H
@@ -14804,7 +16660,7 @@ Admitted.
                 psatz R.
               }
               {
-                clear -r r0 resultGe1 resultGe2 H0 H2. 
+                clear -r r0 resultGe1 resultGe2 H0 H2.
                 repeat match goal with
                        | H : @eq R _ _ |- _ => revert H
                        | H : @Rle _ _ |- _ => revert H
@@ -14858,7 +16714,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -14869,19 +16725,19 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
          pose proof conjoin2 as conjoin2.
         specialize (conjoin2 (floatMin <= lb1 * lb2)%R (lb1 >= 0)%R (lb2 >= 0)%R).
-        
+
         specialize (conjoin2 floatMinCase resultGe1 resultGe2).
         clear floatMinCase.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R)  ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\(lb1 >= 0)%R /\ (ub2 < 0)%R )  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ).
         remember  (Rabs
@@ -14889,8 +16745,8 @@ Admitted.
                                            (FLT_exp
                                               (3 - custom_emax - custom_prec)
                                               custom_prec)
-                                           (round_mode mode_ZR) 
-                                           (x4 * x5) - 
+                                           (round_mode mode_ZR)
+                                           (x4 * x5) -
                                          x4 * x5) <
                                       bpow radix2 (- custom_prec + 1) *
                                       Rabs (x4 * x5))%R.
@@ -14944,7 +16800,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -14955,19 +16811,19 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
          pose proof conjoin2 as conjoin2.
         specialize (conjoin2 (floatMin <= lb1 * lb2)%R (lb1 >= 0)%R (lb2 >= 0)%R).
-        
+
         specialize (conjoin2 floatMinCase resultGe1 resultGe2).
         clear floatMinCase.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R)  ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\(lb1 >= 0)%R /\ (ub2 < 0)%R )  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ).
         remember  (Rabs
@@ -14975,8 +16831,8 @@ Admitted.
                                            (FLT_exp
                                               (3 - custom_emax - custom_prec)
                                               custom_prec)
-                                           (round_mode mode_ZR) 
-                                           (x4 * x5) - 
+                                           (round_mode mode_ZR)
+                                           (x4 * x5) -
                                          x4 * x5) <
                                       bpow radix2 (- custom_prec + 1) *
                                       Rabs (x4 * x5))%R.
@@ -15030,7 +16886,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15041,19 +16897,19 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
          pose proof conjoin2 as conjoin2.
         specialize (conjoin2 (floatMin <= lb1 * lb2)%R (lb1 >= 0)%R (lb2 >= 0)%R).
-        
+
         specialize (conjoin2 floatMinCase resultGe1 resultGe2).
         clear floatMinCase.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R)  ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\(lb1 >= 0)%R /\ (ub2 < 0)%R )  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ).
         remember  (Rabs
@@ -15061,8 +16917,8 @@ Admitted.
                                            (FLT_exp
                                               (3 - custom_emax - custom_prec)
                                               custom_prec)
-                                           (round_mode mode_ZR) 
-                                           (x4 * x5) - 
+                                           (round_mode mode_ZR)
+                                           (x4 * x5) -
                                          x4 * x5) <
                                       bpow radix2 (- custom_prec + 1) *
                                       Rabs (x4 * x5))%R.
@@ -15191,12 +17047,12 @@ Admitted.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7. 
+      destruct H7.
       destruct H8.
       destruct H7.
       destruct H8.
       inversion Heqo.
-      
+
       forward_reason.
       assert (floatToReal x2 = floatToReal x2).
       intuition.
@@ -15217,7 +17073,7 @@ Admitted.
       assert (validFloatArg1 := H9).
       assert (validFloatArg2 := H10).
       clear H11 H12 H8 H0 H2 H H1 H9 H10 H13 H15 H7.
-      
+
       unfold float_mult in *.
       destruct f eqn:f_des.
       {
@@ -15232,7 +17088,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15243,7 +17099,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -15276,11 +17132,11 @@ Admitted.
                        ((floatMin <= (0 - ub1) * (0 - ub2) /\
                       ub1 < 0 /\
                       ub2 < 0) /\
-                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)                     
+                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
                       ((floatMin <= lb1 * lb2 /\
                         lb1 >= 0 /\
                         lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
-                      
+
                       ((floatMin <= lb1 * (0 - ub2) /\
                       lb1 >= 0 /\
                       ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
@@ -15291,13 +17147,13 @@ Admitted.
         specialize (extraFloatMinCase2 andExtra).
 
         pose proof diffOR as diffOR.
-        specialize ( diffOR 
-                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax) 
+        specialize ( diffOR
+                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
                        ((floatMin <= (0 - ub1) * lb2 /\ ub1 < 0 /\ lb2 >= 0) /\ (0 - lb1) * ub2 * (1 + error) < floatMax) )%R.
 
-        
+
 
         apply diffOR in extraFloatMinCase2.
         clear diffOR.
@@ -15394,7 +17250,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15405,7 +17261,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -15438,11 +17294,11 @@ Admitted.
                        ((floatMin <= (0 - ub1) * (0 - ub2) /\
                       ub1 < 0 /\
                       ub2 < 0) /\
-                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)                     
+                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
                       ((floatMin <= lb1 * lb2 /\
                         lb1 >= 0 /\
                         lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
-                      
+
                       ((floatMin <= lb1 * (0 - ub2) /\
                       lb1 >= 0 /\
                       ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
@@ -15453,13 +17309,13 @@ Admitted.
         specialize (extraFloatMinCase2 andExtra).
 
         pose proof diffOR as diffOR.
-        specialize ( diffOR 
-                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax) 
+        specialize ( diffOR
+                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
                        ((floatMin <= (0 - ub1) * lb2 /\ ub1 < 0 /\ lb2 >= 0) /\ (0 - lb1) * ub2 * (1 + error) < floatMax) )%R.
 
-        
+
 
         apply diffOR in extraFloatMinCase2.
         clear diffOR.
@@ -15468,7 +17324,7 @@ Admitted.
         specialize (multRoundingTruth x2 x3 lb1 lb2 ub1 ub2 x4 x5 floatToRealProof1 floatToRealProof2 extraFloatMinCase2 H0 H2 H1 H3).
         pose proof multRoundingTruth2 as multRoundingTruth2.
         specialize (multRoundingTruth2 x2 x3 x4 x5 floatToRealProof1 floatToRealProof2 multRoundingTruth).
-        destruct multRoundingTruth2. 
+        destruct multRoundingTruth2.
         rewrite <- multResultStmt in *.
         simpl in *.
         intuition.
@@ -15485,7 +17341,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15496,7 +17352,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -15529,11 +17385,11 @@ Admitted.
                        ((floatMin <= (0 - ub1) * (0 - ub2) /\
                       ub1 < 0 /\
                       ub2 < 0) /\
-                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)                     
+                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
                       ((floatMin <= lb1 * lb2 /\
                         lb1 >= 0 /\
                         lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
-                      
+
                       ((floatMin <= lb1 * (0 - ub2) /\
                       lb1 >= 0 /\
                       ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
@@ -15544,13 +17400,13 @@ Admitted.
         specialize (extraFloatMinCase2 andExtra).
 
         pose proof diffOR as diffOR.
-        specialize ( diffOR 
-                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax) 
+        specialize ( diffOR
+                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
                        ((floatMin <= (0 - ub1) * lb2 /\ ub1 < 0 /\ lb2 >= 0) /\ (0 - lb1) * ub2 * (1 + error) < floatMax) )%R.
 
-        
+
 
         apply diffOR in extraFloatMinCase2.
         clear diffOR.
@@ -15559,7 +17415,7 @@ Admitted.
         specialize (multRoundingTruth x2 x3 lb1 lb2 ub1 ub2 x4 x5 floatToRealProof1 floatToRealProof2 extraFloatMinCase2 H0 H2 H1 H3).
         pose proof multRoundingTruth2 as multRoundingTruth2.
         specialize (multRoundingTruth2 x2 x3 x4 x5 floatToRealProof1 floatToRealProof2 multRoundingTruth).
-        destruct multRoundingTruth2. 
+        destruct multRoundingTruth2.
         rewrite <- multResultStmt in *.
         simpl in *.
         intuition.
@@ -15576,7 +17432,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15587,7 +17443,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -15620,11 +17476,11 @@ Admitted.
                        ((floatMin <= (0 - ub1) * (0 - ub2) /\
                       ub1 < 0 /\
                       ub2 < 0) /\
-                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)                     
+                      (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
                       ((floatMin <= lb1 * lb2 /\
                         lb1 >= 0 /\
                         lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
-                      
+
                       ((floatMin <= lb1 * (0 - ub2) /\
                       lb1 >= 0 /\
                       ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
@@ -15635,13 +17491,13 @@ Admitted.
         specialize (extraFloatMinCase2 andExtra).
 
         pose proof diffOR as diffOR.
-        specialize ( diffOR 
-                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax) 
-                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax) 
+        specialize ( diffOR
+                       ((floatMin <= (0 - ub1) * (0 - ub2) /\ ub1 < 0 /\ ub2 < 0) /\ (0 - lb1) * (0 - lb2) * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * lb2 /\ lb1 >= 0 /\ lb2 >= 0) /\ ub1 * ub2 * (1 + error) < floatMax)
+                       ((floatMin <= lb1 * (0 - ub2) /\ lb1 >= 0 /\ ub2 < 0) /\ ub1 * (0 - lb2) * (1 + error) < floatMax)
                        ((floatMin <= (0 - ub1) * lb2 /\ ub1 < 0 /\ lb2 >= 0) /\ (0 - lb1) * ub2 * (1 + error) < floatMax) )%R.
 
-        
+
 
         apply diffOR in extraFloatMinCase2.
         clear diffOR.
@@ -15726,7 +17582,7 @@ Admitted.
             }
           }
       }
-    }  
+    }
     {
         destruct H2.
     {
@@ -15741,12 +17597,12 @@ Admitted.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7. 
+      destruct H7.
       destruct H8.
       destruct H7.
       destruct H8.
       inversion Heqo.
-      
+
       forward_reason.
       assert (floatToReal x2 = floatToReal x2).
       intuition.
@@ -15767,7 +17623,7 @@ Admitted.
       assert (validFloatArg1 := H9).
       assert (validFloatArg2 := H10).
       clear H11 H12 H8 H0 H2 H H1 H9 H10 H13 H15 H7.
-      
+
       unfold float_mult in *.
       destruct f eqn:f_des.
       {
@@ -15782,7 +17638,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15793,7 +17649,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -15804,7 +17660,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3_3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -15814,9 +17670,9 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R) (ub1 * (0 - lb2) * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
-       
+
         pose proof orExtra3_3 as extraFloatMinCase2.
         simpl in andExtra.
         simpl in extraFloatMinCase2.
@@ -15881,7 +17737,7 @@ Admitted.
             destruct Rcase_abs.
             {
               split.
-              { 
+              {
                 psatz R.
               }
               {
@@ -15891,11 +17747,11 @@ Admitted.
             {
               split.
               {
-                 
+
                 psatz R.
               }
               {
-                
+
                 psatz R.
               }
             }
@@ -15928,7 +17784,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -15939,7 +17795,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -15950,7 +17806,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3_3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -15960,9 +17816,9 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R) (ub1 * (0 - lb2) * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
-       
+
         pose proof orExtra3_3 as extraFloatMinCase2.
         simpl in andExtra.
         simpl in extraFloatMinCase2.
@@ -16005,7 +17861,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -16016,7 +17872,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -16027,7 +17883,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3_3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -16037,9 +17893,9 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R) (ub1 * (0 - lb2) * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
-       
+
         pose proof orExtra3_3 as extraFloatMinCase2.
         simpl in andExtra.
         simpl in extraFloatMinCase2.
@@ -16082,7 +17938,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -16093,7 +17949,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -16104,7 +17960,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-        
+
         pose proof orExtra3_3 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -16114,9 +17970,9 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R) (ub1 * (0 - lb2) * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
-       
+
         pose proof orExtra3_3 as extraFloatMinCase2.
         simpl in andExtra.
         simpl in extraFloatMinCase2.
@@ -16181,7 +18037,7 @@ Admitted.
             destruct Rcase_abs.
             {
               split.
-              { 
+              {
                 psatz R.
               }
               {
@@ -16191,11 +18047,11 @@ Admitted.
             {
               split.
               {
-                 
+
                 psatz R.
               }
               {
-                
+
                 psatz R.
               }
             }
@@ -16231,12 +18087,12 @@ Admitted.
       destruct H5.
       destruct H6.
       destruct H7.
-      destruct H7. 
+      destruct H7.
       destruct H8.
       destruct H7.
       destruct H8.
       inversion Heqo.
-      
+
       forward_reason.
       assert (floatToReal x2 = floatToReal x2).
       intuition.
@@ -16257,7 +18113,7 @@ Admitted.
       assert (validFloatArg1 := H9).
       assert (validFloatArg2 := H10).
       clear H11 H12 H8 H0 H2 H H1 H9 H10 H13 H15 H7.
-      
+
       unfold float_mult in *.
       destruct f eqn:f_des.
       {
@@ -16272,7 +18128,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -16283,7 +18139,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -16305,7 +18161,7 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ((0 - lb1) * ub2 * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
 
         pose proof orExtra3_4 as extraFloatMinCase2.
@@ -16372,7 +18228,7 @@ Admitted.
             destruct Rcase_abs.
             {
               split.
-              { 
+              {
                 psatz R.
               }
               {
@@ -16415,7 +18271,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -16426,7 +18282,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -16437,7 +18293,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-       
+
         pose proof orExtra3_4 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -16447,7 +18303,7 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ((0 - lb1) * ub2 * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
 
         pose proof orExtra3_4 as extraFloatMinCase2.
@@ -16492,7 +18348,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -16503,7 +18359,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -16514,7 +18370,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-       
+
         pose proof orExtra3_4 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -16524,7 +18380,7 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ((0 - lb1) * ub2 * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
 
         pose proof orExtra3_4 as extraFloatMinCase2.
@@ -16569,7 +18425,7 @@ Admitted.
         assert (expr1Bound := H0).
         assert (expr2Bound := H7).
         assert (floatMinCase := H3).
-        assert (floatMaxBound1 := H4). 
+        assert (floatMaxBound1 := H4).
         assert (resultGe1 := H5).
         assert (resultGe2 := H6).
         assert (multResultStmt := H1).
@@ -16580,7 +18436,7 @@ Admitted.
         remember (ub x0 fState) as ub1.
         remember (ub x1 fState) as ub2.
         specialize (relErrorBasedOnFloatMinTruthMult x4 x5 lb1 lb2 ub1 ub2 ).
-        
+
         destruct expr1Bound.
         destruct expr2Bound.
         pose proof or_introl.
@@ -16591,7 +18447,7 @@ Admitted.
         assert (floatMinCase:=conjoin2).
         clear conjoin2.
         intros.
-      
+
         pose proof orExtra3_4 as extraFloatMinCase.
         specialize (extraFloatMinCase ((floatMin <= lb1 * lb2)%R /\ (lb1 >= 0)%R /\ (lb2 >= 0)%R) ((floatMin <= (0 - ub1) * (0 - ub2))%R /\ (ub1 < 0)%R /\ (ub2 < 0)%R) ((floatMin <= lb1 * (0 - ub2))%R /\ (lb1 >= 0)%R /\ (ub2 < 0)%R)  ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R)).
         specialize (extraFloatMinCase floatMinCase).
@@ -16601,7 +18457,7 @@ Admitted.
         pose proof andExtra as andExtra.
          intros.
         specialize (andExtra ((floatMin <= (0 - ub1) * lb2)%R /\ (ub1 < 0)%R /\ (lb2 >= 0)%R) ((0 - lb1) * ub2 * (1 + error) < floatMax)%R floatMinCase floatMaxBound1).
-       
+
         Local Open Scope R_scope.
 
         pose proof orExtra3_4 as extraFloatMinCase2.
@@ -16668,7 +18524,7 @@ Admitted.
             destruct Rcase_abs.
             {
               split.
-              { 
+              {
                 psatz R.
               }
               {
@@ -16709,3 +18565,5 @@ Admitted.
     }
 Qed.
 *)
+
+Check Bmult_correct.

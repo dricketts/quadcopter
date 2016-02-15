@@ -1112,8 +1112,8 @@ Definition Hoare_ := Hoare.
       Hoare_ (fun fst : fstate =>
                 exists res, fexprD e fst = Some res /\
                        AnyOf (List.map (fun sbt =>
-                                          let '(pred,bound) := bounds_to_formula sbt fst in
-                                          pred /\ forall (val : float) (r : R),
+                                          let '(prem,bound) := bounds_to_formula sbt fst in
+                                          prem /\ forall (val : float) (r : R),
                                               F2OR val = Some r ->
                                               bound r ->
                                               P (fstate_set fst v val))
@@ -1191,6 +1191,31 @@ Definition Hoare_ := Hoare.
                 (ub sbt fst >=  0)%R /\
                 (premise sbt fst)) sbts).
 
+  (* proposed new defs *)
+  (*
+  (* based on Hoare__bound_asn *)
+  (* defs, v2. better, but not in a useful form for things to be provable *)
+    Definition maybe_lt0 (fx : fexpr) (fst : fstate) (r : R) : Prop :=
+    AnyOf (List.map
+             (fun sbt : singleBoundTerm =>
+                let '(prem, bound) := bounds_to_formula sbt fst in
+                (lb sbt fst < 0)%R /\
+                prem /\
+                bound r
+             )
+             (bound_fexpr fx)).
+
+  Definition maybe_ge0 (fx : fexpr) (fst : fstate) (r : R) : Prop :=
+    AnyOf (List.map
+             (fun sbt : singleBoundTerm =>
+                let '(prem, bound) := bounds_to_formula sbt fst in
+                (ub sbt fst >= 0)%R /\
+                prem /\
+                bound r
+             )
+             (bound_fexpr fx)).  
+   *)
+  
   Lemma or_distrib_imp :
     forall A B C : Prop,
       (A \/ B -> C) <->
@@ -1220,6 +1245,7 @@ Definition Hoare_ := Hoare.
     intros. unfold float_lt, float_ge in H. lra.
   Qed.
 
+
   Lemma Hoare__bound_ite :
     forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
       Hoare_ Q1 c1 P ->
@@ -1231,10 +1257,11 @@ Definition Hoare_ := Hoare.
                        (maybe_ge0 bs fst -> Q2 fst) /\
                        (AnyOf (List.map
                                  (fun sbt => let '(prem, _) := denote_singleBoundTermNew fst sbt in prem)
-                                 bs)))%type
+                                 (bound_fexpr ex))))%type
              (FIte ex c1 c2)
              P.
-Proof.
+  
+  Proof.
   intros.
   generalize (bound_fexpr_sound ex (bound_fexpr ex) eq_refl).
   induction 1.
@@ -1319,8 +1346,117 @@ Proof.
           rewrite H2 in H22. inversion H22; subst.
           generalize (float_lt_ge_trichotomy_contra _ _ (conj H24 H11')).
           intros; contradiction. } } } }
-Qed.
+  Qed.
 
+  (* proof of an alternate version *)
+(*    
+  intros.
+  unfold maybe_ge0, maybe_lt0.
+  generalize (bound_fexpr_sound ex (bound_fexpr ex) eq_refl).
+  induction 1.
+  { simpl. eapply Hoare__conseq.
+    3: eapply Hoare__False.
+    - simpl. intros. fwd. auto.
+    - exact (fun _ x => x). }
+  { simpl.
+    eapply Hoare__conseq.
+    2: exact (fun _ x => x).
+    simpl. intros.
+    repeat setoid_rewrite or_distrib_imp in H3.
+    repeat setoid_rewrite and_distrib_or in H3.
+    eapply H3.
+    eapply Hoare__conseq.
+    2: exact (fun _ x => x).
+    2: eapply Hoare__or.
+    3: eapply IHForall.
+    simpl. intros. fwd.
+    destruct H3.
+    { fwd.
+      left.
+      (*exact (conj (Logic.ex_intro (fun x0 => eq (fexprD ex st) (Some x0)) _ H3) (conj H6 (conj H8 (conj H7 (conj H4 H5))))). }*)
+      exact (conj (Logic.ex_intro (fun x0 => eq (fexprD ex st) (Some x0)) _ H3) (conj H6 (conj H8 (conj H7 (conj H4 H5))))). }
+    { right.
+      fwd.
+      eexists. split; eauto. }
+    clear H2 IHForall. (* maybe don't clear H2? *)
+    do 2 red. intros.
+    fwd.
+    simpl in H1.
+    do 2 red in H, H0.
+    specialize (H1 _ _ H2 H3). fwd.
+    assert (x1 = x0).
+    { rewrite H1 in H2. inversion H2; auto. }
+    subst.
+    destruct (float_lt_ge_trichotomy x0 fzero).
+    { pose proof H11 as H11'.
+      unfold float_lt in H11. simpl in H11.
+      unfold F2OR in H8. consider x0; intros; try congruence.
+      { simpl in H12. lra. }
+      { inversion H11.
+        assert (x2 < 0)%R.
+        { rewrite <- H14 in H9.
+          simpl in H12.
+          lra. }
+        assert (lb x s < 0)%R by lra.
+        rewrite H2 in *. simpl in *. subst.
+        specialize (H6 (conj H15 (conj H3 (conj H9 H10)))).
+        specialize (H _ H6). fwd.
+        split.
+        { eexists. eapply FEIteT; eauto. }
+        { intros.
+          inversion H14; subst; clear H14; auto.
+          rewrite H2 in H20. inversion H20; subst.
+          generalize (float_lt_ge_trichotomy_contra _ _ (conj H11' H22)).
+          intro; contradiction. } } }
+    { pose proof H11 as H11'.
+      unfold float_ge in H11. simpl in H11.
+      unfold F2OR in H8. consider x0; intros; try congruence.
+      { inversion H11. subst.
+        pose proof H10 as H10'.
+        apply Rle_ge in H10.
+        fwd.
+        rewrite H2 in *. simpl in *. subst.
+        specialize (H7 (conj H10 (conj H3 (conj H9 H10')))).
+        specialize (H0 _ H7). fwd.
+        split.
+        { eexists. eapply FEIteF; eauto. }
+        { intros. inversion H13; subst; clear H13; auto.
+          rewrite H2 in H18. inversion H18; subst.
+          generalize (float_lt_ge_trichotomy_contra _ _ (conj H20 H11')).
+          intros; contradiction. } }
+      { inversion H11.
+        assert (x2 >= 0)%R.
+        { simpl in H12.
+          rewrite H14 in H12.
+          assumption. }
+        assert (ub x s >= 0)%R by lra.
+        rewrite H2 in *. simpl in *. subst.
+        specialize (H7 (conj H15 (conj H3 (conj H9 H10)))). fwd.
+        specialize (H0 _ H7). fwd.
+        split.
+        { eexists. eapply FEIteF; eauto. }
+        { intros.
+          inversion H14; subst; clear H14; auto.
+          rewrite H2 in H20. inversion H20; subst.
+          generalize (float_lt_ge_trichotomy_contra _ _ (conj H22 H11')).
+          intros; contradiction. } } } }
+Qed.
+*)
+
+(*
+(* propsed alternate ITE rule: *)
+(fun fst =>
+                        exists res, fexprD e fst = Some res /\
+                               exists r, F2OR res = Some r /\
+                                    (* RIGHT ANSWER (we think): *)
+                                    (forall r, F2OR res = Some r -> maybe_lt0 e fst r -> fwp c1 P fst) /\
+                                    (maybe_ge0 e fst r -> fwp c2 P fst) /\
+                                    (AnyOf (List.map
+                                              (fun sbt => let '(prem, _) := denote_singleBoundTermNew fst sbt in prem)
+                                              (bound_fexpr e))))%type
+
+*)
+  
   (* Weakest-precondition calcluation function for fcmd language *)
   Fixpoint fwp (c : fcmd)
            (P : fstate  -> Prop) : fstate -> Prop :=

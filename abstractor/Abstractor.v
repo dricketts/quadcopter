@@ -1413,17 +1413,46 @@ Definition Hoare_ := Hoare.
     unfold Hoare_, Hoare. intros. contradiction.
   Qed.
 
+
   Definition maybe_lt0 (sbts : list singleBoundTerm) (fst : fstate) : Prop :=
     AnyOf (List.map
              (fun sbt =>
                 (lb sbt fst <  0)%R /\
-                (premise sbt fst)) sbts).
+                (premise sbt fst)
+             ) sbts).
+  
+  (*
+  Definition maybe_lt0 (sbts : list singleBoundTerm) (fst : fstate) : Prop :=
+    AnyOf (List.map
+             (fun sbt =>
+                (lb sbt fst <  0)%R /\
+                (lb sbt fst <= ?? <= ub sbt fst) /\               
+                (premise sbt fst)
+             ) sbts).
+*)
+
+  Definition maybe_lt0' (fx : fexpr) (fst : fstate) : Prop := True.
 
   Definition maybe_ge0 (sbts : list singleBoundTerm) (fst : fstate) : Prop :=
     AnyOf (List.map
              (fun sbt =>
                 (ub sbt fst >=  0)%R /\
-                (premise sbt fst)) sbts).
+                (premise sbt fst)
+             ) sbts).
+
+  (* add conclusion. also, maybe need to take var as argument?. look at bounddef' *)
+  (*
+  Definition maybe_ge0 (sbts : list singleBoundTerm) (fst : fstate) : Prop :=
+    AnyOf (List.map
+             (fun sbt =>
+                (ub sbt fst >=  0)%R /\
+                (lb sbt fst <= ?? <= ub sbt fst)
+                (premise sbt fst)
+             ) sbts).
+*)
+
+  Definition maybe_lt0' (fx : fexpr) (fst : fstate) : Prop := True.
+
 
   Lemma or_distrib_imp :
     forall A B C : Prop,
