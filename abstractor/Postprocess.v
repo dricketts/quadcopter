@@ -1433,8 +1433,8 @@ Proof.
         show_value floatMax.
         show_value error.
 
-        assert (-100 < FloatToR x4 < 100)%R by admit.
-        assert (-100 < FloatToR x5 < 100)%R by admit.
+        assert (-(100000*100000) < FloatToR x4 < (100000*100000))%R by admit.
+        assert (-(100000*100000) < FloatToR x5 < (100000*100000))%R by admit.
 
         simpl in H8.
 
@@ -1477,7 +1477,7 @@ Proof.
         z3 solve. admit.
       }
       }
-      {
+      { Check lentail_cut2.
         breakAbstraction.
         intros.
         unfold fstate_get_rval in *.
@@ -1506,3 +1506,43 @@ Proof.
       }
 Admitted.        
 
+(* Now we are going to do the P controller; here dinv = 1/2 *)
+Eval compute in float_one.
+Eval compute in (nat_to_float 2%nat).
+
+Definition fhalf : float.
+                     refine (Fappli_IEEE.B754_finite 24 128 false 8388608 (-24) _).
+                     unfold Fappli_IEEE.bounded, Fappli_IEEE.canonic_mantissa.
+                     simpl. reflexivity.
+Defined.
+
+Eval compute in (F2OR fhalf).
+  
+Definition p_ctrl : fcmd :=
+  FAsn "v" (FMult (FMinus (FConst fzero) (FVar "x")) (FConst fhalf)).
+
+Check fwp_velshim2_full.
+Print preVarIsFloat.
+
+Definition preVarPred (pred : R -> Prop) (v : Var) : Formula :=
+  Syntax.Exists float
+                (fun f : float =>
+                       RealT (FloatToR f) = VarNowT v //\\
+                       PropF (exists r : R, (F2OR f = Some r)%type /\ pred r)).
+
+Definition pred1 (r : R) : Prop :=
+  (-(100000*100000) < r < (100000*100000))%R.
+
+Definition p_vs := ["v"; "x"].
+
+Check fwp_velshim2_full.
+
+Theorem fwp_p :
+  preVarPred pred1 "v" //\\
+  preVarPred pred1 "x" //\\
+  embed_ex p_vs p_ctrl
+  |--  ("v"! = --"x"/2).
+Proof.
+
+
+Admitted.
