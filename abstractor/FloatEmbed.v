@@ -1,4 +1,7 @@
-(* Specialization of the Embedding framework to our floating-point language *)
+(*
+ * FloatEmbed.v
+ * Specialization of the Embedding framework to our floating-point language
+ *)
 Require Import Source.
 Require Import Embed.
 Require Import Logic.Syntax.

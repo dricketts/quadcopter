@@ -1,3 +1,8 @@
+(*
+ * Embed.v
+ * General embedding framework
+ *)
+
 Require Import Logic.Syntax.
 Require Import Logic.Semantics.
 Require Import Logic.ProofRules.

@@ -1,3 +1,11 @@
+(*
+ * Source.v
+ * Contains needed basic floating-point definitions, along with
+ * A now-defunct source language
+ * For actual language source, see FloatEmbed.v
+ * This file should probably be renamed, and definitely be cleaned up.
+ *)
+
 (*Require Import compcert.cfrontend.Clight.*)
 Require Import Coq.micromega.Psatz.
 (*Require Import compcert.cfrontend.Cop.

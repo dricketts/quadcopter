@@ -1,3 +1,8 @@
+(*
+ * Bound.v
+ * Contains theorems and reflective procedure for interval abstraction
+ *)
+
 Require Import SMT.Tactic.
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Raxioms.
