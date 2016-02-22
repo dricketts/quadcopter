@@ -1,3 +1,4 @@
+Require Import SMT.Tactic.
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Raxioms.
 Require Import Coq.micromega.Psatz.
