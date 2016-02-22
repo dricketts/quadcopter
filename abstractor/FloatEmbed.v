@@ -316,12 +316,8 @@ Module FloatEmbed <: EMBEDDING.
       Some val = fstate_lookup (fstate_set fst v val) v.
   Proof.
     intros.
-    induction fst.
-    - simpl. rewrite rel_dec_eq_true; eauto with typeclass_instances.
-    - simpl. destruct a.
-      consider (v ?[eq] v0); intro; subst.
-      + simpl. rewrite rel_dec_eq_true; eauto with typeclass_instances.
-      + simpl. rewrite rel_dec_neq_false; eauto with typeclass_instances.
+    simpl.
+    consider (v ?[eq] v); intro; subst; congruence.
   Qed.
 
   Lemma fstate_lookup_irrelevant_update :
@@ -330,15 +326,8 @@ Module FloatEmbed <: EMBEDDING.
       fstate_lookup fst v = fstate_lookup (fstate_set fst v' val) v.
   Proof.
     intros.
-    induction fst.
-    - simpl. rewrite rel_dec_neq_false; eauto with typeclass_instances.
-    - simpl. destruct a.
-      consider (v ?[eq] v0); intros; subst.
-      + rewrite rel_dec_neq_false; eauto with typeclass_instances.
-        simpl. rewrite rel_dec_eq_true; eauto with typeclass_instances.
-      + consider (v' ?[eq] v0); intros; subst.
-        * simpl. rewrite rel_dec_neq_false; eauto with typeclass_instances.
-        * simpl. rewrite rel_dec_neq_false; eauto with typeclass_instances.
+    simpl.
+    consider (v ?[eq] v'); intro; subst; congruence.
   Qed.
   
   Lemma fstate_lookup_fm_lookup :
@@ -1107,6 +1096,8 @@ Definition Hoare_ := Hoare.
     destruct val; try contradiction; solve [eexists; reflexivity].
   Qed.
 
+
+  (* original *)
   Lemma Hoare__bound_asn :
     forall (P : _ -> Prop) v e,
       Hoare_ (fun fst : fstate =>
@@ -1145,6 +1136,9 @@ Definition Hoare_ := Hoare.
           eapply IHl; eauto. } } }
   Qed.        
 
+
+  Print fstate_lookup.
+  Locate fstate_set.
 
   Lemma Hoare__conseq :
     forall (P P' Q Q' : fstate -> Prop) (c : fcmd),
@@ -1464,7 +1458,7 @@ Qed.
     | FSkip => P
     | FSeq c1 c2 => fwp c1 (fwp c2 P)
     | FAsn v e => (fun fst  =>
-                    exists res, fexprD e fst = Some res /\
+                    (*exists res, fexprD e fst = Some res /\*)
                            AnyOf
                              (map
                                 (fun sbt : singleBoundTerm =>
@@ -1476,7 +1470,7 @@ Qed.
                                 (bound_fexpr e)))
     | FFail => fun fst => False
     | FIte e c1 c2 => (fun fst =>
-                        exists res, fexprD e fst = Some res /\
+                        (*exists res, fexprD e fst = Some res /\*)
                                (let bs := bound_fexpr e in
                                 (maybe_lt0 bs fst -> fwp c1 P fst) /\
                                 (maybe_ge0 bs fst -> fwp c2 P fst) /\
@@ -1505,6 +1499,6 @@ Qed.
       intros; eassumption.
     }
     { eapply Hoare__skip. }
-    { eapply Hoare__bound_asn. }
-    { eapply Hoare__bound_ite; eauto. }
-  Qed.
+    { (*eapply Hoare__bound_asn.*) admit. }
+    { (*eapply Hoare__bound_ite; eauto.*) admit. }
+  Admitted.

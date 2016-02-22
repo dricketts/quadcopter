@@ -393,6 +393,7 @@ Definition FP2RP (vs : list Var) (P : fstate -> Prop) : state -> Prop :=
 (* Version of HoareA_embed_ex we can use for rewriting. *)
 Require Import ExtLib.Tactics.
 Import FloatEmbed.
+
 Lemma Hoare__embed_rw :
   forall (c : fcmd)
          (vs : list string),
@@ -577,14 +578,12 @@ Proof.
       idtac.
       breakAbstraction.
       intros.
-      exists float_one.
-      split; try reflexivity.
       left.
       split; auto. 
       intros.
-      generalize fstate_lookup_update_match; intro Hflum.
+      (*generalize fstate_lookup_update_match; intro Hflum.
       symmetry in Hflum.
-      rewrite Hflum.
+      rewrite Hflum.*)
       exists x0.
       split; try reflexivity.
       exists x1.
@@ -710,129 +709,6 @@ Proof.
   eauto.
 Qed.
 
-(*
-Fact fwp_simpler_full : preVarIsFloat "x" //\\ "x" > 0 //\\
-                                [](embed_ex simple_prog_ivs simpler_prog \\//
-                                               (Enabled (embed_ex simple_prog_ivs simpler_prog) -->> lfalse))
-                                |-- [](preVarIsFloat "x" //\\ "x" > 0).
-Proof.
-  eapply discr_indX.
-  { red. simpl. intuition. }
-  { charge_assumption. }
-  { tlaIntuition. }
-
-  tlaRevert.
-  eapply lorL.
-  {
-    erewrite -> Hoare__embed_rw.
-    eapply lforallL.
-    instantiate (1 := (fun fst => exists f, fstate_lookup fst "x" = Some f /\ exists r, F2OR f = Some r /\ (r > 0)%R)).
-    simpl fwp.
-    cbv zeta.
-    eapply lequiv_rewrite_left.
-    { crunch_embeds. }
-    apply lexistsL.
-    intros.
-    charge_intros.
-    etransitivity.
-    {
-      charge_use.
-      tlaRevert.
-      apply landL1. (* get rid of the fact we used *)
-      charge_intro.
-      apply (lexistsR float_one).
-      charge_split; [apply PropF_tauto; reflexivity|].
-      charge_left.
-      charge_split; [apply PropF_tauto; constructor|].
-      charge_intros.
-      apply (lexistsR x0).
-      rewrite <- (fstate_lookup_update_match).
-      charge_split; [apply PropF_tauto; reflexivity|].
-      apply (lexistsR x1).
-      charge_split; [charge_assumption|].
-      match goal with
-      | |- context[Fcore_defs.F2R ?X] => 
-        let X2 := eval compute in (Fcore_defs.F2R X) in change (Fcore_defs.F2R X) with X2
-      end.
-      
-      breakAbstraction.
-      intros.
-      lra.
-    }
-    {
-      apply lexistsL. intros.
-      breakAbstraction.
-      intros. fwd.
-      split.
-      { do 2 red in H.
-        specialize (H "x"). fwd.
-        simpl in H. destruct H; auto. fwd.
-        rewrite fstate_lookup_fm_lookup in H0. rewrite H0 in H. inversion H; subst.
-        unfold asReal in H4. rewrite H1 in H4. inversion H4; subst.
-        exists x3.
-        split.
-        - unfold F2OR in H1. destruct x3; congruence.
-        - eauto.
-      }
-      {
-        do 2 red in H.
-        specialize (H "x"). fwd. simpl in H.
-        destruct H; auto. fwd.
-        rewrite fstate_lookup_fm_lookup in H0. rewrite H0 in H. inversion H; subst.
-        unfold asReal in H4. rewrite H1 in H4. inversion H4; subst.
-        assumption.
-      }
-    }
-  }
-  {
-    (* enabledness tactic? *)
-    charge_intro.
-    transitivity lfalse; [| eapply lfalseL].
-    charge_use.
-    tlaRevert.
-    eapply Lemmas.forget_prem.
-    Require Import TLA.Tactics.
-    charge_intro.
-    eapply Enabled_action_gen.
-    simpl.
-    intros.
-    clear tr.
-    fwd.
-    eapply (ex_state "x").
-    eapply ex_state_any.
-    unfold models.
-    intros.
-    
-    (*intro st0. clear st0.*)
-    generalize (F2OR_FloatToR _ _ _ H1 H); intro HF2OR.
-    subst.
-
-    eexists.
-    exists ([("x", x)]).
-    eexists.
-    split.
-    { split.
-      - intros.
-        simpl in H2. destruct H2; try contradiction. subst.
-        exists x.
-        split; auto.
-      - intros. simpl.
-        consider (string_dec s "x"); intros; subst; try reflexivity.
-        simpl in H2.
-        exfalso. auto.
-    }
-    { split; [|econstructor; simpl; reflexivity].
-      intros. split.
-      { intros.
-        consider (string_dec "x" s); intros; subst.
-        { unfold asReal. eexists. split; simpl; reflexivity. }
-        { simpl in H2. destruct H2; [congruence|contradiction]. } }
-      { intros.
-        simpl.
-        consider (string_dec s "x"); intros; subst; [|reflexivity].
-        simpl in H2. destruct H2; auto. } } }
-Qed.
-*)
 
 Lemma limpl_limpl_land :
   forall (A B C : Syntax.Formula),
@@ -842,14 +718,6 @@ Proof.
   tlaIntuition.
 Qed.
 
-(* velocity-shim controller *)
-(*
-Definition velshim : fcmd :=
-  FIte (FMinus (FVar "ub") (FPlus (FMult (FVar "a") (FVar "d")) (FVar "vmax")))
-       (FAsn "a" (FVar "a"))
-       (FAsn "a" (FConst fzero)).
- *)
-
 Definition f10 := Eval lazy in (concretize_float (nat_to_float 10)).
 
 Definition velshim : fcmd :=
@@ -857,8 +725,6 @@ Definition velshim : fcmd :=
        (FAsn "a" (FConst fzero))
        (FAsn "a" (FVar "a")).
 
-Print f10.
-Locate f10.
 
 Definition f9 := Eval lazy in (concretize_float (nat_to_float 9)).
 
@@ -869,70 +735,6 @@ Definition velshim2 : fcmd :=
 
 Definition velshim_vs : list (Var) :=
   ["a"; "v"].
-
-(* TODO: prove thorem about always-enabledness of oembed_fcmd
-     (true of any semantics embedded using oembedStep_maybenone, provided
-     that any state has some other state it steps to) *)
-(*
-Lemma feval_never_stuck :
-  forall (fs : fstate) (c : fcmd),
-  exists (ofst : option fstate),
-    feval fs c ofst.
-Proof.
-  intros fs c.
-  generalize dependent fs.
-  induction c.
-  - intros.
-    specialize (IHc1 fs). fwd.
-    destruct x.
-    + specialize (IHc2 f). fwd.
-      eexists. econstructor 2; eassumption.
-    + eexists. econstructor 3. eassumption.
-  - intros. eexists. econstructor.
-  - intros.
-    consider (fexprD f fs); intros.
-    + eexists. econstructor 4. eassumption.
-    + eexists. econstructor 5. eassumption.
-  - intros.
-    consider (fexprD f fs); intros.
-    + generalize (float_lt_ge_trichotomy f0 fzero); intro Htri.
-      destruct Htri.
-      * specialize (IHc1 fs). fwd. eexists. econstructor 6; eauto.
-      * specialize (IHc2 fs). fwd. eexists. econstructor 7; eauto.
-    + eexists. econstructor 8; eauto.
-  - intros. eexists. econstructor.
-  - intros. eexists. econstructor.
-    Grab Existential Variables.
-    apply fzero.
-Qed.
-*)
-
-(*
-(* TODO - prove these lemmas inline *)
-Lemma oembed_fcmd_enabled :
-  forall (ivs ovs : list (Var * Var)) (fc : fcmd),
-    (|-- Enabled (oembed_fcmd ivs ovs fc)).
-Proof.
-  breakAbstraction.
-  intros.
-Abort.
-
-(* Idea: oembedStep_maybenone will always be enabled so long as it is given an evaluation
-   relation which is "never stuck" *)
-Lemma oembedStep_maybenone_enabled :
-  forall (var ast state : Type)
-    (eval : state -> ast -> option state -> Prop)
-    (asReal : state -> var -> option R)
-    (pre_vars post_vars : list (Var * var))
-    (prog : ast)
-    (Heval : forall (a : ast) (st : state), exists (ost : option state), eval st a ost),
-    (|-- Enabled (oembedStep_maybenone var ast state eval asReal pre_vars post_vars prog)).
-Proof.
-  intros.
-  breakAbstraction.
-  intros.
-Abort.
-*)
 
 (* Used to expose post-states, since fwp by default does not let us talk about both
    pre- and post-states *)
@@ -1111,13 +913,6 @@ Proof.
   destruct f; simpl; intros; congruence.
 Qed.
 
-Print velshim2.
-
-Print feval.
-
-(* used instead of admit for the goals we solve by Z3 *)
-Axiom z3_says :
-  forall (A : Prop), A.
 
 (* first line is new stuff *)
 (*
@@ -1206,49 +1001,297 @@ Proof.
   apply varIsValid'.
 Qed.
 
+(* Now we are going to do the height shim *)
 
-Theorem fwp_velshim2_full :
-                                       preVarIsFloat "a" //\\ preVarIsFloat "v" //\\
-                                       (embed_ex velshim_vs velshim2)
-                                       |-- (VarNextT "a" = 0 \\// (VarNextT "v") + ((VarNextT "a") * NatT 1) < NatT 10)%HP.
+Definition fhalf : float.
+                     refine (Fappli_IEEE.B754_finite 24 128 false 8388608 (-24) _).
+                     unfold Fappli_IEEE.bounded, Fappli_IEEE.canonic_mantissa.
+                     simpl. reflexivity.
+Defined.
+
+Definition fminus_half : float.
+                          refine (Fappli_IEEE.B754_finite 24 128 true 8388608 (-24) _).
+                          reflexivity.
+Defined.
+
+Definition posshim_ub := f9.
+Definition fminus1 : float.
+                       refine  (Fappli_IEEE.B754_finite 24 128 true 8388608 (-23) _).
+                       reflexivity.
+Defined.
+
+Definition minus2amin := float_one.
+
+Definition amin := fminus_half.
+
+Definition fmax_with_zero (v : Var) (x1 : fexpr) : fcmd :=
+  FIte x1 (FAsn v (FConst fzero)) (FAsn v x1).
+
+(*
+if (y+v*d+(1/2)*Max(A,0)*d^2+Max(v+Max(A,0)*d,0)^2/(-2*amin) <= ub)
+then a := A
+else a := amin
+
+where d = 1
+where (-1 / (2 * amin)) = 1; i.e., amin = -1/2
+*)
+Definition posshim_lhs : fexpr :=
+  FPlus (FVar "y") (FPlus (FVar "v")
+                          (FPlus (FMult (FConst fhalf) (FVar "maxa0"))
+                                 ((FMult (FVar "max2") (FVar "max2"))))).                                        
+
+Definition posshim : fcmd :=
+  FSeq (fmax_with_zero "maxa0" (FVar "a"))
+       (FSeq (fmax_with_zero "max2" (FPlus (FVar "v") (FVar "maxa0")))
+                (FIte (FMinus posshim_lhs (FConst posshim_ub))
+                      (FAsn "a" (FVar "a"))
+                      (FAsn "a" (FConst amin)))).
+
+Definition posshim_vs :=
+  ["y"; "v"; "a"; "max2"; "maxa0"].
+
+Definition preVarPred (pred : R -> Prop) (v : Var) : Formula :=
+  Syntax.Exists float
+                (fun f : float =>
+                   RealT (FloatToR f) = VarNowT v //\\
+                                                PropF (exists r : R, (F2OR f = Some r)%type /\ pred r)).
+
+Definition pred1 (r : R) : Prop :=
+  (-(100000*100000) < r < (100000*100000))%R.
+
+Lemma F2OR_quant_rew :
+  forall (P : _ -> Prop),
+  (forall a b, F2OR a = Some b -> P (F2OR a)) =
+  (forall a b, F2OR a = Some b -> P (Some b)).
 Proof.
-  rewrite landC. rewrite landA. rewrite landC. rewrite landA. rewrite landC.
-  rewrite <- landC.
-  tlaRevert.
+  intros.
+  apply pe_ax.
+  split.
+  - intros.
+    generalize (H _ _ H0). intros.
+    rewrite H0 in H1.
+    assumption. 
+  - intros.
+    rewrite H0.
+    specialize (H _ _ H0). apply H. 
+Qed.
+
+Definition posshim_tla : Formula :=
+  ("a"! = (-1/2)%R) \\//
+  ("y"! + "v"! + (1/2)*(MaxT ("a"!) 0) + (MaxT ("v"! + (MaxT ("a"!) 0)) 0) <= 10).
+
+Require Import Rbasic_fun.
+
+Require Import Coq.Logic.FunctionalExtensionality.
+
+Fixpoint fstate_lookup_force' (fst : fstate) (v : Var) : R :=
+  match fst with
+  | nil => 0%R
+  | cons (v', b) t =>
+    if v ?[eq] v' then FloatToR b else fstate_lookup_force' t v
+  end.
+
+Lemma fstate_lookup_force_eq :
+  fstate_lookup_force = fstate_lookup_force'.
+Proof.
+  apply functional_extensionality.
+  induction x.
+  - reflexivity.
+  - unfold fstate_lookup_force. simpl. destruct a.
+    apply functional_extensionality.
+    intros.
+    consider (x0 ?[eq] v); intros.
+    + reflexivity.
+    + rewrite <- IHx. reflexivity. 
+Qed.
+
+Theorem fwp_posshim :
+  preVarPred pred1 "y" //\\
+  preVarPred pred1 "v" //\\
+  preVarPred pred1 "a" //\\
+  embed_ex posshim_vs posshim
+  |-- posshim_tla.
+Proof.
+  assert (embed_ex posshim_vs posshim |--
+                   (preVarPred pred1 "y" //\\
+                               preVarPred pred1 "v" //\\
+                               preVarPred pred1 "a") -->> posshim_tla).
+  Focus 2.
+  rewrite H.
+  tlaIntuition.
+
   erewrite -> Hoare__embed_rw.
   {
     eapply lforallL.
-    instantiate (1 := (fstate_get_rval "a" (fun a =>
-                                              fstate_get_rval "v" (fun v _ => (a = 0 \/ v + a < 10)%R)))).
+    Show Existentials.
+
+    instantiate (1 := (fstate_get_rval "y" (fun y =>
+                      (fstate_get_rval "v" (fun v =>
+                      (fstate_get_rval "a" (fun a _ => (eq a (-1/2))%R \/
+                                                     (y + v + (1/2)*(Rmax a 0) + (Rmax (v + (Rmax a 0)) 0)*(Rmax (v + (Rmax a 0)) 0) <= 10)%R))))))).
+    Check lequiv_rewrite_left.
     cbv beta iota zeta delta [fwp velshim2 fexprD].
     eapply lequiv_rewrite_left.
-
     {
+      Print Ltac crunch_embeds.
       crunch_embeds.
     }
-    
 
     apply lexistsL. intros.
-
     apply land_comm_left.
-
     apply landAdj.
     apply land_curry1.
-
     apply lentail_cut2.
 
-    { Opaque bound_fexpr.
+    {
+      Opaque bound_fexpr.
       breakAbstraction.
       Transparent bound_fexpr.
+      
       intros. forward_reason.
-      unfold vmodels, velshim_vs, models in H.
-      generalize (H "a"); intro Ha.
-      destruct Ha as [Ha dead]; clear dead.
-      destruct Ha; [left; reflexivity|].
+      unfold vmodels, posshim_vs, models in H.
+      generalize (H "y"); intro Hy.
+      destruct Hy as [Hy dead]; clear dead.
+      destruct Hy; [left; reflexivity|].
       generalize (H "v"); intro Hv.
       destruct Hv as [Hv dead]; clear dead.
       destruct Hv; [intuition|].
-      
+      generalize (H "a"); intro Ha.
+      destruct Ha as [Ha dead]; clear dead.
+      destruct Ha; [intuition|].
+      generalize (H "maxa0"); intro Hmaxa0.
+      destruct Hmaxa0 as [Hmaxa0 dead]; clear dead.
+      destruct Hmaxa0; [intuition|].
+      generalize (H "max2"); intro Hmax2.
+      destruct Hmax2 as [Hmax2 dead]; clear dead.
+      destruct Hmax2; [intuition|].
+
+      fwd.
+      rewrite <- fstate_lookup_fm_lookup in *.
+      unfold asReal in *.
+      assert (isVarValid "a" x) by proveVarValid.
+      assert (isVarValid "y" x) by proveVarValid.
+      assert (isVarValid "v" x) by proveVarValid.
+      assert (isVarValid "maxa0" x) by proveVarValid.
+      assert (isVarValid "max2" x) by proveVarValid.
+
+      (* first if-statement *)
+      split.
+      {
+        intros.
+        cbv beta zeta iota delta [
+              fstate_lookup fstate_set rel_dec
+              AnyOf map cross bound_fexpr flat_map app lofst lift2
+                  land lor limpl ILInsts.ILFun_Ops ILogicOps_Prop
+                  bound_term fexpr_to_NowTerm combineTripleMinus combineTriplePlus combineTripleMult
+                  eval_NowTerm
+                  a_minus a_mult a_plus lb ub premise c_le c_lt c_ge c_gt
+                  fzero f10
+                  isFloatConstValid (*isVarValid*)
+                  Arithable_Applicative Fun.Applicative_Fun
+                  Arithable_Lift Arithable_R
+                  Comparable_Lift Comparable_R Comparable_Applicative
+                  Applicative.pure Applicative.ap
+                  simpleBound simpleBound2 simpleBound3 simpleBound4 simpleBound5
+                  simpleBound6 simpleBound7 simpleBound8 simpleBound9 simpleBound10 simpleBound11 simpleBound12 simpleBound13
+                  simpleBound14 simpleBound15 simpleBound16 simpleBound17 simpleBound18 simpleBound19 simpleBound20
+                  simpleBound21 simpleBound22 simpleBound23 simpleBound24 simpleBound25 simpleBound26 simpleBound27
+                  simpleBound28 simpleBound29 simpleBound30 simpleBound31 simpleBound32 simpleBound33
+                  (*simpleBoundM1 simpleBoundM2 simpleBoundM3 simpleBoundM4*)
+            ].
+
+        cbv beta zeta iota delta [ub lb premise].
+
+        rewrite fstate_lookup_force_eq.
+
+         unfold simpleBound, simpleBound2, simpleBound3, simpleBound4, simpleBound5,
+                  simpleBound6, simpleBound7, simpleBound8, simpleBound9, simpleBound10, simpleBound11, simpleBound12, simpleBound13,
+                  simpleBound14, simpleBound15, simpleBound16, simpleBound17, simpleBound18, simpleBound19, simpleBound20,
+                  simpleBound21, simpleBound22, simpleBound23, simpleBound24, simpleBound25, simpleBound26, simpleBound27,
+                  simpleBound28, simpleBound29, simpleBound30, simpleBound31, simpleBound32, simpleBound33.
+
+         unfold simpleBoundM3, simpleBoundM4, simpleBoundM5, simpleBoundM6, simpleBoundM7, simpleBoundM8, simpleBoundM9,
+         simpleBoundM10, simpleBoundM11.
+         unfold maybe_lt0, maybe_ge0. unfold map.
+
+        cbv beta zeta iota delta [lofst fstate_set fstate_lookup_force' fstate_lookup fstate_set lofst rel_dec RelDec_string String.string_dec ascii_dec ascii_rec sumbool_rec eq_ind_r f_equal Bool.bool_dec sumbool_rect ascii_rect bool_rec bool_rect eq_ind eq_rect eq_sym].
+        rewrite <- fstate_lookup_force_eq.
+        
+        unfold fstate_lookup_force, lofst.
+        rewrite H10.
+        simpl Fappli_IEEE.B2R.
+        unfold simpleBound, simpleBound2, simpleBound3, simpleBound4, simpleBound5,
+                  simpleBound6, simpleBound7, simpleBound8, simpleBound9, simpleBound10, simpleBound11, simpleBound12, simpleBound13,
+                  simpleBound14, simpleBound15, simpleBound16, simpleBound17, simpleBound18, simpleBound19, simpleBound20,
+                  simpleBound21, simpleBound22, simpleBound23, simpleBound24, simpleBound25, simpleBound26, simpleBound27,
+                  simpleBound28, simpleBound29, simpleBound30, simpleBound31, simpleBound32, simpleBound33.
+
+        
+        
+        unfold a_mult, a_plus, Arithable_Lift, Arithable_R, Arithable_Applicative, Comparable_Lift, Comparable_R, Comparable_Applicative,
+        Applicative.pure, Applicative.ap, Fun.Applicative_Fun, lb, ub, premise, a_mult, a_minus, a_plus, maybe_lt0.
+
+        cbv beta zeta iota delta [
+              fstate_lookup fstate_set rel_dec
+              AnyOf map cross bound_fexpr flat_map app lofst lift2
+                  land lor limpl ILInsts.ILFun_Ops ILogicOps_Prop
+                  bound_term fexpr_to_NowTerm combineTripleMinus combineTriplePlus combineTripleMult
+                  eval_NowTerm
+                  a_minus a_mult a_plus lb ub premise c_le c_lt c_ge c_gt
+                  fzero f10
+                  isFloatConstValid (*isVarValid*) fstate_lookup_force
+                  Arithable_Applicative Fun.Applicative_Fun
+                  Arithable_Lift Arithable_R
+                  Comparable_Lift Comparable_R Comparable_Applicative
+                  Applicative.pure Applicative.ap
+                  simpleBound simpleBound2 simpleBound3 simpleBound4 simpleBound5
+                  simpleBound6 simpleBound7 simpleBound8 simpleBound9 simpleBound10 simpleBound11 simpleBound12 simpleBound13
+                  simpleBound14 simpleBound15 simpleBound16 simpleBound17 simpleBound18 simpleBound19 simpleBound20
+                  simpleBound21 simpleBound22 simpleBound23 simpleBound24 simpleBound25 simpleBound26 simpleBound27
+                  simpleBound28 simpleBound29 simpleBound30 simpleBound31 simpleBound32 simpleBound33
+                  (*simpleBoundM1 simpleBoundM2 simpleBoundM3 simpleBoundM4*)
+            ].
+
+        unfold RelDec_string.
+        
+        simpl.
+        
+        
+        assert (forall v x, isVarValid v x = True) as Hivv by admit.
+                  
+
+        Print isVarValid.
+
+        assert (forall val, (lofst 0 (fstate_set x "maxa0" val) -
+                        fstate_lookup_force (fstate_set x "maxa0" val) "v" +
+                        (lofst 0 (fstate_set x "maxa0" val) -
+                         fstate_lookup_force (fstate_set x "maxa0" val) "maxa0")))%type.
+        cbn beta zeta iota delta [lofst fstate_lookup_force fstate_lookup fstate_set lofst rel_dec RelDec_string String.string_dec ascii_dec ascii_rec sumbool_rec eq_ind_r f_equal Bool.bool_dec sumbool_rect].
+
+        left.
+
+        unfold fstate_lookup_force, fstate_lookup, fstate_set.
+        Print RelDec_string.
+        Print String.string_dec.
+        Locate String.string_dec.
+        unfold rel_dec RelDec_string String.string_dec ascii_dec ascii_rec
+
+        cbn beta zeta iota delta [simpleBound].
+
+        unfold lofst, fstate_set, fstate_lookup_force.
+        unfold fstate_lookup, isVarValid.
+        cbn beta zeta iota delta [rel_dec RelDec_string String.string_dec ascii_dec ascii_rec sumbool_rec eq_ind_r, f_equal, Bool.bool_dec].
+
+        idtac.
+        cbn beta zeta iota delta [String.string_dec ascii_dec].
+        cbn beta zeta iota delta [fplus lift2 fminus fmult].
+        (* here... *)
+        cbn
+
+        idtac.
+
+        unfold rel_dec.
+
       fwd. rewrite <- fstate_lookup_fm_lookup in H4, H5.
       cbv beta zeta iota delta
           [lift2 fplus fmult float_one fzero Fappli_IEEE.Bopp Fappli_IEEE.Bplus Fappli_IEEE.Bmult custom_prec custom_emax prec emax custom_nan].
@@ -1256,208 +1299,95 @@ Proof.
       eexists.
       split; [reflexivity|].
 
-      (* wtf?? *)
+    
+    
+  rewrite landC. rewrite landA. rewrite landC. rewrite landA. rewrite landC.
+  rewrite landA. rewrite <- landC. tlaRevert.
+  
+(* position controller... *)
 
+Definition p_ctrl : fcmd :=
+  FAsn "v" (FMult (FMinus (FConst fzero) (FVar "x")) (FConst fhalf)).
 
-      split.
-      {
-        (* 9 - (a + v) < 0 -> 9 < a + v *)
-        intros.
-        eexists; split; [reflexivity|].
-        simpl.
-        left.
-        split; auto.
-        intros.
-        unfold fstate_get_rval.
-        rewrite <- fstate_lookup_update_match.
-        rewrite H9.
-        rewrite <- fstate_lookup_irrelevant_update; [|congruence].
-        rewrite H5.
-        unfold asReal in H6. rewrite H6.
-        left. lra.
-      }
-      split.
-      {
-        (* 9 - (a + v) >= 0 -> 9 >= a + v *)
-        intros.
-        eexists; split; [reflexivity|].
-        simpl.
-        left.
-        split; [proveVarValid |].
-        intros.
-        unfold fstate_get_rval.
-        rewrite <- fstate_lookup_update_match.
-        rewrite H9.
-        rewrite <- fstate_lookup_irrelevant_update; [|congruence].
-        rewrite H5.
-        unfold asReal in H6.
-        rewrite H6.
-
-        
-
-        (*peel_bounds_hyp H8 10.*)
-        idtac.
-
-
-        (* experimental evaluation *)
-
-        (*
-        cbv beta zeta iota delta [
-              map cross bound_fexpr flat_map app lofst lift2
-                  land lor limpl ILInsts.ILFun_Ops ILogicOps_Prop
-                  bound_term fexpr_to_NowTerm combineTripleMinus combineTriplePlus combineTripleMult
-                  eval_NowTerm
-                  a_minus a_mult a_plus lb ub premise c_le c_lt c_ge c_gt
-                  fzero f10
-                  isFloatConstValid (*isVarValid*) fstate_lookup_force
-                  Arithable_Applicative Fun.Applicative_Fun
-                  Arithable_Lift Arithable_R
-                  Comparable_Lift Comparable_R Comparable_Applicative
-                  Applicative.pure Applicative.ap
-                  simpleBound simpleBound2 simpleBound3 simpleBound4 simpleBound5
-                  simpleBound6 simpleBound7 simpleBound8 simpleBound9 simpleBound10 simpleBound11 simpleBound12 simpleBound13
-                  simpleBound14 simpleBound15 simpleBound16 simpleBound17 simpleBound18 simpleBound19 simpleBound20
-                  simpleBound21 simpleBound22 simpleBound23 simpleBound24 simpleBound25 simpleBound26 simpleBound27
-                  simpleBound28 simpleBound29 simpleBound30 simpleBound31 simpleBound32 simpleBound33
-                  (*simpleBoundM1 simpleBoundM2 simpleBoundM3 simpleBoundM4*)
-            ] in H8.
-*)
+Check fwp_velshim2_full.
+Print preVarIsFloat.
 
 
 
-        (* are if-statement fwp semantics wrong? do we need a
-           "maybe-less/definitely-greater" kind of thing? *)
-        
-        Set Printing Depth 999. idtac.
-                                     
-        unfold maybe_ge0 in H8.
-        simpl in H8.
-        
-        Ltac do_F2Rs :=
-          match goal with
-          | H: context[Fcore_defs.F2R ?X] |- _ =>
-            let FR := fresh "FR" in
-            let FRE := fresh "FRE" in
-            remember (Fcore_defs.F2R X) as FR eqn: FRE;
-              compute in FRE
-          | |- context[Fcore_defs.F2R ?X] =>
-            let FR := fresh "FR" in
-            let FRE := fresh "FRE" in
-            remember (Fcore_defs.F2R X) as FR eqn: FRE;
-              compute in FRE
-          end.
+Definition p_vs := ["v"; "x"].
 
-        do_F2Rs.
+Definition p_eps : R := (1/10000)%R.
 
-        (* find F2R's; remember them; pull them; compute them *)
+Theorem fwp_p :
+  preVarPred pred1 "v" //\\
+  preVarPred pred1 "x" //\\
+  embed_ex p_vs p_ctrl
+  |--  (--"x"/2 - p_eps < "v"! < --"x"/2 + p_eps).
+Proof.
+  rewrite <- landA. rewrite landC.
+  tlaRevert.
+  erewrite Hoare__embed_rw.
+  {
+    eapply lforallL.
+    instantiate (1 := (fstate_get_rval "v" (fun v =>
+                                              fstate_get_rval "x" (fun x _ =>
+                                                                     (x/2 - p_eps < v < x/2 + p_eps)%R)))).
+    cbv beta zeta iota delta [fwp velshim2 fexprD].
+    eapply lequiv_rewrite_left.
+    {
+      crunch_embeds.
+    }
 
-        (* tactic for converting output of bound_term into a form Z3 can understand *)
-        Ltac prepare_bound_hyp H :=
-            unfold fstate_lookup_force, isVarValid, isFloatConstValid, asReal, lofst, error in *;
-            repeat match goal with
-                 | H1: eq (fstate_lookup ?x ?v) (Some _) |- _ => 
-                   match goal with
-                   | H2: context[match fstate_lookup x v with | _ => _ end] |- _ => rewrite H1 in H2
-                   end
-                 end;
-            unfold floatMin, float_plus, floatToReal, error in H;
-            repeat rewrite exists_eq_instantiate in H;
-            unfold emax, emin, custom_emax, custom_emin, floatMax, f10 in H;
-            repeat match goal with
-                   | H' : context[Fcore_Raux.bpow ?x1 ?x2] |- _ =>
-                     let X2 := eval compute in (Fcore_Raux.bpow x1 x2) in
-                         change (Fcore_Raux.bpow x1 x2) with X2 in H'
-                   end;
-            repeat match goal with
-               | H': context[Fcore_defs.F2R ?X] |- _ =>
-                 let Y := constr:(@Fcore_defs.F2R Fcore_Zaux.radix2 X) in
-                 let Y' := eval compute in Y in
-                     change Y with Y' in H'
-               end;
-            repeat match goal with
-                 | H1: (?x <= ?r <= ?x)%R |- _ => assert (x = r) by lra; clear H1
-                   end;
-            repeat match goal with
-                   | H1 : eq (F2OR ?x) ?r |- _ =>
-                     match goal with
-                     | H2: eq (FloatToR x) ?r' |- _ =>
-                       generalize (F2OR_FloatToR _ _ _ H1 H2); intro; clear H1
-                     end end;
-            repeat match goal with
-                   | H1 : eq (F2OR ?x) ?r |- _ =>
-                     apply F2OR_weaken in H1
-                   end.
-          
-        (*z3 solve.*)
-        (* you can use this tactic to solve this part but it's too slow *)
-        (* experiment in minimizing proof term follows *)
-        cbv beta zeta iota delta [
-              map cross bound_fexpr flat_map app lofst lift2
-                  land lor limpl ILInsts.ILFun_Ops ILogicOps_Prop
-                  bound_term fexpr_to_NowTerm combineTripleMinus combineTriplePlus combineTripleMult
-                  eval_NowTerm
-                  a_minus a_mult a_plus lb ub premise c_le c_lt c_ge c_gt
-                  fzero f10
-                  isFloatConstValid (*isVarValid*) fstate_lookup_force
-                  Arithable_Applicative Fun.Applicative_Fun
-                  Arithable_Lift Arithable_R
-                  Comparable_Lift Comparable_R Comparable_Applicative
-                  Applicative.pure Applicative.ap
-                  simpleBound simpleBound2 simpleBound3 simpleBound4 simpleBound5
-                  simpleBound6 simpleBound7 simpleBound8 simpleBound9 simpleBound10 simpleBound11 simpleBound12 simpleBound13
-                  simpleBound14 simpleBound15 simpleBound16 simpleBound17 simpleBound18 simpleBound19 simpleBound20
-                  simpleBound21 simpleBound22 simpleBound23 simpleBound24 simpleBound25 simpleBound26 simpleBound27
-                  simpleBound28 simpleBound29 simpleBound30 simpleBound31 simpleBound32 simpleBound33
-                  (*simpleBoundM1 simpleBoundM2 simpleBoundM3 simpleBoundM4*)
-            ] in H8.
-        
-        unfold fstate_lookup_force in *.
+    apply lexistsL. intros.
+    apply land_comm_left.
+    apply landAdj.
+    apply lentail_cut2.
 
+    (* bounds hold *)
+    {
+      Opaque bound_fexpr. breakAbstraction. Transparent bound_fexpr.
+      intros. fwd.
+      unfold vmodels, p_vs, models in H.
+      generalize (H "v"); intro Hv.
+      destruct Hv as [Hv dead]; clear dead.
+      destruct Hv; [intuition|].
+      generalize (H "x"); intro Hx.
+      destruct Hx as [Hx dead]; clear dead.
+      destruct Hx; [intuition|].
 
-        unfold isVarValid in *.
-        Set Printing Depth 999.
-        idtac.
+      fwd. rewrite <- fstate_lookup_fm_lookup in *.
+      unfold fstate_lookup_force in *.
+      rewrite H1.
+      cbv beta zeta iota delta
+          [lift2 fplus fmult float_one fzero Fappli_IEEE.Bopp Fappli_IEEE.Bplus Fappli_IEEE.Bmult custom_prec custom_emax prec emax custom_nan].
+      eexists.
+      split; [reflexivity|].
+      simpl.
+      unfold fstate_lookup_force.
+      rewrite H1.
+      unfold isFloatConstValid, lofst, fstate_get_rval in *.
+      simpl.
+      rewrite H1.
+      
 
-        repeat match goal with
-               | H : fstate_lookup _ _ = Some _ |- _ =>
-                 rewrite H in *; clear H
-               end.
-
-        unfold asReal in *.
-        
-        repeat match goal with
-               | H : F2OR ?X = Some ?Y |- _ =>
-                 apply F2OR_FloatToR' in H
-               end.
-        show_value floatMin.
-        show_value floatMax.
-        show_value error.
-
-        assert (-(100000*100000) < FloatToR x4 < (100000*100000))%R by admit.
-        assert (-(100000*100000) < FloatToR x5 < (100000*100000))%R by admit.
-
-        simpl in H8.
-
-        z3 solve. admit.
-      }
-      {
-
-        simpl.
-
-        repeat match goal with
+              repeat match goal with
                | |- context[isVarValid ?str ?sta] =>
                  let HV := fresh "Hvalid" in
                  assert (isVarValid str sta) as HV by proveVarValid;
                    rewrite (pe_triv _ HV)
-               end.
+                     end.
 
-        unfold fstate_lookup_force.
+              unfold fstate_lookup_force.
+              unfold asReal in *.
+
+              rewrite H2.
+              
         repeat match goal with
                | H : fstate_lookup _ _ = Some _ |- _ =>
                  rewrite H in *; clear H
                end.
 
-        unfold asReal in *.
+
         repeat match goal with
                | H : F2OR ?X = Some ?Y |- _ =>
                  apply F2OR_FloatToR' in H
@@ -1468,81 +1398,20 @@ Proof.
         unfold lift2, lofst.
         do_F2Rs.
 
-        (* These will be solvable with arithmetic soon after some tweaks
-           to the backend (bound.v) *)
 
-        assert (-1000 < FloatToR x4 < 1000)%R by admit.
-        assert (-1000 < FloatToR x5 < 1000)%R by admit.
+      do_F2Rs.
+      show_value floatMin.
+      show_value floatMax.
+      show_value error.
+      
+    }
 
-        z3 solve. admit.
-      }
-      }
-      { Check lentail_cut2.
-        breakAbstraction.
-        intros.
-        unfold fstate_get_rval in *.
-        fwd.
-        consider (fstate_lookup x0 "a"); intros; try contradiction.
-        consider (F2OR f); intros; try contradiction.
-        consider (fstate_lookup x0 "v"); intros; try contradiction.        
-        consider (F2OR f0); intros; try contradiction.
-        unfold vmodels, models in *.
-        generalize (H "a"); generalize (H "v"); intros.
-        unfold velshim_vs in *.
-        simpl in *.
-        destruct H5; destruct H6.
-        destruct H5;  auto.
-        destruct H6; auto.
-        fwd.
-        rewrite <- fstate_lookup_fm_lookup in H5, H6.
-        unfold asReal in *.
-        rewrite H5 in H2. inversion H2.
-        rewrite H6 in H0. inversion H0.
-        subst.
-        rewrite H1 in H9. inversion H9.
-        rewrite H3 in H10. inversion H10.
-        z3 solve.
-        admit.
-      }
-Admitted.        
+    (* bounds imply spec *)
+    {
 
-(* Now we are going to do the P controller; here dinv = 1/2 *)
-Eval compute in float_one.
-Eval compute in (nat_to_float 2%nat).
+    }
+    
 
-Definition fhalf : float.
-                     refine (Fappli_IEEE.B754_finite 24 128 false 8388608 (-24) _).
-                     unfold Fappli_IEEE.bounded, Fappli_IEEE.canonic_mantissa.
-                     simpl. reflexivity.
-Defined.
-
-Eval compute in (F2OR fhalf).
-  
-Definition p_ctrl : fcmd :=
-  FAsn "v" (FMult (FMinus (FConst fzero) (FVar "x")) (FConst fhalf)).
-
-Check fwp_velshim2_full.
-Print preVarIsFloat.
-
-Definition preVarPred (pred : R -> Prop) (v : Var) : Formula :=
-  Syntax.Exists float
-                (fun f : float =>
-                       RealT (FloatToR f) = VarNowT v //\\
-                       PropF (exists r : R, (F2OR f = Some r)%type /\ pred r)).
-
-Definition pred1 (r : R) : Prop :=
-  (-(100000*100000) < r < (100000*100000))%R.
-
-Definition p_vs := ["v"; "x"].
-
-Check fwp_velshim2_full.
-
-Theorem fwp_p :
-  preVarPred pred1 "v" //\\
-  preVarPred pred1 "x" //\\
-  embed_ex p_vs p_ctrl
-  |--  ("v"! = --"x"/2).
-Proof.
-
+  }
 
 Admitted.
