@@ -18,10 +18,10 @@
 
 Require Import Coqlib.
 Require Import Integers.
-Require Import Fappli_IEEE.
-Require Import Fappli_IEEE_bits.
-Require Import Fappli_IEEE_extra.
-Require Import Fcore.
+Require Import Flocq.Appli.Fappli_IEEE.
+Require Import Flocq.Appli.Fappli_IEEE_bits.
+Require Import Abstractor.Fappli_IEEE_extra.
+Require Import Flocq.Core.Fcore.
 Require Import Program.
 Require Import Archi.
 Require Import Coq.Bool.Bool.

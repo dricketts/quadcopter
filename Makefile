@@ -6,7 +6,6 @@ Makefile.coq: _CoqProject
 	$(COQBIN)coq_makefile -f _CoqProject -o Makefile.coq
 
 clean:
-	$(MAKE) -C Z3-plugin clean
 	$(MAKE) -f Makefile.coq clean
 
 check:

@@ -17,8 +17,8 @@
 (** Architecture-dependent parameters for IA32 *)
 
 Require Import ZArith.
-Require Import Fappli_IEEE.
-Require Import Fappli_IEEE_bits.
+Require Import Flocq.Appli.Fappli_IEEE.
+Require Import Flocq.Appli.Fappli_IEEE_bits.
 
 Definition big_endian := false.
 

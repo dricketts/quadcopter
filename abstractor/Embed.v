@@ -8,7 +8,7 @@ Require Import List.
 Require Import Strings.String.
 Import ListNotations.
 Require Import Rdefinitions.
-Require Import RelDec.
+Require Import ExtLib.Core.RelDec.
 Require Import Coq.Reals.Rbase.
 
 (* We need to add an (axiomatized) decider for the reals, since the one in

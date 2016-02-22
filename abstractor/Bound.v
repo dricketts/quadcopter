@@ -1,7 +1,7 @@
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Raxioms.
 Require Import Coq.micromega.Psatz.
-Require Import Source.
+Require Import Abstractor.Source.
 Require Import Flocq.Core.Fcore_defs.
 
 Require Import Integers.
@@ -31,7 +31,6 @@ Local Open Scope HP_scope.
 
 
 Definition error := bpow radix2 (- (custom_prec) + 1).
-Print Formula.
 
 Record singleBoundTerm : Type := mkSBT {lb : fstate -> R;
                                  ub : fstate -> R ;
@@ -138,8 +137,6 @@ Instance Arithable_Z : Arithable Z :=
     a_minus := Z.sub;
     a_mult := Z.mul
   }.
-
-Check (1 < 1)%Z.
 
 Instance Comparable_Z : Comparable Z Prop :=
   {
@@ -696,8 +693,6 @@ Definition multResultValidity (t1 t2 : NowTerm) (fState : fstate) : Prop :=
                 | None => False
              end).
 
-Check eval_term.
-
 (* "lift over float state" *)
 Definition lofst (r : R) : fstate -> R :=
   fun _ => r.
@@ -955,8 +950,6 @@ Fixpoint cross {T U R : Type} (f : T -> U -> list R) (ls : list T) (rs : list U)
       }
     Qed.
 
-    Check simpleBound4.
-
 Definition plusMinusfoldBoundListWithTriple
            (list:list singleBoundTerm)
            (triple: singleBoundTerm)
@@ -988,10 +981,6 @@ Definition plusMinusfoldBoundListWithTriple
                                                              ((lofst 0 - ub triple) + (lofst 0 - ub triple2) < lofst floatMax) //\\
                                                              (ub triple + ub triple2 < lofst R0))) ::
                                              curList))) List.nil list.
-Print Scopes.
-
-Locate nat.
-
 Definition multfoldBoundListWithTriple
            (list:list singleBoundTerm)
            (triple: singleBoundTerm)
@@ -1126,7 +1115,6 @@ Definition isVarValid (v:Var) (fState : fstate) : Prop
         | None => False
     end.
 
-Print singleBoundTerm.
 
 (* TODO: need to define lifting through AND and OR... *)
 (* Local Close Scope HP_scope. *)
@@ -1175,7 +1163,7 @@ Definition fstate_lookup_force (fst : fstate) (v : Var) : R :=
   | Some f => FloatToR f
   | None => 0%R
   end.
-Print Fappli_IEEE_extra.BofZ.
+
 Fixpoint bound_term (x:NowTerm)  : (list singleBoundTerm):=
   match x with
     | VarNowN var =>  [mkSBT (fun fst => fstate_lookup_force fst var) (fun fst => fstate_lookup_force fst var) (fun fst => isVarValid var fst)]
@@ -1341,7 +1329,6 @@ Lemma firstappend : forall (A:Type) (a:A) lst1 lst2, (a::lst1) ++ lst2 = (a :: (
                       reflexivity.
 Qed.
 
-Check lb.
 
 Lemma fold_right_subList_inferring: forall a x lst fst, fold_right (fun (triple : singleBoundTerm) (prop : Prop) =>
          prop //\\
@@ -1575,7 +1562,6 @@ Definition related (f : fstate) (s : state) : Prop :=
 
 
 
-Print Floats.float.
 Lemma resultImplicationsPlus :
         forall (f : float) (expr1 expr2 : NowTerm) (fState : fstate),
          (Some f =  lift2 (Bplus custom_prec custom_emax
@@ -2034,7 +2020,6 @@ Lemma validFexpProof : Valid_exp (FLT_exp (3 - custom_emax - custom_prec) custom
   split.
   intros.
   unfold FLT_exp in *.
-  Search (Z-> Z ->{_}+{_}).
   lia.
   intros. split. unfold FLT_exp in *.
   unfold FLT_exp in *.
@@ -2068,9 +2053,6 @@ Lemma precThm: (forall k : Z, (-1021 < k)%Z -> (custom_prec <= k - FLT_exp (3-cu
   unfold Z.max.
   pose proof Z_lt_ge_dec ((k - 53)%Z) ((3 - 1024 - 53)%Z).
   pose (k - 53 ?= 3 - 1024 - 53)%Z.
-  Print Datatypes.Eq.
-  Search (_ -> Datatypes.comparison).
-  Print Cge.
   destruct H0 eqn:H0_des.
   destruct (k - 53 ?= 3 - 1024 - 53)%Z eqn:des.
   lia.  simpl in *.
@@ -2482,8 +2464,6 @@ clear  pow_des H H0.
         end.
 
 generalize (Z2R (Z.pow_pos radix2 p)).
-Add LoadPath "../Z3-plugin/theories" as Z3.
-Add LoadPath "../Z3-plugin/src".
 Require Import ArithFacts.
 pose proof Rmult_le_algebra.
 intros.
@@ -2531,7 +2511,6 @@ Proof.
         unfold Z.pow_pos.
         apply RtoZ.
         simpl.
-        SearchAbout Pos.iter.
         pose proof Pos.iter_invariant.
         specialize (H p Z).
         specialize (H (Z.mul 2)).
@@ -2605,10 +2584,6 @@ Proof.
 Qed.
 
 
-
-
-
-Declare ML Module "z3Tactic".
 (*((ub2 >= lb1) /\
       (ub1 >= lb2) /\
       (((ub1 - ub2 >= floatMin) /\ (lb1 - lb2 >=floatMin) /\ (ub2 - lb1 >= floatMin)) \/
@@ -2723,7 +2698,6 @@ Proof.
   unfold Fcore_FLX.FLX_exp in *.
   remember (FLT_exp (3 - custom_emax - custom_prec) custom_prec) as round_fexp.
   specialize (Rel_Err radix2 round_fexp).
-  Check relative_error.
   subst.
   specialize (Rel_Err validFexpProof (custom_emin)%Z custom_prec precThm (round_mode mode_ZR)).
   specialize (Rel_Err (valid_rnd_ZR)).
@@ -3052,7 +3026,6 @@ Proof.
       inversion H0.
 
 
-      Check relErrorBasedOnFloatMinTruthPlus.
       unfold B2R in *.
       unfold Rabs in *.
       pose proof errorGt0 as errorGt0.
@@ -3472,7 +3445,6 @@ Proof.
   unfold floatMax in *.
   unfold error in *.
   destruct Rcase_abs. destruct Rcase_abs. destruct Rcase_abs.
-  Check Bplus_correct.
   z3 solve_dbg. admit.
   z3 solve_dbg. admit.
   destruct Rcase_abs.
@@ -3524,7 +3496,6 @@ Lemma plusRoundingTruth : forall (f1 f2: float)  (lb1 lb2 ub1 ub2 r1 r2:R),
   {
     inversion H.
   inversion H0.
-  Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
   specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
@@ -3560,7 +3531,6 @@ psatz R.
   inversion H0.
   inversion H.
   inversion H0.
-  Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
   specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
@@ -3609,7 +3579,6 @@ inversion H.
 
   inversion H.
   inversion H0.
-  Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
   specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
@@ -3645,7 +3614,6 @@ inversion H0.
 
  inversion H.
   inversion H0.
-  Check relErrorBasedOnFloatMinTruthPlus.
   pose proof relErrorBasedOnFloatMinTruthPlus.
   specialize (H8 r1 r2 lb1 lb2 ub1 ub2).
   specialize (H8 H1 H2 H3 H6 H7 ).
@@ -4995,12 +4963,10 @@ Lemma plusRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,
 Proof.
   intros.
   pose proof Bplus_correct.
-  Set Printing Notations.
   specialize (H2 custom_prec custom_emax).
   specialize (H2 custom_precGt0 custom_precLtEmax custom_nan ).
   specialize (H2  mode_ZR).
   specialize (H2 f1 f2).
-  Print floatValid.
   apply floatValid in H.
   apply floatValid in H0.
   specialize (H2 H H0).
@@ -5012,7 +4978,6 @@ Proof.
   apply H5.
 
 Qed.
-Print Bminus_correct.
 Lemma minusRoundingTruth2 : forall (f1 f2: float)  (r1 r2:R) ,  Some r1 = (floatToReal f1) ->
                                                                        Some r2 = (floatToReal f2) ->
 
@@ -5027,7 +4992,6 @@ Proof.
   specialize (H2 custom_precGt0 custom_precLtEmax custom_nan ).
   specialize (H2  mode_ZR).
   specialize (H2 f1 f2).
-  Print floatValid.
   apply floatValid in H.
   apply floatValid in H0.
   specialize (H2 H H0).
@@ -5054,7 +5018,6 @@ Proof.
   specialize (H2 custom_precGt0 custom_precLtEmax custom_nan ).
   specialize (H2  mode_ZR).
   specialize (H2 f1 f2).
-  Print floatValid.
   apply floatValid in H.
   apply floatValid in H0.
   apply rltProof2 in H1.
@@ -5187,8 +5150,6 @@ Qed.
           end;
    psatz R.
 Qed.
-
-SearchAbout Fappli_IEEE_extra.BofZ.
 
 
 Lemma natRoundingTruth2 : forall (f:float)  (n:nat),
@@ -5387,7 +5348,7 @@ Lemma gt0ImpNE0 :forall x, (x>0 -> x<>0)%R.
                   intros. psatz R. Qed.
 
 Lemma zMaxProof : forall x1 x2, (x1<=x2 -> Z.max x1 x2 = x2)%Z.
-intros. SearchAbout Z.max . pose proof Z.max_r.
+intros. pose proof Z.max_r.
 specialize (H0 x1 x2 H). apply H0.
 Qed.
 
@@ -5639,7 +5600,6 @@ Proof.
     intuition.
     assert (bpow radix2 ex < bpow radix2 emax)%R.
     apply bpow_lt.
-    SearchAbout emax.
     pose proof emaxGtEmin.
     lia.
     unfold round_mode in *.
@@ -5798,7 +5758,6 @@ Proof.
   unfold FLT_exp.
   destruct (Coqlib.zle (3 - custom_emax - custom_prec) (ex-custom_prec)).
   {
-    SearchAbout Z.max.
     pose proof Z.max_l.
     specialize (H0 (ex-custom_prec)%Z (3 - custom_emax - custom_prec)%Z l).
     rewrite H0.
@@ -5812,7 +5771,6 @@ Proof.
   }
   {
     pose proof Z.max_r.
-    SearchAbout (_>_ -> _ >= _)%Z.
     apply zlt_le in g0.
     apply Z.ge_le in g0.
     specialize (H0 (ex - custom_prec)%Z (3 - custom_emax - custom_prec)%Z g0).
@@ -6362,7 +6320,6 @@ Proof.
   assert (floatToRealProof2 := H0).
   assert (sumMaxValue := H9).
   clear H3 H4 H5 H6 H8 H7 H H0 H9.
-  Check Rle_lt_dec.
   generalize (el2 radix2 (r1-r2)%R (ln_beta radix2 (r1-r2))).
   intros ln_beta_premise.
   remember (ln_beta radix2 (r1 - r2)) as ex.
@@ -8580,7 +8537,6 @@ Proof.
       {
         inversion floatToRealProof1.
         inversion floatToRealProof2.
-        Check Bplus_correct.
         pose proof Bplus_correct.
         Set Printing Notations.
         specialize (H custom_prec custom_emax).
@@ -9016,9 +8972,6 @@ Lemma minusThirdProof : forall f1 f2 r1 r2 lb1 lb2 ub1 ub2 f o,
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
   clear H3 H4 H5 H6 H9 H10 H12 H H0 H8 H11 H1 H2.
-  Check relative_error.
-  Check Bplus_correct.
-  Check relative_error.
   assert (B2R custom_prec custom_emax
               (Bminus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -11463,7 +11416,6 @@ Proof.
   assert (floatToRealProof2 := H0).
   assert (sumMaxValue := H9).
   clear H3 H4 H5 H6 H10 H11 H8 H7 H H0 H9.
-  Check Rle_lt_dec.
   generalize (el2 radix2 (r1+r2)%R (ln_beta radix2 (r1+r2))).
   intros ln_beta_premise.
   remember (ln_beta radix2 (r1 + r2)) as ex.
@@ -12688,9 +12640,6 @@ Proof.
   assert (validFloatProof2 := H2).
   unfold isFloatConstValid.
   clear H1 H2 H3 H4 H5 H6 H9 H10 H12 H H0 H8 H7 H12.
-  Check relative_error.
-  Check Bplus_correct.
-  Check relative_error.
   assert (B2R custom_prec custom_emax
               (Bplus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan mode_ZR f1 f2) =
@@ -13415,7 +13364,6 @@ Proof.
   induction expr.
 (*
   intros.
-  Print eval_NowTerm.
   remember (eval_NowTerm fState (expr)). destruct o; trivial.
   revert Heqo; revert f.
   induction expr.
@@ -18566,4 +18514,3 @@ Proof.
 Qed.
 *)
 
-Check Bmult_correct.

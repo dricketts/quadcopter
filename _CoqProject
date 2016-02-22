@@ -1,17 +1,8 @@
--I Z3-plugin/src
--R Z3-plugin/theories Z3
--R ChargeCore/ChargeCore/src/ChargeCore ChargeCore
--R coq-ext-lib/theories ExtLib
 -R ChargeTactics ChargeTactics
 -R logic Logic
 -R examples Examples
--R shallow-logic SLogic
--R shallow-examples SExamples
 -R abstractor Abstractor
--R flocq-2.5.1/src Flocq
 
-Z3-plugin/theories/Tactic.v
-Z3-plugin/src/z3Tactic.ml4
 
 #shallow-logic/Stream.v
 #shallow-logic/Logic.v
@@ -49,13 +40,26 @@ ChargeTactics/Tactics.v
 ChargeTactics/Lemmas.v
 ChargeTactics/Indexed.v
 
-examples/DiffEqSolutions.v
-examples/System.v
-examples/Quadcopter.v
-examples/Velocity.v
-examples/Position.v
-examples/UtilPosition.v
-examples/Interval.v
-examples/Rectangle.v
-examples/Cuboid.v
-examples/FirstOrderStability.v
+# examples/DiffEqSolutions.v
+# examples/System.v
+# examples/Quadcopter.v
+# examples/Velocity.v
+# examples/Position.v
+# examples/UtilPosition.v
+# examples/Interval.v
+# examples/Rectangle.v
+# examples/Cuboid.v
+# examples/FirstOrderStability.v
+
+abstractor/Archi.v
+abstractor/Bound2.v
+abstractor/Bound.v
+abstractor/Coqlib.v
+abstractor/Embed.v
+abstractor/Fappli_IEEE_extra.v
+abstractor/FloatEmbed.v
+abstractor/Floats.v
+abstractor/Integers.v
+abstractor/Postprocess_scratch.v
+abstractor/Postprocess.v
+abstractor/Source.v

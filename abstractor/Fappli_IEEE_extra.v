@@ -20,15 +20,15 @@
 Require Import Psatz.
 Require Import Bool.
 Require Import Eqdep_dec.
-Require Import Fcore.
-Require Import Fcore_digits.
-Require Import Fcalc_digits.
-Require Import Fcalc_ops.
-Require Import Fcalc_round.
-Require Import Fcalc_bracket.
-Require Import Fprop_Sterbenz.
-Require Import Fappli_IEEE.
-Require Import Fappli_rnd_odd.
+Require Import Flocq.Core.Fcore.
+Require Import Flocq.Core.Fcore_digits.
+Require Import Flocq.Calc.Fcalc_digits.
+Require Import Flocq.Calc.Fcalc_ops.
+Require Import Flocq.Calc.Fcalc_round.
+Require Import Flocq.Calc.Fcalc_bracket.
+Require Import Flocq.Prop.Fprop_Sterbenz.
+Require Import Flocq.Appli.Fappli_IEEE.
+Require Import Flocq.Appli.Fappli_rnd_odd.
 
 Local Open Scope Z_scope.
 
@@ -1481,7 +1481,7 @@ End Compose_Conversions.
 
 (** Specialization to binary32 and binary64 formats. *)
 
-Require Import Fappli_IEEE_bits.
+Require Import Flocq.Appli.Fappli_IEEE_bits.
 
 Section B3264.
 
