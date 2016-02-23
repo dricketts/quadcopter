@@ -457,7 +457,6 @@ Proof.
 Qed.
 
 (** * Max **)
-
 Definition float_max (a b : float) : float :=
   match Fappli_IEEE_extra.Bcompare _ _ a b with
   | Some Datatypes.Eq => a
@@ -490,34 +489,14 @@ Proof.
     split; eapply Rmax_case_strong; psatz R.
 Qed.
 
-(** * Unions of Intervals **)
-Definition Any_predInt : Type := list predInt.
+(** * Intersections of Predicated Intervals **)
+Definition All_predInt : Type := list predInt.
 
-Section AnyOf.
-  (** TODO: This should be in ExtLib, it is already defined somewhere else
-   ** in the abstractor directory
-   **)
-  Context {T : Type}.
-  Variable P : T -> Prop.
-  Fixpoint AnyOf (ls : list T) : Prop :=
-    match ls with
-    | List.nil => False
-    | l :: ls => P l \/ AnyOf ls
-    end.
+Definition All_predIntD (p : All_predInt) (f : float) (fs : fstate) : Prop :=
+  Forall (fun x => predIntD x f fs) p.
 
-  Theorem AnyOf_sem : forall ls, AnyOf ls <-> exists x, List.In x ls /\ P x.
-  Proof.
-    induction ls.
-    { simpl. split. tauto. destruct 1. tauto. }
-    { simpl. rewrite IHls.
-      split.
-      { destruct 1. eauto. destruct H. destruct H. eauto. }
-      { destruct 1. destruct H. destruct H; subst; eauto. } }
-  Qed.
-End AnyOf.
-
-Definition Any_predIntD (p : Any_predInt) (f : float) (fs : fstate) : Prop :=
-  AnyOf (fun x => predIntD x f fs) p.
+Definition All_predInt_entails (a b : All_predInt) : Prop :=
+  forall f fs, All_predIntD a f fs -> All_predIntD b f fs.
 
 Section cross_product.
   Context {T U V : Type}.
@@ -546,8 +525,8 @@ Section cross_product.
   Qed.
 End cross_product.
 
-Definition lift (abs : predInt -> predInt -> predInt) (l r : Any_predInt)
-: Any_predInt :=
+Definition lift (abs : predInt -> predInt -> predInt) (l r : All_predInt)
+: All_predInt :=
   cross abs l r.
 
 Theorem lift_sound : forall op abs_op fs,
@@ -556,17 +535,76 @@ Theorem lift_sound : forall op abs_op fs,
         predIntD c d fs ->
         predIntD (abs_op a c) (op b d) fs) ->
     forall l r c d,
-      Any_predIntD l c fs ->
-      Any_predIntD r d fs ->
-      Any_predIntD (lift abs_op l r) (op c d) fs.
+      All_predIntD l c fs ->
+      All_predIntD r d fs ->
+      All_predIntD (lift abs_op l r) (op c d) fs.
 Proof.
-  unfold Any_predIntD. intros.
+  unfold All_predIntD. intros.
   unfold lift.
-  eapply AnyOf_sem.
-  eapply AnyOf_sem in H0.
-  eapply AnyOf_sem in H1.
-  destruct H0 as [ ? [ ? ? ] ]; destruct H1 as [ ? [ ? ? ] ].
-  exists (abs_op x x0).
-  split; eauto.
-  eapply cross_In. do 2 eexists; eauto.
+  eapply Forall_forall.
+  intros.
+  eapply cross_In in H2.
+  forward_reason.
+  subst.
+  eapply Forall_forall in H0; eauto.
+  eapply Forall_forall in H1; eauto.
+Qed.
+
+Theorem All_predInt_split : forall Ps (P : fstate -> Prop),
+    (forall fs, P fs \/ ~P fs) ->
+    All_predInt_entails
+      (List.map (fun x =>
+                   {| premise := fun f => x.(premise) f /\ P f
+                    ; lb := x.(lb)
+                    ; ub := x.(ub) |}) Ps ++
+       List.map (fun x =>
+                   {| premise := fun f => x.(premise) f /\ ~P f
+                    ; lb := x.(lb)
+                    ; ub := x.(ub) |}) Ps)
+      Ps.
+Proof.
+  intros. red. intros.
+  unfold All_predIntD in *.
+  eapply Forall_forall. intros.
+  rewrite Forall_forall in H0.
+  setoid_rewrite in_app_iff in H0.
+  setoid_rewrite in_map_iff in H0.
+  specialize (H fs).
+  destruct H.
+  { specialize (H0 ({|
+          lb := lb x;
+          ub := ub x;
+          premise := fun f : fstate => premise x f /\ P f |})).
+    red in H0. simpl in H0.
+    red. intros.
+    eapply H0.
+    left. eauto.
+    tauto. }
+  { specialize (H0 ({|
+          lb := lb x;
+          ub := ub x;
+          premise := fun f : fstate => premise x f /\ ~P f |})).
+    red in H0. simpl in H0.
+    red. intros.
+    eapply H0.
+    right. eauto.
+    tauto. }
+Qed.
+
+Definition predInt_entails (a b : predInt) : Prop :=
+  forall fs f, predIntD a f fs -> predIntD b f fs.
+
+Theorem predInt_entails_weaken : forall (P Q : _ -> Prop) a b c d,
+    (forall fs, a fs >= b fs)%R ->
+    (forall fs, c fs <= d fs)%R ->
+    (forall fs, Q fs -> P fs) ->
+    predInt_entails {| premise := P ; lb := a ; ub := c |}
+                    {| premise := Q ; lb := b ; ub := d |}.
+Proof.
+  red. unfold predIntD. simpl. intros.
+  forward_reason.
+  eauto. split; auto.
+  specialize (H fs).
+  specialize (H0 fs).
+  psatz R.
 Qed.
