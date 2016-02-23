@@ -1,30 +1,23 @@
-Require Import SMT.Tactic.
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Raxioms.
 Require Import Coq.micromega.Psatz.
-Require Import Abstractor.Source.
-Require Import Flocq.Core.Fcore_defs.
-
-Require Import Integers.
+Require Import Coq.Lists.List.
+Require Import SMT.Tactic.
+Require Import ExtLib.Tactics.
+Require Import Abstractor.Integers.
 Require Import Coq.Reals.Rdefinitions.
-Require Import List.
-Import ListNotations.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
 Require Import Flocq.Core.Fcore_Raux.
-Require Import Source.
 Require Import Coq.Reals.Raxioms.
-Require Import Coq.micromega.Psatz.
 Require Import Flocq.Prop.Fprop_relative.
 Require Import Flocq.Core.Fcore_Raux.
 Require Import Flocq.Core.Fcore_FLT.
 Require Import Flocq.Core.Fcore_generic_fmt.
-
-
 Require Import Flocq.Core.Fcore_Raux.
-
-
-Local Open Scope HP_scope.
+Require Import Flocq.Core.Fcore_defs.
+Require Import Abstractor.Source.
+Import ListNotations.
 
 Definition error    : R := bpow radix2 (- (custom_prec) + 1).
 Definition floatMax : R := bpow radix2 custom_emax.
@@ -41,18 +34,6 @@ Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
   p.(premise) fs ->
   is_finite f = true /\
   (p.(lb) fs <= B2R _ _ f <= p.(ub) fs)%R.
-
-Definition absFloatConst (f : float) : predInt :=
-  {| premise := fun _ => is_finite f = true
-   ; lb := fun _ => B2R _ _ f ; ub := fun _ => B2R _ _ f |}%R.
-
-Theorem absFloatConst_ok : forall f fs,
-    predIntD (absFloatConst f) f fs.
-Proof.
-  red. intros. simpl. split.
-  apply H.
-  psatz R.
-Qed.
 
 (** * Rounding Approximation **)
 Let the_round : R -> R :=
@@ -247,7 +228,7 @@ Definition absFloatPlus' (l r : predInt) : predInt :=
    ; lb := min
    ; ub := max |}%R.
 
-Require Import ExtLib.Tactics.
+
 
 Lemma float_bounded_Rlt_bool
   : forall a b c,
@@ -316,6 +297,20 @@ Proof.
   eapply float_bounded_Rlt_bool in H1; eauto.
   destruct H1.
   rewrite H2. auto.
+Qed.
+
+(** * Predicated Interval Abstractions **)
+
+Definition absFloatConst (f : float) : predInt :=
+  {| premise := fun _ => is_finite f = true
+   ; lb := fun _ => B2R _ _ f ; ub := fun _ => B2R _ _ f |}%R.
+
+Theorem absFloatConst_ok : forall f fs,
+    predIntD (absFloatConst f) f fs.
+Proof.
+  red. intros. simpl. split.
+  apply H.
+  psatz R.
 Qed.
 
 Theorem absFloatPlus'_ok : forall lp lv rp rv fs,
@@ -445,4 +440,36 @@ Proof.
     rewrite H in *. rewrite H0 in *. simpl in H10.
     split; try tauto.
     destruct H10. rewrite H10. tauto. }
+Qed.
+
+Definition float_max (a b : float) : float :=
+  match Fappli_IEEE_extra.Bcompare _ _ a b with
+  | Some Datatypes.Eq => a
+  | Some Datatypes.Lt => b
+  | Some Datatypes.Gt => a
+  | None => a
+  end.
+
+Definition absFloatMax' (l r : predInt) : predInt :=
+  let min fst := Rmax (l.(lb) fst) (r.(lb) fst) in
+  let max fst := Rmax (l.(ub) fst) (r.(ub) fst) in
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+   ; lb := min
+   ; ub := max |}%R.
+
+Theorem absFloatMax'_ok : forall lp lv rp rv fs,
+    predIntD lp lv fs ->
+    predIntD rp rv fs ->
+    predIntD (absFloatMax' lp rp) (float_max lv rv) fs.
+Proof.
+  unfold predIntD. simpl; intros.
+  forward_reason.
+  unfold float_max.
+  rewrite (@Fappli_IEEE_extra.Bcompare_finite_correct _ _ _ _ H H0).
+  case (Rcompare_spec (B2R custom_prec custom_emax lv)
+                      (B2R custom_prec custom_emax rv));
+    intros; subst; split; auto;
+  generalize dependent (B2R custom_prec custom_emax lv);
+  generalize dependent (B2R custom_prec custom_emax rv); intros;
+    split; eapply Rmax_case_strong; psatz R.
 Qed.
