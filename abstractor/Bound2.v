@@ -23,12 +23,14 @@ Definition error    : R := bpow radix2 (- (custom_prec) + 1).
 Definition floatMax : R := bpow radix2 custom_emax.
 Definition floatMin : R := bpow radix2 custom_emin%Z.
 
+Arguments is_finite {_ _} _.
+
+(** * Predicated Intervals **)
+
 Record predInt : Type :=
   mkPI { lb : fstate -> R
        ; ub : fstate -> R
        ; premise : fstate -> Prop }.
-
-Arguments is_finite {_ _} _.
 
 Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
   p.(premise) fs ->
@@ -37,7 +39,8 @@ Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
 
 (** * Rounding Approximation **)
 Let the_round : R -> R :=
-  round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR).
+  round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+        (round_mode mode_ZR).
 
 Definition Rsign (r : R) : R :=
   if Rlt_dec r 0 then -1%R
@@ -57,7 +60,8 @@ Definition roundDown (r : R) : R :=
 
 Lemma relative_error_prem : forall k : Z,
     (custom_emin < k)%Z ->
-    (custom_prec <= k - FLT_exp (3 - custom_emax - custom_prec) custom_prec k)%Z.
+    (custom_prec <= k - FLT_exp (3 - custom_emax - custom_prec)
+                                custom_prec k)%Z.
 Proof.
   intros; simpl.
   unfold FLT_exp, custom_prec, prec, custom_emin, emin in *.
@@ -81,14 +85,17 @@ Lemma roundDown_relative_round : forall a,
      roundDown_relative a <= the_round a)%R.
 Proof.
   intros.
-  generalize (@relative_error radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
-                              (fexp_correct _ _ custom_precGt0) custom_emin custom_prec
-                              relative_error_prem
-                              (round_mode mode_ZR) (valid_rnd_round_mode _)
-                              a H).
+  generalize (@relative_error
+                radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                (fexp_correct _ _ custom_precGt0) custom_emin custom_prec
+                relative_error_prem
+                (round_mode mode_ZR) (valid_rnd_round_mode _)
+                a H).
   intros.
   unfold the_round.
-  generalize dependent (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) a).
+  generalize dependent (round radix2 (FLT_exp (3 - custom_emax - custom_prec)
+                                              custom_prec) (round_mode mode_ZR)
+                              a).
   clear H.
   intros.
   unfold roundDown_relative.
@@ -167,14 +174,17 @@ Lemma roundUp_relative_round : forall a,
      the_round a <= roundUp_relative a)%R.
 Proof.
   intros.
-  generalize (@relative_error radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
-                              (fexp_correct _ _ custom_precGt0) custom_emin custom_prec
-                              relative_error_prem
-                              (round_mode mode_ZR) (valid_rnd_round_mode _)
-                              a H).
+  generalize (@relative_error
+                radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                (fexp_correct _ _ custom_precGt0) custom_emin custom_prec
+                relative_error_prem
+                (round_mode mode_ZR) (valid_rnd_round_mode _)
+                a H).
   intros.
   unfold the_round.
-  generalize dependent (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) a).
+  generalize dependent (round radix2 (FLT_exp (3 - custom_emax - custom_prec)
+                                              custom_prec) (round_mode mode_ZR)
+                              a).
   clear H.
   intros.
   unfold roundUp_relative.
@@ -182,7 +192,7 @@ Proof.
   rewrite <- Rmult_assoc.
   rewrite (Rmult_comm a (Rsign a)). rewrite Rsign_mult.
   cut (r - a <= Rabs a * error)%R; [ psatz R | ].
-  apply Rabs_lt_inv in H0. destruct H0.  
+  apply Rabs_lt_inv in H0. destruct H0.
   eapply Rle_trans; [ left; eassumption | ].
   cut (error >= bpow radix2 (-custom_prec + 1))%R.
   { clear. intros.
@@ -219,16 +229,6 @@ Qed.
 
 Definition float_bounded (r : R) : Prop :=
   (- floatMax < r < floatMax)%R.
-
-Definition absFloatPlus' (l r : predInt) : predInt :=
-  let min fst := roundDown (l.(lb) fst + r.(lb) fst) in
-  let max fst := roundUp   (l.(ub) fst + r.(ub) fst) in
-  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
-                        /\ float_bounded (min fst) /\ float_bounded (max fst)
-   ; lb := min
-   ; ub := max |}%R.
-
-
 
 Lemma float_bounded_Rlt_bool
   : forall a b c,
@@ -267,7 +267,8 @@ Proof.
     destruct H2.
     { destruct H.
       cut (roundDown a <=
-           round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) c)%R;
+           round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                 (round_mode mode_ZR) c)%R;
         [ psatz R | ].
       eapply Rle_trans; [ eapply roundDown_round | ].
       eapply Rle_trans; [ eapply round_le | eapply Rle_refl ].
@@ -275,7 +276,8 @@ Proof.
       - eapply valid_rnd_round_mode.
       - psatz R. }
     { destruct H0.
-      cut (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec) (round_mode mode_ZR) c
+      cut (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                 (round_mode mode_ZR) c
            <= roundUp b)%R; [ psatz R | ].
       eapply Rle_trans; [ | eapply roundUp_round ].
       eapply Rle_trans; [ eapply Rle_refl | eapply round_le ].
@@ -301,6 +303,7 @@ Qed.
 
 (** * Predicated Interval Abstractions **)
 
+(** * Constants **)
 Definition absFloatConst (f : float) : predInt :=
   {| premise := fun _ => is_finite f = true
    ; lb := fun _ => B2R _ _ f ; ub := fun _ => B2R _ _ f |}%R.
@@ -313,6 +316,15 @@ Proof.
   psatz R.
 Qed.
 
+(** * Addition **)
+Definition absFloatPlus' (l r : predInt) : predInt :=
+  let min fst := roundDown (l.(lb) fst + r.(lb) fst) in
+  let max fst := roundUp   (l.(ub) fst + r.(ub) fst) in
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+   ; lb := min
+   ; ub := max |}%R.
+
 Theorem absFloatPlus'_ok : forall lp lv rp rv fs,
     predIntD lp lv fs ->
     predIntD rp rv fs ->
@@ -321,13 +333,15 @@ Proof.
   unfold predIntD. simpl; intros.
   forward_reason.
   unfold float_plus.
-  generalize (@Bplus_correct _ _ custom_precGt0 custom_precLtEmax custom_nan mode_ZR _ _ H H0).
+  generalize (@Bplus_correct _ _ custom_precGt0 custom_precLtEmax custom_nan
+                             mode_ZR _ _ H H0).
   eapply apply_float_bounded_lt; eauto. psatz R.
   intros.
   split; try tauto.
   destruct H10. rewrite H10. tauto.
 Qed.
 
+(** * Subtraction **)
 Definition absFloatMinus' (l r : predInt) : predInt :=
   let min fst := roundDown (l.(lb) fst - r.(ub) fst) in
   let max fst := roundUp   (l.(ub) fst - r.(lb) fst) in
@@ -375,7 +389,7 @@ Proof.
                | eassumption ].
 Qed.
 
-
+(** * Multiplication **)
 Definition absFloatMult' (l r : predInt) : predInt :=
   let min fst := roundDown (Rmin4 (l.(lb) fst * r.(lb) fst)
                                   (l.(lb) fst * r.(ub) fst)
@@ -442,6 +456,8 @@ Proof.
     destruct H10. rewrite H10. tauto. }
 Qed.
 
+(** * Max **)
+
 Definition float_max (a b : float) : float :=
   match Fappli_IEEE_extra.Bcompare _ _ a b with
   | Some Datatypes.Eq => a
@@ -472,4 +488,85 @@ Proof.
   generalize dependent (B2R custom_prec custom_emax lv);
   generalize dependent (B2R custom_prec custom_emax rv); intros;
     split; eapply Rmax_case_strong; psatz R.
+Qed.
+
+(** * Unions of Intervals **)
+Definition Any_predInt : Type := list predInt.
+
+Section AnyOf.
+  (** TODO: This should be in ExtLib, it is already defined somewhere else
+   ** in the abstractor directory
+   **)
+  Context {T : Type}.
+  Variable P : T -> Prop.
+  Fixpoint AnyOf (ls : list T) : Prop :=
+    match ls with
+    | List.nil => False
+    | l :: ls => P l \/ AnyOf ls
+    end.
+
+  Theorem AnyOf_sem : forall ls, AnyOf ls <-> exists x, List.In x ls /\ P x.
+  Proof.
+    induction ls.
+    { simpl. split. tauto. destruct 1. tauto. }
+    { simpl. rewrite IHls.
+      split.
+      { destruct 1. eauto. destruct H. destruct H. eauto. }
+      { destruct 1. destruct H. destruct H; subst; eauto. } }
+  Qed.
+End AnyOf.
+
+Definition Any_predIntD (p : Any_predInt) (f : float) (fs : fstate) : Prop :=
+  AnyOf (fun x => predIntD x f fs) p.
+
+Section cross_product.
+  Context {T U V : Type}.
+  Variable f : T -> U -> V.
+  Fixpoint cross (x : list T) (y : list U) : list V :=
+    match x with
+    | List.nil => List.nil
+    | x :: xs => map (f x) y ++ cross xs y
+    end.
+
+  Theorem cross_In : forall xs ys z,
+      List.In z (cross xs ys) <->
+      exists x y, z = f x y /\ List.In x xs /\ List.In y ys.
+  Proof.
+    induction xs; simpl; intros.
+    { split; destruct 1. destruct H; tauto. }
+    { rewrite in_app_iff.
+      rewrite IHxs.
+      rewrite in_map_iff.
+      split.
+      { destruct 1; forward_reason;
+        do 2 eexists; eauto. }
+      { destruct 1; forward_reason.
+        destruct H0; subst; eauto.
+        right. do 2 eexists; eauto. } }
+  Qed.
+End cross_product.
+
+Definition lift (abs : predInt -> predInt -> predInt) (l r : Any_predInt)
+: Any_predInt :=
+  cross abs l r.
+
+Theorem lift_sound : forall op abs_op fs,
+    (forall a b c d,
+        predIntD a b fs ->
+        predIntD c d fs ->
+        predIntD (abs_op a c) (op b d) fs) ->
+    forall l r c d,
+      Any_predIntD l c fs ->
+      Any_predIntD r d fs ->
+      Any_predIntD (lift abs_op l r) (op c d) fs.
+Proof.
+  unfold Any_predIntD. intros.
+  unfold lift.
+  eapply AnyOf_sem.
+  eapply AnyOf_sem in H0.
+  eapply AnyOf_sem in H1.
+  destruct H0 as [ ? [ ? ? ] ]; destruct H1 as [ ? [ ? ? ] ].
+  exists (abs_op x x0).
+  split; eauto.
+  eapply cross_In. do 2 eexists; eauto.
 Qed.
