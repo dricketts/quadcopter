@@ -26,7 +26,6 @@ Definition floatMin : R := bpow radix2 custom_emin%Z.
 Arguments is_finite {_ _} _.
 
 (** * Predicated Intervals **)
-
 Record predInt : Type :=
   mkPI { lb : fstate -> R
        ; ub : fstate -> R
@@ -36,6 +35,23 @@ Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
   p.(premise) fs ->
   is_finite f = true /\
   (p.(lb) fs <= B2R _ _ f <= p.(ub) fs)%R.
+
+Definition predInt_entails (a b : predInt) : Prop :=
+  forall f fs, predIntD a f fs -> predIntD b f fs.
+
+Theorem prove_predInt_entails : forall a b,
+    (forall fs, b.(premise) fs -> a.(premise) fs)%R ->
+    (forall fs, a.(premise) fs -> b.(premise) fs -> b.(lb) fs <= a.(lb) fs /\ a.(ub) fs <= b.(ub) fs)%R ->
+    predInt_entails a b.
+Proof.
+  unfold predInt_entails, predIntD.
+  intros.
+  specialize (H _ H2).
+  specialize (H1 H).
+  destruct H1. split; auto.
+  specialize (H0 _ H H2).
+  destruct H0. split;  psatz R.
+Qed.
 
 (** * Rounding Approximation **)
 Let the_round : R -> R :=
@@ -322,6 +338,7 @@ Definition absFloatPlus' (l r : predInt) : predInt :=
   let max fst := roundUp   (l.(ub) fst + r.(ub) fst) in
   {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
                         /\ float_bounded (min fst) /\ float_bounded (max fst)
+                        /\ min fst <= max fst
    ; lb := min
    ; ub := max |}%R.
 
@@ -338,14 +355,18 @@ Proof.
   eapply apply_float_bounded_lt; eauto. psatz R.
   intros.
   split; try tauto.
-  destruct H10. rewrite H10. tauto.
+  destruct H10.
+  destruct H11. rewrite H11.
+  tauto.
 Qed.
 
 (** * Subtraction **)
 Definition absFloatMinus' (l r : predInt) : predInt :=
   let min fst := roundDown (l.(lb) fst - r.(ub) fst) in
   let max fst := roundUp   (l.(ub) fst - r.(lb) fst) in
-  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst /\ float_bounded (min fst) /\ float_bounded (max fst)
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+                        /\ min fst <= max fst
    ; lb := min
    ; ub := max |}%R.
 
@@ -361,7 +382,9 @@ Proof.
   eapply apply_float_bounded_lt; eauto. psatz R.
   intros.
   split; try tauto.
-  destruct H10. rewrite H10. tauto.
+  destruct H10.
+  destruct H11; rewrite H11.
+  tauto.
 Qed.
 
 Definition Rmin4 (a b c d : R) : R :=
@@ -401,6 +424,7 @@ Definition absFloatMult' (l r : predInt) : predInt :=
                                   (l.(ub) fst * r.(ub) fst)) in
   {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
                         /\ float_bounded (min fst) /\ float_bounded (max fst)
+(*                      /\ min fst <= max fst *)
    ; lb := min
    ; ub := max |}%R.
 
@@ -469,6 +493,7 @@ Definition absFloatMax' (l r : predInt) : predInt :=
   let min fst := Rmax (l.(lb) fst) (r.(lb) fst) in
   let max fst := Rmax (l.(ub) fst) (r.(ub) fst) in
   {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ min fst <= max fst
    ; lb := min
    ; ub := max |}%R.
 
@@ -529,6 +554,17 @@ Definition lift (abs : predInt -> predInt -> predInt) (l r : All_predInt)
 : All_predInt :=
   cross abs l r.
 
+Fixpoint flatten {T} (ls : list (list T)) : list T :=
+  match ls with
+  | List.nil => List.nil
+  | l :: ls => l ++ flatten ls
+  end.
+
+Definition lift_flatten (abs : predInt -> predInt -> All_predInt) (l r : All_predInt)
+: All_predInt :=
+  flatten (cross abs l r).
+
+
 Theorem lift_sound : forall op abs_op fs,
     (forall a b c d,
         predIntD a b fs ->
@@ -550,18 +586,21 @@ Proof.
   eapply Forall_forall in H1; eauto.
 Qed.
 
+Definition split_All_predInt (P : fstate -> Prop) (Ps : All_predInt)
+: All_predInt :=
+  List.map (fun x =>
+              {| premise := fun f => x.(premise) f /\ P f
+               ; lb := x.(lb)
+               ; ub := x.(ub) |}) Ps ++
+  List.map (fun x =>
+              {| premise := fun f => x.(premise) f /\ ~P f
+               ; lb := x.(lb)
+               ; ub := x.(ub) |}) Ps.
+
+
 Theorem All_predInt_split : forall Ps (P : fstate -> Prop),
     (forall fs, P fs \/ ~P fs) ->
-    All_predInt_entails
-      (List.map (fun x =>
-                   {| premise := fun f => x.(premise) f /\ P f
-                    ; lb := x.(lb)
-                    ; ub := x.(ub) |}) Ps ++
-       List.map (fun x =>
-                   {| premise := fun f => x.(premise) f /\ ~P f
-                    ; lb := x.(lb)
-                    ; ub := x.(ub) |}) Ps)
-      Ps.
+    All_predInt_entails (split_All_predInt P Ps) Ps.
 Proof.
   intros. red. intros.
   unfold All_predIntD in *.
@@ -591,20 +630,83 @@ Proof.
     tauto. }
 Qed.
 
-Definition predInt_entails (a b : predInt) : Prop :=
-  forall fs f, predIntD a f fs -> predIntD b f fs.
+(** * "Simplified" Addition **)
 
-Theorem predInt_entails_weaken : forall (P Q : _ -> Prop) a b c d,
-    (forall fs, a fs >= b fs)%R ->
-    (forall fs, c fs <= d fs)%R ->
-    (forall fs, Q fs -> P fs) ->
-    predInt_entails {| premise := P ; lb := a ; ub := c |}
-                    {| premise := Q ; lb := b ; ub := d |}.
-Proof.
-  red. unfold predIntD. simpl. intros.
+Open Scope R_scope.
+
+Definition absFloatPlus_demo_spec (l r : predInt) : All_predInt :=
+  let min fst := roundDown (l.(lb) fst + r.(lb) fst) in
+  let max fst := roundUp   (l.(ub) fst + r.(ub) fst) in
+  let result :=
+    {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+                        /\ min fst <= max fst
+    ; lb := min
+    ; ub := max |}
+  in
+  split_All_predInt (fun fst => floatMin <= (l.(lb) fst + r.(lb) fst))%R (result :: List.nil).
+
+Record Refine_All_pred_f (x : predInt -> predInt -> All_predInt) :=
+  { optimized : predInt -> predInt -> All_predInt
+  ; optimized_proof : forall a b, All_predInt_entails (optimized a b) (x a b) }.
+
+Lemma done : All_predInt_entails List.nil List.nil.
+Proof. Admitted.
+
+Lemma drop : forall P Ps Ps',
+    (forall fs, P.(premise) fs -> False) ->
+    All_predInt_entails Ps Ps' ->
+    All_predInt_entails (P :: Ps) Ps'.
+Proof. Admitted.
+
+Lemma keep : forall P P' Ps Ps',
+    predInt_entails P P' ->
+    All_predInt_entails Ps Ps' ->
+    All_predInt_entails (P :: Ps) (P' :: Ps').
+Proof. Admitted.
+
+Lemma refine_predInt_entails_flip : forall a (P : _ -> Prop) l u,
+    (forall fs, P fs -> a.(premise) fs)%R ->
+    (forall fs, a.(premise) fs -> P fs -> l fs <= a.(lb) fs /\ a.(ub) fs <= u fs)%R ->
+    predInt_entails a {| premise := P ; lb := l ; ub := u |}.
+Proof. Admitted.
+
+Lemma refine_predInt_entails : forall a (P : _ -> Prop) l u,
+    (forall fs, a.(premise) fs -> P fs)%R ->
+    (forall fs, a.(premise) fs -> P fs -> a.(lb) fs <= l fs /\ a.(ub) fs >= u fs)%R ->
+    predInt_entails {| premise := P ; lb := l ; ub := u |} a.
+Proof. Admitted.
+
+Axiom todo: forall T : Prop, T.
+
+Ltac use H :=
+  match goal with
+  | |- _ ?fs => refine (conj H _)
+  end.
+
+Lemma something : forall x, floatMin <= x -> roundDown x = roundDown_relative x.
+Proof. unfold roundDown; simpl. admit. Admitted.
+Lemma something' : forall x, floatMin <= x -> roundUp x = roundUp_relative x.
+Proof. unfold roundDown; simpl. admit. Admitted.
+
+
+
+Definition absFloatPlus_demo : predInt -> predInt -> All_predInt.
+refine (@optimized absFloatPlus_demo_spec _).
+econstructor.
+intros. unfold absFloatPlus_demo_spec. unfold split_All_predInt; simpl.
+eapply keep.
+{ eapply refine_predInt_entails; simpl; intros.
+  exact H. simpl in H0.
   forward_reason.
-  eauto. split; auto.
-  specialize (H fs).
-  specialize (H0 fs).
-  psatz R.
-Qed.
+  split.
+  { rewrite something. apply Rle_refl. assumption. }
+  { rewrite something'. apply Rle_refl. apply todo. } }
+eapply keep.
+{ eapply refine_predInt_entails; simpl; intros.
+  exact H.
+  split. eapply Rle_refl. eapply Rle_refl. }
+eapply done.
+Defined.
+
+Eval cbv beta iota zeta delta [ absFloatPlus_demo optimized ] in absFloatPlus_demo.
