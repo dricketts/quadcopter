@@ -1667,110 +1667,204 @@ Proof.
     apply Bool.andb_true_iff; split; auto.
   Qed.
 
-  (*
-(* doesn't decompose in this way sadly... *)
+  (* doesn't decompose in this way sadly... *)
   (* used to prove the full correctness theorem.
      basically states that var-map checking doesn't depend on VC gen *)
 
+  Print Hoare.
+
+(*
   Lemma fpig_vcgen_var_correct :
     forall (c : fcmd) (vs : list Var) (P : fstate -> Prop),
       let (vs', P') := fpig_vcgen c vs P in
-      Hoare_ (fun fst  => fstate_has_vars fst vs = true) c
-             (fun fst' => fstate_has_vars fst' vs' = true).
+      forall (fst : fstate),
+        fstate_has_vars fst vs = true ->
+        forall (fst' : fstate),
+          eval fst c fst' -> fstate_has_vars fst' vs = true.
+  Proof.
+    induction c.
+    { intros. simpl. lazy.
+ *)
+
+  Fixpoint vars_subset (lhs : list Var) (rhs : list Var) : bool :=
+    match lhs with
+    | nil => true
+    | v :: lhs' => andb (varmap_has_var rhs v) (vars_subset lhs' rhs)
+    end.
+  
+  Lemma vars_subset_cons:
+      forall vs vs' v, vars_subset vs vs' = true ->
+                  vars_subset vs (v :: vs') = true.
+    Proof.
+      induction vs; simpl; try reflexivity; intros.
+      consider (a ?[eq] v); intros; simpl.
+      { apply Bool.andb_true_iff in H. fwd. subst. auto. }
+      { apply Bool.andb_true_iff. apply Bool.andb_true_iff in H. fwd.
+        auto. }
+    Qed.
+
+    Lemma vars_subset_sound :
+      forall vs vs' a,
+        varmap_has_var vs a = true ->
+        vars_subset vs vs' = true ->
+        varmap_has_var vs' a = true.
+    Proof.
+      induction vs; simpl; try congruence.
+      intros.
+      apply Bool.andb_true_iff in H0. fwd.
+      consider (a0 ?[eq] a); intros; subst; auto.
+    Qed.
+      
+  Lemma vars_subset_trans :
+    forall (vs vs' vs'': list Var),
+      vars_subset vs vs' = true -> vars_subset vs' vs'' = true ->
+      vars_subset vs vs'' = true.
+  Proof.
+    induction vs; simpl; try reflexivity; intros.
+    apply Bool.andb_true_iff; apply Bool.andb_true_iff in H. fwd.
+    specialize (IHvs _ _ H1 H0). split; auto.
+    eapply vars_subset_sound; eauto.
+  Qed.
+
+  Lemma vars_subset_refl :
+    forall vs, vars_subset vs vs = true.
+  Proof.
+    induction vs; simpl; try reflexivity.
+    consider (a ?[eq] a); intros; try congruence.
+    simpl. apply vars_subset_cons. auto.
+  Qed.
+
+  Lemma fstate_has_var_varmap :
+    forall vs fst a,
+      fstate_has_vars fst vs = true ->
+      varmap_has_var vs a = true ->
+      fstate_has_var fst a = true.
+  Proof.
+    induction vs; simpl; intros; try congruence.
+    apply Bool.andb_true_iff in H. fwd.
+    consider (a0 ?[eq] a); intros; subst; auto.
+  Qed.
+  
+  Lemma vars_subset_sound' :
+    forall vs' vs fst,
+      fstate_has_vars fst vs = true ->
+      vars_subset vs' vs = true ->
+      fstate_has_vars fst vs' = true.
+  Proof.
+    induction vs'; simpl; intros; auto.
+    apply Bool.andb_true_iff. apply Bool.andb_true_iff in H0. fwd.
+    split; auto.
+    eapply fstate_has_var_varmap; eauto.
+    eapply IHvs'; eauto.
+  Qed.
+
+  Lemma fpig_vcgen_var_indep :
+    forall c vs P P',
+      fst (fpig_vcgen c vs P) = fst (fpig_vcgen c vs P').
+  Proof.
+    induction c; simpl; intros; try reflexivity.
+    { repeat match goal with
+             | |- context[let (_,_) := ?X in _] => consider X; intros
+             end.
+      simpl.
+      specialize (IHc2 l P' P).
+      rewrite H2 in IHc2.
+      rewrite H0 in IHc2.
+      simpl in IHc2; inversion IHc2; subst.
+      reflexivity. }
+    { destruct (fexpr_check f vs); reflexivity. }
+    { destruct (fexpr_check f vs); reflexivity. }
+  Qed.
+ 
+  (* partial correctness *)
+  Lemma fpig_vcgen_var_correct :
+    forall (c : fcmd) (vs : list Var) (P : fstate -> Prop) (fst fst' : fstate),
+      fstate_has_vars fst vs = true ->
+      eval fst c fst' ->
+      let (vs', P') := fpig_vcgen c vs P in
+      (fstate_has_vars fst' vs' = true /\
+       vars_subset vs vs' = true).
   Proof.
     induction c.
     { intros. simpl.
+      inversion H0; subst; clear H0.
+
       generalize IHc1; intro IHc1'.
       specialize (IHc1' vs (fun _ => True)).
-      destruct (fpig_vcgen c1 vs (fun _ => True)).
-      specialize (IHc2  l P).
-      destruct (fpig_vcgen c2 l P).
+      consider (fpig_vcgen c1 vs (fun _ => True)); intros.
+      specialize (IHc2 l P).
+      consider (fpig_vcgen c2 l P); intros.
       specialize (IHc1 vs P1).
-      destruct (fpig_vcgen c1 vs P1).
-      eapply Hoare__seq; eauto. }
-    { intros. simpl.
-      apply Hoare__skip. }
-    { intros. simpl.
-      
+      consider (fpig_vcgen c1 vs P1); intros.
+
+      assert (l = l1).
+      { generalize (fpig_vcgen_var_indep c1 vs (fun _ => True) P1); intros.
+        rewrite H0 in H3. rewrite H2 in H3. simpl in H3. auto. }
+
+      subst.
+      specialize (IHc1 _ _ H H4). fwd.
+      specialize (IHc2 _ _ H3 H6). fwd.
+      split; auto.
+      eapply vars_subset_trans; eauto. }
+    { simpl; intros.
+      inversion H0; subst; split; auto.
+      apply vars_subset_refl. }
+    { simpl; intros.
+      inversion H0; subst; clear H0.
       consider (fexpr_check f vs); intros.
-      {
-        unfold Hoare_, Hoare. intros.
-        specialize (fexpr_check_sound _ _ H _ H0). intro. fwd.
-        split.
-        { eexists. econstructor. eapply H1. }
-        { intros. simpl.
-          inversion H2; subst; clear H2.
-          apply Bool.andb_true_iff. split.
-          { apply fstate_has_var_fstate_set. }
-          { apply fstate_has_var_fstate_set'; auto. } } }
-      {
-        unfold Hoare_, Hoare. intros. split.
-        Check fexpr_check_sound.
-        Print fexpr_check.
-
-        Lemma fexpr_check_sound' :
-          forall (fx : fexpr) (vs : list Var),
-            fexpr_check fx vs = false ->
-            
-
-        eexists. econstructor. SearchAbout fexprD.
-
-            app
-
-                apply IHvs; aut
-              { unfold fstate_has_vars in H.
-              intros.
-              
-
-          SearchAbout fstate_has_var.
-
-          
-          inversion H2; subst.
-
-        
-        (* this doesn't work! *)
-        eapply Hoare__conseq.
-        3: apply Hoare__bound_asn.
-        2: instantiate (1 := (fun st => fstate_has_vars st (v :: vs) = true)).
-        2: simpl; auto.
-        
-        intros. simpl.
+      { simpl.
         consider (v ?[eq] v); intros; try congruence.
+        simpl. split.
+        { apply fstate_has_var_fstate_set'. auto. }
+        { apply vars_subset_cons. apply vars_subset_refl. } }
+      { simpl.
+        consider (v ?[eq] v); intros; try congruence.
+        simpl. split.
+        { apply fstate_has_var_fstate_set'. auto. }
+        { apply vars_subset_cons. apply vars_subset_refl. } } }
+    { simpl; intros.
+      inversion H0; subst; clear H0.
+      { specialize (IHc1 _ P _ _ H H8).
+        consider (fexpr_check f vs); intros.
+        { consider (fpig_vcgen c1 vs P); intros.
+          fwd. split.
+          { eapply vars_subset_sound'; eauto. }
+          { apply vars_subset_refl. } }
+        { consider (fpig_vcgen c1 vs P); intros.
+          fwd. split.
+          { eapply vars_subset_sound'; eauto. }
+          { eapply vars_subset_refl; eauto. } } }
+      { specialize (IHc2 _ P _ _ H H8).
+        consider (fexpr_check f vs); intros.
+        { consider (fpig_vcgen c2 vs P); intros.
+          fwd. split.
+          { eapply vars_subset_sound'; eauto. }
+          { apply vars_subset_refl. } }
+        { consider (fpig_vcgen c2 vs P); intros.
+          fwd. split.
+          { eapply vars_subset_sound'; eauto. }
+          { apply vars_subset_refl. } } } }
+    { intros. simpl.
+      inversion H0. }
+  Qed.
 
-        apply exists_and_pull.
-        eapply fexpr_check_sound; eauto.
-        simpl.
+  Require Import Coq.Logic.ClassicalFacts.
+  Axiom pe_ax : prop_extensionality.
 
-        (* sleazy hack *)
-        induction f. simpl in *.
-        { intros.
-          Check varmap_has_var_sound.
-          
-          Lemma varmap_has_var_sound' :
-            forall (vs : list Var) (v : Var),
-              varmap_has_var vs v = true ->
-              forall (fst : fstate),
-                fstate_has_vars fst vs = true ->
-                isVarValid v fst.
-          Proof.
-            generalize varmap_has_var_sound; intro Hhvs.
-            intros.
-            specialize (Hhvs _ _ H _ H0). fwd.
-            unfold isVarValid.
-            rewrite H1.
-            
-            
-            induction vs.
-            { intros. simpl in *. congruence. }
-            { intros. simpl in *.
-              consider (v ?[eq] a); intros; subst.
-              { apply Bool.andb_true_iff in H0. fwd.
-                
-                specialize (Hhvs _ _H _ H0).
-              apply IHvs.
-              unfold isVarValid.
-              con
-*)
+  Lemma vars_subset_fstate :
+    forall vs' s vs,
+      fstate_has_vars s vs = true ->
+      vars_subset vs' vs = true ->
+      fstate_has_vars s vs' = true.
+  Proof.
+    induction vs'; intros; simpl in *; auto.
+    apply Bool.andb_true_iff.
+    apply Bool.andb_true_iff in H0. fwd.
+    SearchAbout fstate_has_var.
+    generalize (fstate_has_var_varmap _ _ _ H H0); intros.
+    split; auto.
+    eapply IHvs'; eauto.
+  Qed.
 
   Lemma fpig_vcgen_correct :
     forall (c : fcmd) (vs : list Var) (P : fstate -> Prop),
@@ -1781,34 +1875,122 @@ Proof.
     { simpl.
       generalize IHc1; intro IHc1'.
       specialize (IHc1' vs (fun _ => True)). simpl in IHc1'.
-      destruct (fpig_vcgen c1 vs (fun _ : fstate => True)).
+      consider (fpig_vcgen c1 vs (fun _ : fstate => True)); intros.
       specialize (IHc2 l P).
-      destruct (fpig_vcgen c2 l P).
+      consider (fpig_vcgen c2 l P); intros.
       specialize (IHc1 vs P1).
-      destruct (fpig_vcgen c1 vs P1).
+      consider (fpig_vcgen c1 vs P1); intros.
+      generalize fpig_vcgen_var_indep; intros.
+      specialize (H2 c1 vs (fun _ => True) P1).
+      rewrite H, H1 in H2. simpl in H2. inversion H2; subst.
 
       eapply Hoare__conseq.
       3: eapply Hoare__seq.
       4: eapply IHc2.
-      3: eapply 
-      Focus 3.
-      apply IHc2.
-      3: eapply IHc2.
-      { eapply IHc1. }
-      { eapply IHc2. }
       3: eapply IHc1.
+      { intros. fwd. auto. }
+      { intros. fwd. auto. } }
+    { simpl. apply Hoare__skip. }
+    { simpl.
+      consider (fexpr_check f vs); intros.
+      { eapply Hoare__conseq.
+        3: eapply Hoare__bound_asn.
+        { intros. simpl in *. fwd.
+          apply fexpr_check_sound with (fst := st) in H; eauto. fwd.
+          eexists. split; [eauto|].
+          instantiate (1 := (fun fst => P fst /\ fstate_has_vars fst (v :: vs) = true)). simpl.
+          consider (v ?[eq] v); intros; try congruence.
+          simpl.
 
-      unfold Hoare_, Hoare in *.
-      intros.
-      specialize (IHc1 _ H). fwd.
-      specialize (H2 _ H1).
-      specialize (IHc2 _ H2).
+          replace (fun sbt : singleBoundTerm =>
+                     premise sbt st /\
+                     (forall (val : float) (r : R),
+                         F2OR val = Some r ->
+                         (lb sbt st <= r <= ub sbt st)%R -> P (fstate_set st v val)))
+          with
+          (fun sbt : singleBoundTerm =>
+             premise sbt st /\
+             (forall (val : float) (r : R),
+                 F2OR val = Some r ->
+                 (lb sbt st <= r <= ub sbt st)%R -> P (fstate_set st v val) /\ fstate_has_vars (fstate_set st v val) vs = true)) in H0; auto.
 
-      { eexists. econstructor.
-        - specialize (IHc1' s). fwd.
-      
-      specialize (IHc1 vs (
-  
+          Require Import Coq.Logic.FunctionalExtensionality.
+
+          extensionality sbt.
+
+          replace ((forall (val : float) (r : R),
+                       F2OR val = Some r ->
+                       (lb sbt st <= r <= ub sbt st)%R -> P (fstate_set st v val)))
+          with
+          (forall (val : float) (r : R),
+              F2OR val = Some r ->
+              (lb sbt st <= r <= ub sbt st)%R -> P (fstate_set st v val) /\ fstate_has_vars (fstate_set st v val) vs = true); auto.
+
+          extensionality val.
+          extensionality r.
+
+          extensionality Hn.
+          extensionality Hn2.
+          apply fstate_has_var_fstate_set' with (v := v) (val := val) in H1.
+          apply pe_ax.
+          split; intros; fwd; auto. }
+        intros. simpl in *. auto. }
+      { do 2 red. intros. fwd. contradiction. } }
+    { simpl.
+      consider (fexpr_check f vs); intros.
+      { eapply Hoare__conseq.
+        3: eapply Hoare__bound_ite.
+        2: instantiate (1 := (fun st => P st /\ fstate_has_vars st vs = true)).
+        2: eauto.
+        2: instantiate (1 := (fun fst => snd (fpig_vcgen c1 vs P) fst /\ fstate_has_vars fst vs = true)).
+        3: instantiate (1 := (fun fst => snd (fpig_vcgen c2 vs P) fst /\ fstate_has_vars fst vs = true)).
+        { intros. fwd.
+          generalize (fexpr_check_sound _ _ H _ H1). intros. fwd.
+          eexists. split; eauto.
+          generalize dependent (bound_fexpr f). intros.
+          split; auto. }
+        { specialize (IHc1 vs P).
+          consider (fpig_vcgen c1 vs P); intros.
+          simpl.
+          do 2 red. do 2 red in IHc1. intros. fwd.
+          specialize (IHc1 s). fwd.
+          split; [eexists; eauto|].
+          intros.
+
+          Check fpig_vcgen_var_correct.
+
+          generalize (fpig_vcgen_var_correct c1 vs P s s').
+          intros. fwd.
+          rewrite H0 in H6. fwd.
+          specialize (H4 _ H5).
+          fwd.
+          split; auto.
+
+
+          idtac.
+
+          eapply vars_subset_fstate; eauto. }
+        { specialize (IHc2 vs P).
+          consider (fpig_vcgen c2 vs P); intros.
+          simpl.
+          do 2 red. do 2 red in IHc2. intros. fwd.
+          specialize (IHc2 s). fwd.
+          split; [eexists; eauto|].
+          intros.
+
+          generalize (fpig_vcgen_var_correct c2 vs P s s').
+          intros. fwd.
+          rewrite H0 in H6. fwd.
+          
+          specialize (H4 _ H5). fwd.
+          split; auto.
+          eapply vars_subset_fstate; eauto. } }
+      { do 2 red. intros. fwd. contradiction. } }
+    { simpl. do 2 red. intros. fwd. contradiction. }
+  Qed.
+
+  (* the following is the old weakest-precondition calculation *)
+(*  
   (* Weakest-precondition calcluation function for fcmd language *)
   Fixpoint fwp (c : fcmd)
            (P : fstate  -> Prop) : fstate -> Prop :=
@@ -1860,3 +2042,4 @@ Proof.
     { (*eapply Hoare__bound_asn.*) admit. }
     { (*eapply Hoare__bound_ite; eauto.*) admit. }
   Admitted.
+*)
