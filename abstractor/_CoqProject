@@ -18,3 +18,4 @@ Fappli_IEEE_extra.v
 Integers.v
 Archi.v
 Coqlib.v
+Automation.v

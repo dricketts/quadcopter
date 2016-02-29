@@ -6,6 +6,7 @@ Require Import Source.
 Require Import Embed.
 Require Import Logic.Syntax.
 Require Import Logic.Semantics.
+Require Import Logic.Automation.
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Strings.String.
 Require Import micromega.Psatz.
@@ -1988,6 +1989,95 @@ Proof.
       { do 2 red. intros. fwd. contradiction. } }
     { simpl. do 2 red. intros. fwd. contradiction. }
   Qed.
+
+  (* auxiliary lemmas for the rewriting vcgen rule below *)
+
+  Lemma fstate_has_var_sound' :
+        forall (fst : fstate) (a : Var) (d : float),
+          fstate_lookup fst a = Some d ->
+          fstate_has_var fst a = true.
+      Proof.
+        induction fst; simpl; intros; try congruence.
+        destruct a. consider (a0 ?[eq] v); intros; auto.
+        eapply IHfst; eauto.
+      Qed.
+
+      Require Import Coq.Lists.List.
+      Import ListNotations.
+
+      Lemma app_cons_last :
+        forall (T : Type) (l l' : list T) (a : T),
+          l ++ (a :: l') =
+          (l ++ [a]) ++ l'.
+      Proof.
+        induction l; simpl; intros; auto.
+        rewrite IHl. reflexivity.
+      Qed.
+
+      Lemma models_fstate_has_vars :
+        forall vs vs' fst st,
+          models (vs' ++ vs) fst st ->
+          fstate_has_vars fst vs = true.
+      Proof.
+        induction vs; simpl; intros; auto.
+        apply Bool.andb_true_iff.
+        split.
+        {
+          unfold models in H.
+          specialize (H a).
+          fwd.
+          generalize (Coqlib.in_app); intros.
+          specialize (H1 _ a vs' (a :: vs)).
+          simpl in H1. destruct H1.
+          specialize (H2 (or_intror (or_introl eq_refl))).
+          fwd.
+
+          
+          idtac.
+          rewrite <- fstate_lookup_fm_lookup in H.
+          
+          eapply fstate_has_var_sound'; eauto.
+        }      
+        {
+          rewrite app_cons_last in H.
+          eapply IHvs; eauto. }
+      Qed.
+
+  (* Finally here is a rule for using the vc gen in rewrting
+     (see Postprocess*.v *)
+  Lemma Hoare__embed_rw :
+  forall (c : fcmd)
+         (vs : list string),
+    (*var_spec_valid' vs ->*)
+    (*varmap_check_fcmd vs c ->*)
+    fembed_ex vs c |--
+                Forall Q : fstate -> Prop,
+  let (vs', P) := fpig_vcgen c vs Q in
+  Embed (fun st st' : state =>
+           (exists fst : fstate,
+             vmodels vs fst st /\
+             (P fst -> exists fst' : fstate, vmodels vs fst' st' /\ Q fst'))).
+Proof.
+  intros.
+  breakAbstraction.
+  intros.
+  fwd.
+  generalize (fpig_vcgen_correct); intro Hfpc.
+  specialize (Hfpc c vs x).
+  consider (fpig_vcgen c vs x); intros.
+  unfold Hoare_, Hoare in *. simpl.
+  unfold vmodels in *.
+  eexists x0. split; auto.
+  intros.
+  exists x1. split; auto.
+  specialize (Hfpc x0).
+  Check models_fstate_has_vars.
+  generalize models_fstate_has_vars as Hmfv; intros.
+  specialize (Hmfv vs nil x0 (Stream.hd tr) H).
+  fwd.
+  specialize (H5 _ H1). fwd. auto.
+Qed.
+
 
   (* the following is the old weakest-precondition calculation *)
 (*  
