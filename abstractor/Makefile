@@ -121,7 +121,8 @@ VFILES:=Source.v\
   Fappli_IEEE_extra.v\
   Integers.v\
   Archi.v\
-  Coqlib.v
+  Coqlib.v\
+  Automation.v
 
 ifneq ($(filter-out archclean clean cleanall printenv,$(MAKECMDGOALS)),)
 -include $(addsuffix .d,$(VFILES))
