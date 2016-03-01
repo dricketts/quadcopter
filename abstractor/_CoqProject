@@ -1,14 +1,7 @@
--R . Abstractor
--R ../logic Logic
--R ../flocq-2.5.1/src Flocq
--R ../coq-ext-lib/theories ExtLib
--I ../Z3-plugin/src
--R ../Z3-plugin/theories Z3
--R ../ChargeCore/ChargeCore/src/ChargeCore/Logics ChargeCore.Logics
--R ../ChargeCore/ChargeCore/src/ChargeCore/Tactics ChargeCore.Tactics
--R ../ChargeCore/ChargeCore/src/ChargeCore/Open ChargeCore.Open
--R ../ChargeCore/ChargeCore/src/ChargeCore/SepAlg ChargeCore.SepAlg
--R ../ChargeTactics ChargeTactics
+-Q . Abstractor
+-Q ../logic Logic
+-Q ../ChargeTactics ChargeTactics
+
 FloatOps.v
 Embed.v
 FloatEmbed.v

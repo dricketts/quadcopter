@@ -16,14 +16,14 @@
 
 (** Formalization of floating-point numbers, using the Flocq library. *)
 
-Require Import Coqlib.
-Require Import Integers.
+Require Import Abstractor.Coqlib.
+Require Import Abstractor.Integers.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
 Require Import Abstractor.Fappli_IEEE_extra.
 Require Import Flocq.Core.Fcore.
 Require Import Program.
-Require Import Archi.
+Require Import Abstractor.Archi.
 Require Import Coq.Bool.Bool.
 
 Close Scope R_scope.

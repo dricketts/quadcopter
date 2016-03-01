@@ -13,6 +13,9 @@ Require Import Logic.Lib.
 Require Import Flocq.Core.Fcore_defs.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
+Require Import Abstractor.Fappli_IEEE_extra.
+
+Require Abstractor.Floats.
 
 Require Import ExtLib.Programming.Extras.
 Import FunNotation.
@@ -93,10 +96,8 @@ unfold custom_emax, custom_prec.
 apply precLtEmax.
 Qed.
 
-Require Floats.
 Definition custom_nan:float -> float -> bool * nan_pl custom_prec := Floats.Float32.binop_pl.
 
-Require Import Fappli_IEEE_extra.
 
 Definition nat_to_float (n : nat) : float :=
 Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n).

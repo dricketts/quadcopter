@@ -2,9 +2,6 @@
  * FloatEmbed.v
  * Specialization of the Embedding framework to our floating-point language
  *)
-Require Import FloatOps.
-Require Import Embed.
-Require Import Bound2.
 Require Import Logic.Syntax.
 Require Import Logic.Semantics.
 Require Import Logic.Automation.
@@ -13,7 +10,12 @@ Require Import Coq.Strings.String.
 Require Import micromega.Psatz.
 Require Import ExtLib.Tactics.
 Require Import ExtLib.Data.Option.
-Require Import RelDec.
+Require Import ExtLib.Core.RelDec.
+
+Require Import Abstractor.FloatOps.
+Require Import Abstractor.Embed.
+Require Import Abstractor.Bound2.
+
 
 Inductive fexpr :=
 | FVar : Var -> fexpr
@@ -188,7 +190,7 @@ Module FloatEmbed <: EMBEDDING.
       lra.
   Qed.
 
-  Require Import ArithFacts.
+  Require Import Logic.ArithFacts.
   Require Import Flocq.Core.Fcore_float_prop.
   Require Import Flocq.Core.Fcore_Zaux.
   Lemma F2OR_pl_eq :
