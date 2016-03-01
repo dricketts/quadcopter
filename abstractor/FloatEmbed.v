@@ -2,8 +2,9 @@
  * FloatEmbed.v
  * Specialization of the Embedding framework to our floating-point language
  *)
-Require Import Source.
+Require Import FloatOps.
 Require Import Embed.
+Require Import Bound2.
 Require Import Logic.Syntax.
 Require Import Logic.Semantics.
 Require Import Logic.Automation.
@@ -16,7 +17,7 @@ Require Import RelDec.
 
 Inductive fexpr :=
 | FVar : Var -> fexpr
-| FConst : Source.float -> fexpr
+| FConst : float -> fexpr
 | FPlus : fexpr -> fexpr -> fexpr
 | FMinus : fexpr -> fexpr -> fexpr
 | FMult : fexpr -> fexpr -> fexpr
@@ -24,24 +25,24 @@ Inductive fexpr :=
 .
 (* TODO - other ops? *)
 
-Definition fplus : Source.float -> Source.float -> Source.float :=
+Definition fplus : float -> float -> float :=
   Fappli_IEEE.Bplus custom_prec custom_emax custom_precGt0
                     custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
-Definition fminus : Source.float -> Source.float -> Source.float :=
+Definition fminus : float -> float -> float :=
   Fappli_IEEE.Bminus custom_prec custom_emax custom_precGt0
                      custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
-Definition fmult : Source.float -> Source.float -> Source.float :=
+Definition fmult : float -> float -> float :=
   Fappli_IEEE.Bmult custom_prec custom_emax custom_precGt0
                     custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
-Definition fdiv : Source.float -> Source.float -> Source.float :=
+Definition fdiv : float -> float -> float :=
   Fappli_IEEE.Bdiv custom_prec custom_emax custom_precGt0
                    custom_precLtEmax custom_nan Fappli_IEEE.mode_ZR.
 
 (* TODO pretty sure we need to do variable translation here *)
-Fixpoint fexprD (fx : fexpr) (sf : fstate) : option Source.float :=
+Fixpoint fexprD (fx : fexpr) (sf : fstate) : option float :=
   match fx with
     | FVar s         => fstate_lookup sf s
     | FConst f       => Some f
@@ -186,7 +187,7 @@ Module FloatEmbed <: EMBEDDING.
       specialize (Hin0 H0).
       lra.
   Qed.
-  
+
   Require Import ArithFacts.
   Require Import Flocq.Core.Fcore_float_prop.
   Require Import Flocq.Core.Fcore_Zaux.
@@ -273,7 +274,7 @@ Module FloatEmbed <: EMBEDDING.
         - generalize (Coq.Logic.Eqdep_dec.UIP_dec Bool.bool_dec).
           intros. auto. } }
   Qed.
-  
+
   Lemma states_iso_iso' : forall (st st' : istate),
       states_iso st st' <-> states_iso' st st'.
   Proof.
@@ -333,7 +334,7 @@ Module FloatEmbed <: EMBEDDING.
     simpl.
     consider (v ?[eq] v'); intro; subst; congruence.
   Qed.
-  
+
   Lemma fstate_lookup_fm_lookup :
     forall fst v,
       fstate_lookup fst v = fm_lookup fst v.
@@ -396,7 +397,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -415,7 +416,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -433,7 +434,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -451,7 +452,7 @@ Module FloatEmbed <: EMBEDDING.
       consider (string_dec v s); intros; subst.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
         rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
@@ -474,7 +475,7 @@ Module FloatEmbed <: EMBEDDING.
         rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_update_match in IHpl_eq.
         rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_update_match in IHpl_eq.
         forward_reason. inversion H1; subst.
-        eexists; eauto. 
+        eexists; eauto.
       - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
         rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_irrelevant_update in IHpl_eq; [|auto].
         specialize (H s). rewrite <- fstate_lookup_fm_lookup in H.
@@ -556,7 +557,7 @@ Module FloatEmbed <: EMBEDDING.
       pose proof e2' as p2'.
       apply Bool.andb_true_iff in p2'. fwd. auto. }
   Qed.
-  
+
   (* For brutal case-analysis *)
   Ltac smash :=
     let rec smash' E :=
@@ -605,7 +606,7 @@ Module FloatEmbed <: EMBEDDING.
         { split. lra. lra. }
         lra. }
     Qed.
-    
+
   Lemma states_iso_fexprD :
     forall ist ist',
       states_iso ist ist' ->
@@ -719,14 +720,14 @@ Module FloatEmbed <: EMBEDDING.
       states_iso istf istf'.
   Proof.
     intros.
-        
+
   Axiom eval_det2 :
     forall prg isti istf istf',
       (istf ~~ istf') ->
       eval isti prg istf ->
       exists isti', isti ~~ isti' /\ eval isti' prg istf'
 *)
-  
+
   Lemma eval_det :
     forall prg isti isti' istf,
       (states_iso isti isti') ->
@@ -781,8 +782,8 @@ Module FloatEmbed <: EMBEDDING.
         try lra; try solve [inversion Hsif; lra].
     - intros.
       inversion H0.
-  Qed.      
-  
+  Qed.
+
   Lemma asReal_det :
     forall (p p' : pl_data) (r : R),
       asReal p r ->
@@ -857,7 +858,7 @@ Module FloatEmbed <: EMBEDDING.
             (forall s', eval s c s' -> Q s'))%type.
 
   End Hoare.
-  
+
 End FloatEmbed.
 
 (* The following is a Hoare logic implementation for floating-point language *)
@@ -890,7 +891,7 @@ Definition Hoare_ := Hoare.
            (fun fst => exists rst : Syntax.state, vmodels vs fst rst /\ Q rst)%type.
 
   Definition fembed_ex :=
-    embed_ex. 
+    embed_ex.
 
   Lemma Hoare__embed :
     forall P c Q vs,
@@ -915,7 +916,7 @@ Definition Hoare_ := Hoare.
     specialize (H _ H4). fwd.
     auto.
   Qed.
-    
+
   Lemma Hoare__skip :
     forall (P : istate -> Prop),
       Hoare_ P FSkip P.
@@ -946,7 +947,7 @@ Definition Hoare_ := Hoare.
       specialize (H0 _ H2).
       fwd; auto. }
   Qed.
-  
+
   (* this plus consequence should be enough to get our real assignment rule
    that talks about bounds *)
   Lemma Hoare__asn :
@@ -966,24 +967,6 @@ Definition Hoare_ := Hoare.
     - intros. inversion H1; subst; clear H1.
       rewrite H6 in H. inversion H; subst; clear H. assumption.
   Qed.
-
-
-
-  (* Calculating bounds for expressions *)
-  Fixpoint fexpr_to_NowTerm (fx : fexpr) : NowTerm :=
-    match fx with
-    (*| FVar v   => VarNowN (vtrans_flt2tla ivs v)*)
-    | FVar v => VarNowN v
-    | FConst f => FloatN f
-    | FPlus fx1 fx2 =>
-      PlusN (fexpr_to_NowTerm fx1) (fexpr_to_NowTerm fx2)
-    | FMinus fx1 fx2 =>
-      MinusN (fexpr_to_NowTerm fx1) (fexpr_to_NowTerm fx2)
-    | FMult fx1 fx2 =>
-      MultN (fexpr_to_NowTerm fx1) (fexpr_to_NowTerm fx2)
-    end.
-
-  Require Import Bound2.
 
   (* need an implementation of bound_term *)
   Print All_predInt.
@@ -1021,7 +1004,7 @@ Definition Hoare_ := Hoare.
   Print Bound.bound_term.
   Print fexpr.
   Print natBound.*)
-  
+
   Fixpoint bound_fexpr (fx : fexpr) : All_predInt :=
     match fx with
     | FVar v =>
@@ -1042,32 +1025,6 @@ Definition Hoare_ := Hoare.
       cross absFloatMult' (bound_fexpr fx1) (bound_fexpr fx2)
     end.
 
-(*  
-  Definition bounds_to_formula (sbt : singleBoundTerm) (fs : fstate) : (Prop * (R -> Prop)) :=
-    denote_singleBoundTermNew fs sbt.
-*)
-    
-  (* another lemma needed for bound_fexpr_sound *)
-  Lemma fexpr_NowTerm_related_eval :
-    forall fst,
-    forall fx f,
-      fexprD fx fst = Some f ->
-      eval_NowTerm fst (fexpr_to_NowTerm fx) = Some f.
-  Proof.
-    Locate fplus.
-    Print float_plus.
-    induction fx; eauto;
-    try (intros; simpl; simpl in *; fwd;
-         unfold lift2, fplus, float_plus in *;
-           consider (fexprD fx1 fst); intros; try congruence;
-         consider (fexprD fx2 fst); intros; try congruence;
-         erewrite IHfx1; eauto;
-         erewrite IHfx2; eauto).
-  Qed.
-
-  Print predIntD.
-  Check bound_fexpr.
-
   Lemma fstate_lookup_miss :
     forall fs v f,
       fstate_lookup fs v = Some f ->
@@ -1085,7 +1042,7 @@ Definition Hoare_ := Hoare.
      the soundness statement *)
   Lemma bound_fexpr_sound :
     forall (fx : fexpr) (fs : fstate) (f : float),
-      fexprD fx fs = Some f ->      
+      fexprD fx fs = Some f ->
       All_predIntD (bound_fexpr fx) f fs.
   Proof.
     induction fx; simpl in *; intros.
@@ -1146,7 +1103,7 @@ Definition Hoare_ := Hoare.
       eapply Forall_forall in IHfx1; eauto.
       eapply Forall_forall in IHfx2; eauto. }
       (* TODO the following two are copy pastes of the previous one.
-         We should automate this more. *)    
+         We should automate this more. *)
     {
       unfold lift2 in *.
       consider (fexprD fx1 fs); intros; try congruence.
@@ -1180,7 +1137,7 @@ Definition Hoare_ := Hoare.
       eapply Forall_forall in IHfx1; eauto.
       eapply Forall_forall in IHfx2; eauto. }
   Qed.
-      
+
   (* Useful prop combinator *)
   Fixpoint AnyOf (Ps : list Prop) : Prop :=
     match Ps with
@@ -1268,7 +1225,7 @@ Definition Hoare_ := Hoare.
     unfold Hoare_, Hoare in *.
     intros.
     destruct H1; eauto.
-  Qed.    
+  Qed.
 
   Lemma Hoare__False :
     forall (P : _ -> Prop) c,
@@ -1314,9 +1271,9 @@ Definition Hoare_ := Hoare.
                 prem /\
                 bound r
              )
-             (bound_fexpr fx)).  
+             (bound_fexpr fx)).
    *)
-  
+
   Lemma or_distrib_imp :
     forall A B C : Prop,
       (A \/ B -> C) <->
@@ -1348,7 +1305,8 @@ Definition Hoare_ := Hoare.
 
   Check Hoare__bound_asn.
   Check All_predIntD.
-  
+
+  (*
   Lemma Hoare__bound_ite :
     forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
       Hoare_ Q1 c1 P ->
@@ -1468,7 +1426,7 @@ Lemma Hoare__bound_ite :
   Qed.
 
   (* proof of an alternate version *)
-(*    
+(*
   intros.
   unfold maybe_ge0, maybe_lt0.
   generalize (bound_fexpr_sound ex (bound_fexpr ex) eq_refl).
@@ -1580,7 +1538,7 @@ Qed.
   (* to be used with our new vc gen *)
   Lemma Hoare__seq' :
     forall P Q R c1 c2,
-      Hoare_ 
+      Hoare_
 
   Lemma Hoare__seq :
     forall P Q R c1 c2,
@@ -1615,7 +1573,7 @@ Qed.
   (* new weakest-precondition function *)
   (* P is postcondition *)
   (* vs is var list going into the command *)
-  
+
   Fixpoint fpig_vcgen
            (c : fcmd)
            (vs : list Var)
@@ -1661,7 +1619,7 @@ Qed.
   Print fstate.
 
   Check (forall a b : string, a ?[eq] b = true).
-  
+
   Fixpoint fstate_has_var (fst : fstate) (v : Var) :=
     match fst with
     | nil => false
@@ -1678,7 +1636,7 @@ Qed.
     fwd.
     exists x. auto.
   Qed.
-  
+
   Fixpoint fstate_has_vars (fst : fstate) (vs : list Var) :=
     match vs with
     | nil => true
@@ -1750,10 +1708,10 @@ Proof.
       generalize fexpr_check_sound; intro.
       eexists. econstructor.
       specia
-      
-      
-      
-      
+
+
+
+
     induction f; intros; simpl in *.
     { unfold Hoare_, Hoare.
       intros.
@@ -1764,9 +1722,9 @@ Proof.
         eapply fexpr_check_sound.
         simpl.
         SearchAbout fstate_has_vars
-    
-    
-    
+
+
+
   Admitted.
  *)
 
@@ -1813,7 +1771,7 @@ Proof.
     | nil => true
     | v :: lhs' => andb (varmap_has_var rhs v) (vars_subset lhs' rhs)
     end.
-  
+
   Lemma vars_subset_cons:
       forall vs vs' v, vars_subset vs vs' = true ->
                   vars_subset vs (v :: vs') = true.
@@ -1836,7 +1794,7 @@ Proof.
       apply Bool.andb_true_iff in H0. fwd.
       consider (a0 ?[eq] a); intros; subst; auto.
     Qed.
-      
+
   Lemma vars_subset_trans :
     forall (vs vs' vs'': list Var),
       vars_subset vs vs' = true -> vars_subset vs' vs'' = true ->
@@ -1866,7 +1824,7 @@ Proof.
     apply Bool.andb_true_iff in H. fwd.
     consider (a0 ?[eq] a); intros; subst; auto.
   Qed.
-  
+
   Lemma vars_subset_sound' :
     forall vs' vs fst,
       fstate_has_vars fst vs = true ->
@@ -1897,7 +1855,7 @@ Proof.
     { destruct (fexpr_check f vs); reflexivity. }
     { destruct (fexpr_check f vs); reflexivity. }
   Qed.
- 
+
   (* partial correctness *)
   Lemma fpig_vcgen_var_correct :
     forall (c : fcmd) (vs : list Var) (P : fstate -> Prop) (fst fst' : fstate),
@@ -2103,7 +2061,7 @@ Proof.
           generalize (fpig_vcgen_var_correct c2 vs P s s').
           intros. fwd.
           rewrite H0 in H6. fwd.
-          
+
           specialize (H4 _ H5). fwd.
           split; auto.
           eapply vars_subset_fstate; eauto. } }
@@ -2153,12 +2111,12 @@ Proof.
           specialize (H2 (or_intror (or_introl eq_refl))).
           fwd.
 
-          
+
           idtac.
           rewrite <- fstate_lookup_fm_lookup in H.
-          
+
           eapply fstate_has_var_sound'; eauto.
-        }      
+        }
         {
           rewrite app_cons_last in H.
           eapply IHvs; eauto. }
@@ -2201,7 +2159,7 @@ Qed.
 
 
   (* the following is the old weakest-precondition calculation *)
-(*  
+(*
   (* Weakest-precondition calcluation function for fcmd language *)
   Fixpoint fwp (c : fcmd)
            (P : fstate  -> Prop) : fstate -> Prop :=
@@ -2231,7 +2189,7 @@ Qed.
                                         let '(prem, _) := denote_singleBoundTermNew fst sbt in prem)
                                      bs)))
     end.
-  
+
   Lemma fwp_correct :
     forall c P,
       Hoare_ (fwp c P)
@@ -2253,4 +2211,5 @@ Qed.
     { (*eapply Hoare__bound_asn.*) admit. }
     { (*eapply Hoare__bound_ite; eauto.*) admit. }
   Admitted.
+*)
 *)

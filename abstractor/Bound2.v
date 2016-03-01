@@ -16,7 +16,7 @@ Require Import Flocq.Core.Fcore_FLT.
 Require Import Flocq.Core.Fcore_generic_fmt.
 Require Import Flocq.Core.Fcore_Raux.
 Require Import Flocq.Core.Fcore_defs.
-Require Import Abstractor.Source.
+Require Import Abstractor.FloatOps.
 Import ListNotations.
 
 Definition error    : R := bpow radix2 (- (custom_prec) + 1).

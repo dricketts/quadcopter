@@ -9,8 +9,7 @@
 -R ../ChargeCore/ChargeCore/src/ChargeCore/Open ChargeCore.Open
 -R ../ChargeCore/ChargeCore/src/ChargeCore/SepAlg ChargeCore.SepAlg
 -R ../ChargeTactics ChargeTactics
-Source.v
-Bound.v
+FloatOps.v
 Embed.v
 FloatEmbed.v
 Floats.v
