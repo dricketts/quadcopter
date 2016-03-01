@@ -835,7 +835,8 @@ Proof.
   apply Forall_nil.
 Qed.
 
-Lemma boundLbBet0AndFloatMin : forall x, x >= 0 -> x < floatMin -> roundDown x = -floatMin.
+Lemma boundLbBet0AndFloatMin
+: forall x, x >= 0 -> x < floatMin -> roundDown x = -floatMin.
 Proof.
   intros.
   unfold roundDown.
@@ -852,7 +853,8 @@ Proof.
   psatz R.
 Qed.
 
-Lemma boundLbBetNegFloatMinAnd0 : forall x, x < 0 -> x > -floatMin -> roundDown x = -floatMin.
+Lemma boundLbBetNegFloatMinAnd0
+: forall x, x < 0 -> x > -floatMin -> roundDown x = -floatMin.
 Proof.
   intros.
   unfold roundDown.
@@ -866,7 +868,8 @@ Proof.
   psatz R.
 Qed.
 
-Lemma boundLbLessThanFloatMin : forall x, x <= - floatMin -> roundDown x = roundDown_relative x.
+Lemma boundLbLessThanFloatMin
+: forall x, x <= - floatMin -> roundDown x = roundDown_relative x.
 Proof.
   intros.
   pose proof floatMinGt0.
@@ -881,7 +884,10 @@ Proof.
   psatz R.
 Qed.
 
-Lemma simpl : forall pUnk pNew pOld, All_predInt_entails pNew pOld ->  All_predInt_entails pUnk pNew -> All_predInt_entails pUnk pOld.
+Lemma simpl
+: forall pUnk pNew pOld, All_predInt_entails pNew pOld ->
+                         All_predInt_entails pUnk pNew ->
+                         All_predInt_entails pUnk pOld.
 Proof.
   intros.
   unfold All_predInt_entails in *. intros.
@@ -890,7 +896,9 @@ Proof.
   apply H.
 Qed.
 
-Lemma simpl2 : forall pred p1 p2, All_predInt_entails p1 (split_All_predInt pred p2) -> All_predInt_entails p1 p2.
+Lemma simpl2
+: forall pred p1 p2, All_predInt_entails p1 (split_All_predInt pred p2) ->
+                     All_predInt_entails p1 p2.
 Proof.
   intros.
   eapply simpl.
@@ -903,7 +911,10 @@ Proof.
 Qed.
 
 
-Lemma AllPredImpl : forall p p1 p2, All_predInt_entails p1 (p :: List.nil) -> All_predInt_entails p1 p2 -> All_predInt_entails p1 (p :: p2).
+Lemma AllPredImpl
+: forall p p1 p2, All_predInt_entails p1 (p :: List.nil) ->
+                  All_predInt_entails p1 p2 ->
+                  All_predInt_entails p1 (p :: p2).
 Proof.
   intros.
   unfold All_predInt_entails in *.
@@ -918,7 +929,9 @@ Proof.
   apply H0.
 Qed.
 
-Lemma AllPredEntImplPredEnt : forall p1 p2, All_predInt_entails (p1 :: List.nil) (p2 :: List.nil) -> predInt_entails p1 p2.
+Lemma AllPredEntImplPredEnt : forall p1 p2,
+    All_predInt_entails (p1 :: List.nil) (p2 :: List.nil) ->
+    predInt_entails p1 p2.
 Proof.
   intros.
   unfold All_predInt_entails in *.
@@ -934,7 +947,8 @@ Proof.
   apply Forall_nil.
 Qed.
 
-Lemma simpl1 : forall (A:Type) (pred:A ->Prop) p1 p2, Forall pred (p1 ++ p2) -> (Forall pred p1) /\ (Forall pred p2).
+Lemma simpl1 : forall (A:Type) (pred:A ->Prop) p1 p2,
+    Forall pred (p1 ++ p2) -> (Forall pred p1) /\ (Forall pred p2).
 Proof.
   intros.
   split.
@@ -972,7 +986,10 @@ Proof.
   apply H0.
 Qed.
 
-Lemma AllPredIntKeep :  forall p p1 p2 p3,  All_predInt_entails p1 [p] -> All_predInt_entails p2 p3-> All_predInt_entails (p1 ++ p2) (p :: p3).
+Lemma AllPredIntKeep :  forall p p1 p2 p3,
+    All_predInt_entails p1 [p] ->
+    All_predInt_entails p2 p3 ->
+    All_predInt_entails (p1 ++ p2) (p :: p3).
 Proof.
   intros.
   unfold All_predInt_entails in *.
