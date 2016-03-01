@@ -6,22 +6,16 @@
  * This file should probably be renamed, and definitely be cleaned up.
  *)
 
-(*Require Import compcert.cfrontend.Clight.*)
 Require Import Coq.micromega.Psatz.
-(*Require Import compcert.cfrontend.Cop.
-Require Import compcert.cfrontend.Ctypes.*)
-Require Import Integers.
 Require Import Coq.Reals.Rdefinitions.
 Require Import List.
 Import ListNotations.
 Require Import Logic.Syntax.
 Require Import Logic.Semantics.
 Require Import Logic.Lib.
-
 Require Import Flocq.Core.Fcore_defs.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
-
 
 Require Import ExtLib.Programming.Extras.
 Import FunNotation.
@@ -35,24 +29,7 @@ Local Open Scope SrcLang_scope.
     [emax] is the exponent of the infinities.
     Typically p=24 and emax = 128 in single precision. *)
 
-(*
-Variable prec:Z.
-Variable emax:Z.
-Variable emin:Z.
-Hypothesis emaxGtEmin : (emax > emin)%Z.
-Hypothesis precGe1: (prec >= 1)%Z.
-Hypothesis precLtEmax : (prec < emax)%Z.
-Hypothesis eminMinValue : (emin >= 3 - emax - prec)%Z.
-Hypothesis nan : binary_float prec emax -> binary_float prec emax -> bool * nan_pl prec.
-Locate FLT_exp.
-Hypothesis precThm : forall k : ,Z
-    (emin < k)%Z ->
-    (prec <=
-     k - Fcore_FLT.FLT_exp (3 - emax - prec) prec k)%Z.*)
-
 Definition prec:Z := 24%Z.
-(* Definition emax:Z := 128%Z.
-   Definition emax:Z := 1023%Z. *)
 Definition emax := 128%Z.
 
 (*Definition emin:Z := (3 - emax - prec)%Z.*)
@@ -65,14 +42,13 @@ Definition precGe1: (prec >= 1)%Z.
 Proof. compute. inversion 1.
 Defined.
 
+(* these last two may not end up being useful *)
 Lemma eminMinValue : (emin >= 3 - emax - prec)%Z.
 Proof. compute. inversion 1. Qed.
 
 Definition precLtEmax : (prec < emax)%Z.
 Proof. compute. reflexivity.
 Defined.
-
-(* TODO - figure out where eminMinValue and precThm are actually getting used *)
 
 (* Lemma nan : binary_float prec emax -> binary_float prec emax -> bool * nan_pl prec. *)
 Lemma precThm : forall k : Z,
@@ -139,8 +115,6 @@ VarNowN x.
 Coercion VarC : String.string >-> NowTerm.
 (* convenient coercions between number formats *)
 
-Definition nat_to_int (n : nat) : int :=
-Int.repr $ Z.of_nat n.
 
 Lemma custom_precGt0 : Fcore_FLX.Prec_gt_0 custom_prec.
 unfold Fcore_FLX.Prec_gt_0.
@@ -163,7 +137,6 @@ Definition nat_to_float (n : nat) : float :=
 Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n).
 
 Definition FloatToR : (float) -> R := B2R custom_prec custom_emax.
-Coercion nat_to_int : nat >-> int.
 
 Coercion Pos.of_nat : nat >-> positive.
 (*Coercion FloatToR : Floats.float >-> R.*)
@@ -418,6 +391,7 @@ Fixpoint eval_NowTerm (t:NowTerm) :=
 
   (* denotation of comparison functions *)
 
+(*
 Definition custom_cmp (c : comparison) (f1 : float) (f2 : float) := Floats.cmp_of_comparison c (Fappli_IEEE_extra.Bcompare custom_prec custom_emax f1 f2).
 
   Definition eval_comp (op : CompOp) (lhs rhs : NowTerm) : option bool :=
@@ -441,6 +415,7 @@ Definition custom_cmp (c : comparison) (f1 : float) (f2 : float) := Floats.cmp_o
     | FAnd p1 p2 => lift2 andb (progr_cond_holds p1) (progr_cond_holds p2)
     | FOr p1 p2 => lift2 orb (progr_cond_holds p1) (progr_cond_holds p2)
     end.
+*)
 End eval_expr.
 
 
@@ -466,6 +441,7 @@ Fixpoint assns_update_state (assns: list progr_assn) (acc : fstate) : option fst
   end.
 *)
 
+(*
 Fixpoint eval_SrcProg (sp : SrcProg) (init : fstate) : option fstate :=
   match sp with
     | SAssn v nt   => assn_update_state v nt init
@@ -482,7 +458,7 @@ Fixpoint eval_SrcProg (sp : SrcProg) (init : fstate) : option fstate :=
         | None       => None
       end
   end.
-
+*)
 (* failed effort to get nat_to_float to compute *)
 (*
 Lemma derp : forall x, nat_to_float 3 = x.

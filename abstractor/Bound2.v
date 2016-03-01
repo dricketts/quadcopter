@@ -471,9 +471,9 @@ Proof.
       destruct (Rle_dec 0 r1); try_elim;
       destruct (Rle_dec 0 r2); try_elim;
       destruct (Rle_dec 0 r3); try_elim;
-      destruct (Rle_dec 0 r4); try_elim.
-      - right. right. right. psatz R.
-      - right. right. right. psatz R. } }
+      destruct (Rle_dec 0 r4); try_elim. } }
+(*      - right. right. right. psatz R.
+      - right. right. right. psatz R. } } *)
   { intros.
     rewrite H in *. rewrite H0 in *. simpl in H10.
     split; try tauto.

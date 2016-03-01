@@ -861,7 +861,7 @@ Module FloatEmbed <: EMBEDDING.
 End FloatEmbed.
 
 (* The following is a Hoare logic implementation for floating-point language *)
-Require Import Bound.
+(*Require Import Bound.*)
 Import FloatEmbed.
 
 Definition vmodels := models.
@@ -967,7 +967,7 @@ Definition Hoare_ := Hoare.
       rewrite H6 in H. inversion H; subst; clear H. assumption.
   Qed.
 
-  Require Import Bound.
+
 
   (* Calculating bounds for expressions *)
   Fixpoint fexpr_to_NowTerm (fx : fexpr) : NowTerm :=
@@ -983,28 +983,70 @@ Definition Hoare_ := Hoare.
       MultN (fexpr_to_NowTerm fx1) (fexpr_to_NowTerm fx2)
     end.
 
-  Definition bound_fexpr (fx : fexpr) : list singleBoundTerm :=
-    bound_term (fexpr_to_NowTerm fx).
+  Require Import Bound2.
 
+  (* need an implementation of bound_term *)
+  Print All_predInt.
+  Print predInt.
+  (*Require Import Bound.*)
+  (*Print Bound.bound_term.
+  Print isVarValid.
+  Print isFloatConstValid.
+  Print fstate_lookup_force.
+  Print isVarValid.
+  Print fexpr.
+   *)
+
+  Print fstate_lookup.
+
+  Fixpoint fstate_lookup_force (fs : fstate) (v : Var) : R :=
+    match fs with
+    | nil => 0%R (* "bogus" value *)
+    | (v', f') :: fs' => if v ?[eq] v' then FloatToR f' else fstate_lookup_force fs' v
+    end.
+
+  (* unneeded, we use Flocq's is_finite instead *)
+  (*
+  Inductive isFloatConstValid : float -> Prop :=
+  | valid_zero : forall s, isFloatConstValid (B754_zero _ _ s)
+  | valid_finite : forall s m e (b : bounded prec emax m e = true),
+      isFloatConstValid (B754_finite _ _ s m e b).
+   *)
+
+  Definition isVarValid (v:Var) (fState : fstate) : Prop
+    :=
+      exists f, fstate_lookup fState v = Some f /\ is_finite f = true.
+
+  (*Require Import Bound.
+  Print Bound.bound_term.
+  Print fexpr.
+  Print natBound.*)
+  
+  Fixpoint bound_fexpr (fx : fexpr) : All_predInt :=
+    match fx with
+    | FVar v =>
+      {| lb := fun fst => fstate_lookup_force fst v;
+         ub := fun fst => fstate_lookup_force fst v;
+         (* TODO: this premise is suspect; perhaps with fwp it can be eliminated *)
+         premise := fun fst => isVarValid v fst |}
+        :: nil
+    | FConst f =>
+      {| lb := fun _ => FloatToR f;
+         ub := fun _ => FloatToR f;
+         premise := fun _ => is_finite f = true |} :: nil
+    | FPlus fx1 fx2 =>
+      cross absFloatPlus' (bound_fexpr fx1) (bound_fexpr fx2)
+    | FMinus fx1 fx2 =>
+      cross absFloatMinus' (bound_fexpr fx1) (bound_fexpr fx2)
+    | FMult fx1 fx2 =>
+      cross absFloatMult' (bound_fexpr fx1) (bound_fexpr fx2)
+    end.
+
+(*  
   Definition bounds_to_formula (sbt : singleBoundTerm) (fs : fstate) : (Prop * (R -> Prop)) :=
     denote_singleBoundTermNew fs sbt.
-
-  (* Used to translate between two different representations
-   of floating-point state (since bounds proofs use a different one) *)
-  
-  (* Ensures the variable map only mentions variables in the given expression *)
-  Fixpoint varmap_check_fexpr (ivs : list (Var * Var)) (e : fexpr) : Prop :=
-    match e with
-    | FVar v       => exists lv, In (lv, v) ivs
-    | FConst _     => True
-    | FPlus e1 e2  => varmap_check_fexpr ivs e1 /\
-                     varmap_check_fexpr ivs e2
-    | FMinus e1 e2 => varmap_check_fexpr ivs e1 /\
-                     varmap_check_fexpr ivs e2
-    | FMult e1 e2  => varmap_check_fexpr ivs e1 /\
-                     varmap_check_fexpr ivs e2
-    end%type.
-
+*)
+    
   (* another lemma needed for bound_fexpr_sound *)
   Lemma fexpr_NowTerm_related_eval :
     forall fst,
@@ -1023,53 +1065,127 @@ Definition Hoare_ := Hoare.
          erewrite IHfx2; eauto).
   Qed.
 
-  Lemma bound_fexpr_sound : forall fx sbts,
-      bound_fexpr fx = sbts ->
-      List.Forall (fun sbt =>
-                     forall (fst : fstate) f,
-                       fexprD fx fst = Some f ->
-                       let '(P,Pr) := bounds_to_formula sbt fst in
-                       P -> exists fval, fexprD fx fst = Some fval
-                                   /\ exists val,
-                             F2OR fval = Some val /\ Pr val)%type
-                  sbts.
+  Print predIntD.
+  Check bound_fexpr.
+
+  Lemma fstate_lookup_miss :
+    forall fs v f,
+      fstate_lookup fs v = Some f ->
+      forall v' f',
+        v <> v' ->
+        fstate_lookup ((v',f') :: fs) v = Some f.
   Proof.
-    intros.
-    generalize (bound_proof'). intro Hbp.
-    apply Forall_forall. intros.
-    specialize (Hbp (fexpr_to_NowTerm fx) fst). simpl in *. intros.
-    exists f.
-    split; auto.
-    unfold boundDef' in Hbp. simpl in Hbp.
-    generalize (fexpr_NowTerm_related_eval _ _ _ H1); intro Hentfxd.
-    rewrite Hentfxd in Hbp.
-    apply Forall_forall with (x := x) in Hbp.
-    - consider (floatToReal f); intros.
-      + exists r. split.
-        * fwd. rewrite <- H3. reflexivity.
-        * forward_reason. auto.
-      + exfalso; auto.
-    - unfold bound_fexpr in *. rewrite H. assumption.
+    induction fs; simpl; intros.
+    { congruence. }
+    { destruct a.
+      consider (v ?[eq] v'); intros; congruence. }
   Qed.
 
+  (* TODO: include the fact that expr evaluates successfully in
+     the soundness statement *)
+  Lemma bound_fexpr_sound :
+    forall (fx : fexpr) (fs : fstate) (f : float),
+      fexprD fx fs = Some f ->      
+      All_predIntD (bound_fexpr fx) f fs.
+  Proof.
+    induction fx; simpl in *; intros.
+    { generalize dependent v. generalize dependent f.
+      induction fs; simpl in *; intros; try congruence.
+      destruct a. unfold All_predIntD in *.
+      constructor; auto.
+      consider (v ?[eq] v0); intros.
+      {
+        inversion H0; subst.
+        unfold predIntD; simpl.
+        intros.
+        unfold isVarValid in H. fwd.
+        simpl in H.
+        consider (v0 ?[eq] v0); intros; try congruence.
+        inversion H2; subst.
+        split; auto.
+        unfold fstate_lookup_force.
+        unfold FloatToR.
+        lra.
+      }
+      {
+      specialize (IHfs _ _ H0). inversion IHfs; subst; clear IHfs.
+      unfold predIntD in *. simpl in *.
+      intros.
+      unfold isVarValid in *. fwd.
+      destruct H3.
+      {
+        eexists; split; eauto.
+        apply fstate_lookup_miss with (v' := v0) (f' := f0) in H0; auto.
+        rewrite H0 in H1. inversion H1; subst.
+        auto. }
+      {
+        split; auto.
+        consider (v ?[eq] v0); intros; congruence. } } }
+    {
+      inversion H; subst. unfold All_predIntD.
+      constructor; auto.
+      unfold predIntD. intros.
+      simpl in H0.
+      split; auto.
+      simpl.
+      unfold FloatToR; lra. }
+    {
+      unfold lift2 in *.
+      consider (fexprD fx1 fs); intros; try congruence.
+      consider (fexprD fx2 fs); intros; try congruence.
+      inversion H1; subst.
+      specialize (IHfx1 _ _ H).
+      specialize (IHfx2 _ _ H0).
+      generalize (absFloatPlus'_ok); intros.
+      generalize (@cross_In _ _ _ absFloatPlus' (bound_fexpr fx1) (bound_fexpr fx2)); intros.
+      unfold All_predIntD in *.
+      apply Forall_forall; intros.
+      specialize (H3 x). destruct H3. fwd.
+      subst.
+      apply H2.
+      eapply Forall_forall in IHfx1; eauto.
+      eapply Forall_forall in IHfx2; eauto. }
+      (* TODO the following two are copy pastes of the previous one.
+         We should automate this more. *)    
+    {
+      unfold lift2 in *.
+      consider (fexprD fx1 fs); intros; try congruence.
+      consider (fexprD fx2 fs); intros; try congruence.
+      inversion H1; subst.
+      specialize (IHfx1 _ _ H).
+      specialize (IHfx2 _ _ H0).
+      generalize (absFloatMinus'_ok); intros.
+      generalize (@cross_In _ _ _ absFloatMinus' (bound_fexpr fx1) (bound_fexpr fx2)); intros.
+      unfold All_predIntD in *.
+      apply Forall_forall; intros.
+      specialize (H3 x). destruct H3. fwd.
+      subst.
+      apply H2.
+      eapply Forall_forall in IHfx1; eauto.
+      eapply Forall_forall in IHfx2; eauto. }
+    {
+      unfold lift2 in *.
+      consider (fexprD fx1 fs); intros; try congruence.
+      consider (fexprD fx2 fs); intros; try congruence.
+      inversion H1; subst.
+      specialize (IHfx1 _ _ H).
+      specialize (IHfx2 _ _ H0).
+      generalize (absFloatMult'_ok); intros.
+      generalize (@cross_In _ _ _ absFloatMult' (bound_fexpr fx1) (bound_fexpr fx2)); intros.
+      unfold All_predIntD in *.
+      apply Forall_forall; intros.
+      specialize (H3 x). destruct H3. fwd.
+      subst.
+      apply H2.
+      eapply Forall_forall in IHfx1; eauto.
+      eapply Forall_forall in IHfx2; eauto. }
+  Qed.
+      
   (* Useful prop combinator *)
   Fixpoint AnyOf (Ps : list Prop) : Prop :=
     match Ps with
     | nil => False
     | P :: Ps => P \/ AnyOf Ps
-    end%type.
-
-  (* perhaps unnecessary *)
-  Fixpoint varmap_check_fcmd (ivs : list (Var * Var)) (c : fcmd) : Prop :=
-    match c with
-    | FSeq c1 c2   => varmap_check_fcmd ivs c1 /\
-                     varmap_check_fcmd ivs c2
-    | FSkip        => True
-    | FAsn v e     => In (v, v) ivs /\ varmap_check_fexpr ivs e
-    | FIte e c1 c2 => varmap_check_fexpr ivs e  /\
-                     varmap_check_fcmd   ivs c1 /\
-                     varmap_check_fcmd   ivs c2
-    | FFail        => True
     end%type.
 
   (* Lemmas aboutt Forall, needed for HoareA_ex_asn *)
@@ -1090,6 +1206,7 @@ Definition Hoare_ := Hoare.
     induction ls; simpl; intros; eauto.
   Qed.
 
+  (*
   Lemma floatConstValid_toR :
     forall val,
       isFloatConstValid val -> exists r,
@@ -1099,50 +1216,34 @@ Definition Hoare_ := Hoare.
     unfold isFloatConstValid in H.
     destruct val; try contradiction; solve [eexists; reflexivity].
   Qed.
+*)
 
 
   (* original *)
+  Check bound_fexpr_sound.
+
   Lemma Hoare__bound_asn :
     forall (P : _ -> Prop) v e,
       Hoare_ (fun fst : fstate =>
                 exists res, fexprD e fst = Some res /\
-                       AnyOf (List.map (fun sbt =>
-                                          let '(prem,bound) := bounds_to_formula sbt fst in
-                                          prem /\ forall (val : float) (r : R),
-                                              F2OR val = Some r ->
-                                              bound r ->
-                                              P (fstate_set fst v val))
-                                       (bound_fexpr e)))%type
+                       (forall res',
+                           All_predIntD (bound_fexpr e) res' fst ->
+                           P (fstate_set fst v res')))
              (FAsn v e)
              P.
   Proof.
-    intros. red; red. intros.
+    intros.
+    red; red. intros.
     fwd.
     split.
-    { consider (fexprD e s); intros.
-      - eexists. econstructor. eassumption.
-      - congruence. }
-    { intros. inversion H1; subst; clear H1.
-      simpl in H0.
-      generalize (bound_fexpr_sound e _ eq_refl). intro Hbfs.
-      induction (bound_fexpr e).
-      { simpl in *. contradiction. }
-      { simpl in *. destruct H0.
-        { clear IHl.
-          inversion Hbfs. fwd.
-          subst.
-          specialize (H3 _ _ H6 H0). fwd.
-          rewrite H in H1. inversion H1. subst. clear H1.
-          eapply H5.
-          - rewrite H in H6. inversion H6. subst. eauto.
-          - lra. }
-        { inversion Hbfs; subst; clear Hbfs.
-          eapply IHl; eauto. } } }
-  Qed.        
-
-
-  Print fstate_lookup.
-  Locate fstate_set.
+    { eexists; econstructor; eauto. }
+    { intros.
+      inversion H1; subst; clear H1.
+      rewrite H in H6. inversion H6; subst.
+      generalize bound_fexpr_sound; intro Hbfs.
+      specialize (Hbfs _ _ _ H).
+      auto. }
+  Qed.
 
   Lemma Hoare__conseq :
     forall (P P' Q Q' : fstate -> Prop) (c : fcmd),
@@ -1177,6 +1278,7 @@ Definition Hoare_ := Hoare.
     unfold Hoare_, Hoare. intros. contradiction.
   Qed.
 
+  (*
   Definition maybe_lt0 (sbts : list singleBoundTerm) (fst : fstate) : Prop :=
     AnyOf (List.map
              (fun sbt =>
@@ -1188,6 +1290,7 @@ Definition Hoare_ := Hoare.
              (fun sbt =>
                 (ub sbt fst >=  0)%R /\
                 (premise sbt fst)) sbts).
+*)
 
   (* proposed new defs *)
   (*
@@ -1243,7 +1346,9 @@ Definition Hoare_ := Hoare.
     intros. unfold float_lt, float_ge in H. lra.
   Qed.
 
-
+  Check Hoare__bound_asn.
+  Check All_predIntD.
+  
   Lemma Hoare__bound_ite :
     forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
       Hoare_ Q1 c1 P ->
@@ -1258,7 +1363,23 @@ Definition Hoare_ := Hoare.
                                  (bound_fexpr ex))))%type
              (FIte ex c1 c2)
              P.
-  
+  (* original *)
+  (*
+Lemma Hoare__bound_ite :
+    forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
+      Hoare_ Q1 c1 P ->
+      Hoare_ Q2 c2 P ->
+      Hoare_ (fun fst =>
+                exists res, fexprD ex fst = Some res /\
+                       let bs := bound_fexpr ex in
+                       (maybe_lt0 bs fst -> Q1 fst) /\
+                       (maybe_ge0 bs fst -> Q2 fst) /\
+                       (AnyOf (List.map
+                                 (fun sbt => let '(prem, _) := denote_singleBoundTermNew fst sbt in prem)
+                                 (bound_fexpr ex))))%type
+             (FIte ex c1 c2)
+             P.
+   *)
   Proof.
   intros.
   generalize (bound_fexpr_sound ex (bound_fexpr ex) eq_refl).
