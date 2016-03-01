@@ -1112,12 +1112,16 @@ eapply keep.
         split.
         {
           rewrite boundLbBet0AndFloatMin.
+          assert (-floatMin <= 0).
+          pose proof floatMinGt0.
+          psatz R.
           eapply Rle_refl.
           psatz R.
           psatz R.
         }
         {
           rewrite boundUbBet0AndFloatMin.
+          unfold roundUp_subnormal.
           apply Rle_refl.
           psatz R.
         }
@@ -1149,6 +1153,7 @@ eapply keep.
         }
         {
           rewrite boundUbBet0AndFloatMin.
+          unfold roundUp_subnormal.
           apply Rle_refl.
           psatz R.
         }
@@ -1169,6 +1174,7 @@ eapply keep.
           }
           {
             rewrite boundUbBet0AndFloatMin.
+            unfold roundUp_subnormal.
             apply Rle_refl.
             psatz R.
           }
@@ -1211,6 +1217,8 @@ eapply keep.
                  }
                  {
                    rewrite boundUbBetNegFloatMinAnd0.
+                   unfold roundUp_subnormal.
+                   pose proof floatMinGt0.                   
                    apply Rle_refl.
                    psatz R.
                  }
@@ -1256,6 +1264,7 @@ eapply keep.
               }
               {
                 rewrite boundUbBetNegFloatMinAnd0.
+                unfold roundUp_subnormal.
                 apply Rle_refl.
                 psatz R.
               }
@@ -1268,9 +1277,295 @@ eapply keep.
     }
   }
 }
-
 Defined.
 
 Eval cbv beta iota zeta delta [ absFloatPlus_demo optimized ] in absFloatPlus_demo.
+
+
+Definition absFloatMinus_demo_spec (l r : predInt) : All_predInt :=
+  let min fst := roundDown (l.(lb) fst - r.(ub) fst) in
+  let max fst := roundUp   (l.(ub) fst - r.(lb) fst) in
+  let result :=
+    {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+                        /\ l.(lb) fst <= l.(ub) fst /\ r.(lb) fst <= r.(ub) fst
+    ; lb := min
+    ; ub := max |}
+  in
+  split_All_predInt (fun fst => floatMin <= (l.(lb) fst - r.(ub) fst))%R (result :: List.nil).
+
+
+
+
+Definition absFloatMinus_demo : predInt -> predInt -> All_predInt.
+  refine (@optimized absFloatMinus_demo_spec _).
+  econstructor.
+  intros. unfold absFloatMinus_demo_spec.
+  unfold split_All_predInt; simpl.
+  eapply keep.
+  { eapply refine_predInt_entails; simpl; intros.
+    exact H.  
+    simpl in H0.
+    forward_reason.
+    split.
+    { 
+      rewrite boundLbGtFloatMin.
+      apply Rle_refl. assumption. }
+    { rewrite boundUbGtFloatMin. apply Rle_refl. psatz R. } }
+  {  eapply simpl2 with ((fun f:fstate => lb a f - ub b f >= 0)).
+     eapply simpl2 with ((fun f:fstate => ub a f - lb b f >= floatMin)).
+     unfold split_All_predInt; simpl.
+     eapply keep.
+     {
+       eapply refine_predInt_entails; simpl; intros.
+       exact H.
+       simpl in H0.
+       forward_reason.
+       split.
+       {
+         rewrite boundLbBet0AndFloatMin. 
+         pose proof floatMinGt0.
+         assert (- floatMin <= 0).
+         psatz R.
+         exact H18.
+         psatz R.
+         psatz R.
+       }
+       {
+         rewrite boundUbGtFloatMin.
+         apply Rle_refl. 
+         psatz R.
+       }   
+     }
+     eapply AllPredIntKeep.
+     {
+       eapply simpl2 with ((fun f:fstate => lb a f - ub b f > -floatMin)).
+       unfold split_All_predInt; simpl.
+       eapply keep.
+       {
+         eapply refine_predInt_entails; simpl; intros.
+         exact H.
+         simpl in H0.
+         forward_reason.
+         split.
+         {
+           rewrite boundLbBetNegFloatMinAnd0.       
+           apply Rle_refl.
+           psatz R.
+           psatz R.
+         }
+         {
+           rewrite boundUbGtFloatMin.
+           apply Rle_refl.
+           psatz R.
+         }
+       }
+       {
+         eapply keep.
+         {
+           eapply refine_predInt_entails; simpl; intros.
+           exact H.
+           simpl in H0.
+           forward_reason.
+           split.
+           {
+             rewrite boundLbLessThanFloatMin.
+             eapply Rle_refl.
+             psatz R.
+           }
+           {
+             rewrite boundUbGtFloatMin.
+             apply Rle_refl. 
+             psatz R.
+           }
+         }
+         {
+           eapply done.
+         }
+       }
+     }
+     {
+       eapply AllPredIntKeep.
+       {
+         eapply simpl2 with ((fun f:fstate => ub a f - lb b f >= 0)).
+         unfold split_All_predInt; simpl.
+         eapply keep.
+         {
+           eapply refine_predInt_entails; simpl; intros.
+           exact H.
+           simpl in H0.
+           forward_reason.
+           split.
+           {
+             rewrite boundLbBet0AndFloatMin.
+             pose proof floatMinGt0.
+             assert (-floatMin <= 0).
+             psatz R.
+             eapply Rle_refl.
+             psatz R.
+             psatz R.
+           }
+           {
+             rewrite boundUbBet0AndFloatMin.
+             apply Rle_refl.
+             psatz R.
+           }
+         }      
+         {
+           intros.
+           eapply drop1.
+           intros.
+           simpl in *.
+           psatz R.
+           eapply done.
+         }
+       }
+       {
+         eapply simpl2 with ((fun f:fstate => lb a f - ub b f <= -floatMin)).
+         eapply simpl2 with ((fun f:fstate => ub a f - lb b f >= R0)).
+         unfold split_All_predInt; simpl.
+         eapply keep.
+         {
+           eapply refine_predInt_entails; simpl; intros.
+           exact H.
+           simpl in H0.
+           forward_reason.
+           split.
+           {
+             rewrite boundLbLessThanFloatMin.
+             eapply Rle_refl.
+             psatz R.
+           }
+           {
+             rewrite boundUbBet0AndFloatMin.
+             unfold roundUp_subnormal.
+             apply Rle_refl.
+             psatz R.
+           }
+         }     
+         {
+           eapply keep.
+           {
+             eapply refine_predInt_entails; simpl; intros.
+             exact H.
+             simpl in H0.
+             forward_reason.
+             split.
+             {
+               rewrite boundLbBetNegFloatMinAnd0.
+               eapply Rle_refl.
+               psatz R.
+               psatz R.
+             }
+             {
+               rewrite boundUbBet0AndFloatMin.
+               apply Rle_refl.
+               psatz R.
+             }
+           }
+           {
+             
+             eapply AllPredIntKeep.
+             {
+               eapply simpl2 with ((fun f:fstate => ub a f - lb b f <= -floatMin)).
+               unfold split_All_predInt; simpl.
+               eapply keep.
+               {
+                 eapply refine_predInt_entails; simpl; intros.
+                 exact H.
+                 simpl in H0.
+                 forward_reason.
+                 split.
+                 {
+                   rewrite boundLbLessThanFloatMin.
+                   eapply Rle_refl.
+                   psatz R.
+                 }
+                 {
+                   rewrite boundUbLessThanFloatMin.
+                   apply Rle_refl.
+                   psatz R.
+                 }
+               }
+               {
+                 eapply keep.
+                 {
+                   eapply refine_predInt_entails; simpl; intros.
+                   exact H.
+                   simpl in H0.
+                   forward_reason.
+                   split.
+                   {
+                     rewrite boundLbLessThanFloatMin.
+                     eapply Rle_refl.
+                     psatz R.
+                   }
+                   {
+                     rewrite boundUbBetNegFloatMinAnd0.
+                     apply Rle_refl.
+                     psatz R.
+                   }
+                 }
+                 {
+                   apply done.
+                 }
+               }
+             }
+             {
+               eapply simpl2 with ((fun f:fstate => ub a f - lb b f <= -floatMin)).
+               unfold split_All_predInt; simpl.
+               eapply keep.
+               {
+                 eapply refine_predInt_entails; simpl; intros.
+                 exact H.
+                 simpl in H0.
+                 forward_reason.
+                 split.
+                 {
+                   rewrite boundLbLessThanFloatMin.
+                   eapply Rle_refl.
+                   psatz R.
+                 }
+                 {
+                   rewrite boundUbLessThanFloatMin.
+                   apply Rle_refl.
+                   psatz R.
+                 }
+               }
+               {
+                 eapply keep. 
+                 eapply refine_predInt_entails; simpl; intros.
+                 exact H.
+                 simpl in H0.
+                 forward_reason.
+                 split.
+                 {
+                   rewrite boundLbBetNegFloatMinAnd0.
+                   eapply Rle_refl.
+                   psatz R.
+                   psatz R.
+                 }
+                 {
+                   rewrite boundUbBetNegFloatMinAnd0.
+                   apply Rle_refl.
+                   psatz R.
+                 }
+                 
+                 eapply done.
+               }
+             }
+           }
+         }
+       }
+  } }
+
+Defined.
+
+
+
+Eval cbv beta iota zeta delta [ absFloatPlus_demo optimized ] in absFloatPlus_demo.
+
+Eval cbv beta iota zeta delta [ absFloatMinus_demo optimized ] in absFloatMinus_demo.
+
 Print roundDown.
 Print roundDown_relative.
