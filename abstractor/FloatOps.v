@@ -14,7 +14,6 @@ Require Import Flocq.Core.Fcore_defs.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
 Require Import Abstractor.Fappli_IEEE_extra.
-
 Require Abstractor.Floats.
 
 Require Import ExtLib.Programming.Extras.
@@ -87,7 +86,7 @@ Qed.
 Lemma custom_precGt0 : Fcore_FLX.Prec_gt_0 custom_prec.
 unfold Fcore_FLX.Prec_gt_0.
 unfold custom_prec.
-pose proof precGe1. 
+pose proof precGe1.
 lia.
 Qed.
 
@@ -96,11 +95,13 @@ unfold custom_emax, custom_prec.
 apply precLtEmax.
 Qed.
 
-Definition custom_nan:float -> float -> bool * nan_pl custom_prec := Floats.Float32.binop_pl.
+Definition custom_nan:float -> float -> bool * nan_pl custom_prec :=
+  Floats.Float32.binop_pl.
 
 
 Definition nat_to_float (n : nat) : float :=
-Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n).
+  Fappli_IEEE_extra.BofZ custom_prec custom_emax
+                         custom_precGt0 custom_precLtEmax (Z.of_nat n).
 
 Definition FloatToR : (float) -> R := B2R custom_prec custom_emax.
 
@@ -206,4 +207,4 @@ Definition float_le (a b : float) : bool :=
   | B754_infinity _ _ is_neg => is_neg
   | B754_nan _ _ is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
   | B754_finite _ _ is_neg _ _ _ => is_neg
-  end.  
+  end.
