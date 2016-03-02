@@ -18,7 +18,7 @@
 Require Import Eqdep_dec.
 Require Import Zquot.
 Require Import Zwf.
-Require Import Coqlib.
+Require Import Abstractor.Coqlib.
 Require Import Coq.Bool.Bool.
 
 (** * Comparisons *)

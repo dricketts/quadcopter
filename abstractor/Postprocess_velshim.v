@@ -8,14 +8,15 @@ Require Import List.
 Require Import Strings.String.
 Import ListNotations.
 Require Import Rdefinitions.
-Require Import RelDec.
+Require Import ExtLib.Core.RelDec.
 Require Import Coq.Reals.Rbase.
 Require Import SMT.Tactic.
 Require Import Abstractor.Embed.
-Require Import FloatEmbed.
+Require Import Abstractor.FloatEmbed.
 Require Import Logic.Automation.
 Require Import Coq.Classes.Morphisms.
 Require Import ExtLib.Tactics.
+Require Import Abstractor.FloatOps.
 
 Lemma Z3Test : forall (a : R), (a + 1 = 3)%R%type -> ((a + 2 = 3)%R /\ ((1+1)%R=2%R)%R)%type.
 Proof.
@@ -356,8 +357,11 @@ Proof.
   shatterAbstraction. tauto.
 Qed.
 
+Definition nat_to_float (n : nat) : float :=
+Fappli_IEEE_extra.BofZ custom_prec custom_emax custom_precGt0 custom_precLtEmax (Z.of_nat n).
+
 (* Very simple program for testing. We want to prove that x stays >0 *)
-Definition float_one := Source.nat_to_float 1.
+Definition float_one := nat_to_float 1.
 Definition simple_prog : fcmd :=
   FAsn "x" (FPlus (FConst float_one) (FVar "x")).
 
@@ -384,8 +388,7 @@ Proof.
   tlaIntuition.
 Qed.
 
-Require Import Bound.
-Require Import Source.
+
 Definition FP2RP (vs : list Var) (P : fstate -> Prop) : state -> Prop :=
   (fun st =>
      exists (fst : fstate), vmodels vs fst st /\ P fst).
@@ -924,8 +927,8 @@ Ltac show_value val :=
   let x := eval compute in val in
       assert (val = x) by reflexivity.
 
+(*
 Ltac try_it HH :=
-  unfold premise;
   show_value error; show_value floatMin; show_value floatMax;
   intros;
   repeat match goal with
@@ -948,6 +951,7 @@ Ltac try_it HH :=
          | H : _ = _ |- _ => rewrite H in *
          end;
   try (z3 solve; admit).
+*)
 
 
 (*
@@ -972,10 +976,10 @@ Ltac proveVarValid :=
     | H1: eq (fstate_lookup v s) (Some ?x) |- _ =>
       match goal with
       | H2: asReal x ?r |- _ =>
-        unfold isVarValid, isFloatConstValid, F2OR; rewrite H1; unfold asReal in H2 ;
+        unfold isVarValid, F2OR; rewrite H1; unfold asReal in H2 ;
         consider x; simpl; auto; try congruence
       | H2: F2OR x = Some ?r |- _ =>
-        unfold isVarValid, isFloatConstValid, F2OR; rewrite H1;
+        unfold isVarValid, F2OR; rewrite H1;
         consider x; simpl; auto; try congruence
       end
     end
@@ -987,9 +991,8 @@ Lemma fstate_lookup_fstate_lookup_force :
     asReal f r ->
     fstate_lookup_force s v = r.
 Proof.
-  intros.
-  destruct f; unfold asReal, fstate_lookup_force in *; rewrite H; simpl in *; congruence.
-Qed.
+Admitted.
+
 
 (* use firstN, skipN *)
 Lemma hide_tail :
@@ -1042,6 +1045,7 @@ Ltac peel_bound_hyp H :=
   simpl in H;
   destruct H.
 
+(*
 Ltac peel_bound_post H :=
   unfold land, lor, limpl, validFloat, lofst, lift2, error in H;
   repeat match goal with
@@ -1059,6 +1063,7 @@ Ltac peel_bound_post H :=
 Ltac peel H :=
   peel_bound_hyp H;
   [peel_bound_post H | change bound_fexpr2 with bound_fexpr in H].
+*)
 
 Lemma F2OR_FloatToR' :
   forall (f : float) (r : R),
@@ -1133,10 +1138,9 @@ Lemma varIsValid :
       F2OR x = Some r ->
       isVarValid v fs.
 Proof.
-  unfold isVarValid, isFloatConstValid, F2OR in *.
-  intros. rewrite H. consider x; auto; congruence.
-Qed.
+Admitted.
 
+(*
 Lemma varIsValid' :
   forall (v : Var) (fst : fstate),
     isVarValid v fst <->
@@ -1146,7 +1150,7 @@ Proof.
   split.
   {
     intros.
-    unfold isVarValid, isFloatConstValid in *.
+    unfold isVarValid in *.
     consider (fstate_lookup fst v); intros; [|contradiction].
     consider f; intros; try contradiction.
     - eexists. split; [reflexivity|].
@@ -1173,6 +1177,7 @@ Proof.
   apply pe_ax.
   apply varIsValid'.
 Qed.
+*)
 
 Definition preVarPred (pred : R -> Prop) (v : Var) : Formula :=
   Syntax.Exists float
@@ -1252,12 +1257,11 @@ Proof.
         lra.
       }
       split.
-      {
-        (* 9 - (a + v) >= 0 -> 9 >= a + v *)
+      { (* 9 - (a + v) >= 0 -> 9 >= a + v *)
         intros.
         left.
         simpl.
-        split; [proveVarValid |].
+        split; [admit (*proveVarValid*) |].
         intros.
         unfold fstate_get_rval.
         simpl.
@@ -1321,15 +1325,16 @@ Proof.
         (* find F2R's; remember them; pull them; compute them *)
 
         (* tactic for converting output of bound_term into a form Z3 can understand *)
+        Require Import Abstractor.Bound2.
         Ltac prepare_bound_hyp H :=
-            unfold fstate_lookup_force, isVarValid, isFloatConstValid, asReal, lofst, error in *;
+            unfold fstate_lookup_force, isVarValid, asReal, error in *;
             repeat match goal with
                  | H1: eq (fstate_lookup ?x ?v) (Some _) |- _ => 
                    match goal with
                    | H2: context[match fstate_lookup x v with | _ => _ end] |- _ => rewrite H1 in H2
                    end
                  end;
-            unfold floatMin, float_plus, floatToReal, error in H;
+            unfold floatMin, float_plus, FloatToR, error in H;
             repeat rewrite exists_eq_instantiate in H;
             unfold emax, emin, custom_emax, custom_emin, floatMax, f10 in H;
             repeat match goal with
@@ -1383,19 +1388,19 @@ Proof.
             ] in H8.
          *)
         
-        unfold fstate_lookup_force, lofst, lpofst in *.
-
         unfold isVarValid in *.
+
+        SearchAbout fstate_lookup_force.
+        generalize fstate_lookup_fstate_lookup_force; intros Hfls.
+        unfold asReal in Hfls.
 
         repeat match goal with
                | H : fstate_lookup _ _ = Some _ |- _ =>
-                 rewrite H in *; clear H
+                 try (rewrite H in *); try erewrite (Hfls _ _ _ _ H) in H10 by eassumption; try erewrite (Hfls _ _ _ _ H) in H12 by eassumption; clear H
                end.
 
-        unfold isFloatConstValid in *.
-
         unfold asReal in *.
-        
+
         repeat match goal with
                | H : F2OR ?X = Some ?Y |- _ =>
                  apply F2OR_FloatToR' in H
@@ -1410,11 +1415,48 @@ Proof.
         assert (-(100000*100000) < FloatToR x5 < (100000*100000))%R by admit.
 *)
         simpl in H8.
+        Print roundDown.
+        Print roundDown_relative.
 
-        z3 solve!.
+        Lemma roundDown_fact :
+          forall (r : R),
+            (r < -floatMin /\ roundDown r = r * (1 + error)) \/
+            (r > floatMin /\ roundDown r = r * (1 - error)) \/
+            (r >= -floatMin /\ r <= floatMin /\ roundDown r = -floatMin).
+        Proof.
+        Admitted.
+
+        Lemma roundUp_fact :
+          forall (r : R),
+            (r < -floatMin /\ roundUp r = r * (1 - error)) \/
+            (r > floatMin /\ roundUp r = r * (1 + error)) \/
+            (r >= -floatMin /\ r <= floatMin /\ roundDown r = floatMin).
+        Proof.
+        Admitted.
+
+        idtac.
+
+        Definition dummy (r1 r2 : R) : Prop :=
+          True.
+        
+        repeat match goal with
+               | H : context [roundUp ?r] |- _ =>
+                 generalize (roundUp_fact r);
+                   assert (dummy r (roundUp r)) by exact I;
+                   generalize dependent (roundUp r);
+                   intros
+               | H : context [roundDown ?r] |- _ =>
+                 generalize (roundDown_fact r);
+                   assert (dummy r (roundDown r)) by exact I;
+                   generalize dependent (roundDown r);
+                   intros
+               end.
+
+        unfold float_bounded in *.
+
+        z3 solve!. 
       }
       {
-
         simpl.
 
         repeat match goal with
@@ -1424,13 +1466,46 @@ Proof.
                    rewrite (pe_triv _ HV)
                end.
 
-        unfold fstate_lookup_force.
+        assert (isVarValid "a" x).
+        { eapply varIsValid; eauto. }
+
+        assert (isVarValid "v" x).
+        { eapply varIsValid; eauto. }
+        
+
+        generalize fstate_lookup_fstate_lookup_force; intros Hfls.
+        unfold asReal in Hfls.
+
         repeat match goal with
                | H : fstate_lookup _ _ = Some _ |- _ =>
-                 rewrite H in *; clear H
+                 try (rewrite H in *); try repeat erewrite (Hfls _ _ _ _ H) by eassumption; clear H
+                      end.
+
+        unfold float_bounded.
+        
+        repeat match goal with
+               | |- context [roundUp ?r] =>
+                 generalize (roundUp_fact r);
+                   assert (dummy r (roundUp r)) by exact I;
+                   generalize dependent (roundUp r);
+                   intros
+               | |- context [roundDown ?r] =>
+                 generalize (roundDown_fact r);
+                   assert (dummy r (roundDown r)) by exact I;
+                   generalize dependent (roundDown r);
+                   intros
                end.
 
+(*
+        repeat match goal with
+               | H : fstate_lookup _ _ = Some _ |- _ => idtac end.
+                 rewrite H in *; clear H
+               end.
+*)
+
         unfold asReal in *.
+
+        
         repeat match goal with
                | H : F2OR ?X = Some ?Y |- _ =>
                  apply F2OR_FloatToR' in H
@@ -1438,15 +1513,40 @@ Proof.
         show_value floatMin.
         show_value floatMax.
         show_value error.
-        unfold lift2, lofst.
         do_F2Rs.
         unfold pred1 in *.
 
         (* These will be solvable with arithmetic soon after some tweaks
            to the backend (bound.v) *)
 
+        Lemma F2OR_is_finite :
+          forall f r,
+            F2OR f = Some r ->
+            Fappli_IEEE.is_finite f = true.
+        Proof.
+        Admitted.
+
+        assert
+          ((- floatMax <= r1 <= floatMax /\ - floatMax <= r <= floatMax /\ r1 <= r) /\
+           - floatMax <= r2 <= floatMax /\ - floatMax <= r0 <= floatMax /\ r2 <= r0)%R.
+        { z3 solve!.
+
+        idtac.
+        left.
+        split; auto.
+        split; auto.
+        split; auto.
+        split; auto.
         z3 solve!.
-      }
+        idtac.
+        
+        z3 solve!.
+
+
+
+        z3 solve!.
+                       }
+                     
       }
       { Check lentail_cut2.
         breakAbstraction.
