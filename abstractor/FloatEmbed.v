@@ -1413,3 +1413,5 @@ Proof.
     unfold M.pl_data in *. congruence.
   - fwd. eexists; eauto.
 Qed.
+
+Export Embedding.

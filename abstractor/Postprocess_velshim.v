@@ -383,23 +383,15 @@ Proof.
   tlaIntuition.
 Qed.
 
-
-Definition FP2RP (vs : list Var) (P : fstate -> Prop) : state -> Prop :=
-  (fun st =>
-     exists (fst : fstate), vmodels vs fst st /\ P fst).
-
 (* Version of HoareA_embed_ex we can use for rewriting. *)
 Require Import ExtLib.Tactics.
 Import FloatEmbed.
 Locate Ltac breakAbstraction.
 
-Definition FP2RP' (vs : list Var) (P : fstate -> Prop) (Q : Prop) : state -> Prop :=
-  (fun st =>
-     exists (fst : fstate), vmodels vs fst st /\ (P fst -> Q)).
-
-Check FloatEmbed.embed_ex.
+(*
 Axiom Always_proper : Proper (lentails ==> lentails) Syntax.Always.
 Existing Instance Always_proper.
+*)
 
 (* Used to begin rewriting in our goal. *)
 Lemma lequiv_rewrite_left :
@@ -408,29 +400,6 @@ Lemma lequiv_rewrite_left :
 Proof.
   shatterAbstraction. intuition.
 Qed.
-
-(* Convert a predicate over float states to a predicate over real states *)
-
-(*
-Definition FP2RP (P : fstate -> Prop) : state -> Prop :=
-  (fun st =>
-     exists (fst : fstate),
-       (forall (v : Var) (f : float), fstate_lookup fst v = Some f ->
-                                      exists r, F2OR f = Some r /\ st v = r) /\
-       P fst).
- *)
-
-(* Here is the thing I am trying to figure out *)
-(*
-Lemma FP2RP_rewrite :
-  forall ivs,
-  _ /\ (isFloat ivs _) -|- FP2RP ivs (fun st => ... (F2R x...)).
-*)
-
-(* this theorem is not true so try something that is, like always set x to 5; need invariant that x is float
-   simple_prog_ivs will be given to is_float
- *)
-
 
 (* Automation for rewriting Embeds *)
 Hint Extern
@@ -449,7 +418,7 @@ Hint Resolve
 Ltac crunch_embeds :=
   progress repeat
            match goal with
-           | |- Embed (fun x y => vmodels _ _ _) -|- _ => reflexivity
+           | |- Embed (fun x y => models _ _ _) -|- _ => reflexivity
            | |- Embed (fun x y => _ -> _) -|- _ => eapply embed_push_Imp
            | |- Embed (fun x y => _ \/ _) -|- _ => eapply embed_push_Or
            | |- Embed (fun x y => _ /\ _) -|- _ => eapply embed_push_And
@@ -664,7 +633,7 @@ Proof.
   intros.
   generalize (fpig_vcgen_correct prg vs (fun fst'0 : fstate => models vs fst'0 st')); intros.
   destruct (fpig_vcgen prg vs); intros.
-  unfold Hoare_, Hoare in *.
+  unfold Hoare in *.
   specialize (H fst).
 (*
   generalize (models_fstate_has_vars vs nil fst st); intros. simpl in H3. fwd.
@@ -1071,7 +1040,7 @@ Proof.
       breakAbstraction.
       Transparent bound_fexpr.
       intros. forward_reason.
-      unfold vmodels, velshim_vs, models in H.
+      unfold velshim_vs, models in H.
       generalize (H "a"); intro Ha.
       destruct Ha as [Ha dead]; clear dead.
       destruct Ha; [left; reflexivity|].
