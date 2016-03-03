@@ -197,6 +197,19 @@ Module Type EMBEDDING_THEOREMS.
   Axiom Hoare_Hoare' : forall (P : M.istate -> Prop) (c : M.ast)
                               (Q : M.istate -> Prop),
       M.Hoare P c Q <-> M.Hoare' P c Q.
+
+  Axiom Hoare__embed :
+    forall P c Q vs,
+      M.Hoare P c Q ->
+      (|-- M.embed_ex vs c -->>
+           Embed (fun st st' =>
+                    exists fst,
+                      M.models vs fst st /\
+                      (P fst ->
+                       exists fst',
+                         M.models vs fst' st' /\
+                         Q fst'))).
+
 End EMBEDDING_THEOREMS.
 
 Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
@@ -276,4 +289,29 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
     { specialize (H _ H0). destruct H. auto. }
     { eauto. }
   Qed.
+
+  Theorem Hoare__embed :
+    forall P c Q vs,
+      M.Hoare P c Q ->
+      (|-- M.embed_ex vs c -->>
+           Embed (fun st st' =>
+                    exists fst,
+                      M.models vs fst st /\
+                      (P fst ->
+                       exists fst',
+                         M.models vs fst' st' /\
+                         Q fst'))).
+  Proof.
+    simpl. intros. unfold tlaEntails. simpl.
+    intros.
+    forward_reason.
+    unfold Hoare in H.
+    exists x. unfold models. split; auto.
+    intros.
+    exists x0.
+    split; auto.
+    specialize (H _ H4). forward_reason.
+    auto.
+  Qed.
+
 End EmbeddingProofs.

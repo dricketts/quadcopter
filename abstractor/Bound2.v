@@ -16,6 +16,7 @@ Require Import Flocq.Core.Fcore_FLT.
 Require Import Flocq.Core.Fcore_generic_fmt.
 Require Import Flocq.Core.Fcore_defs.
 Require Import Abstractor.FloatOps.
+Require Import Abstractor.FloatLang.
 Require Import Abstractor.Integers.
 
 Import ListNotations.

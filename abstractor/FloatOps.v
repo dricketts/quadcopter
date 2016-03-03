@@ -7,9 +7,6 @@ Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Rdefinitions.
 Require Import List.
 Import ListNotations.
-Require Import Logic.Syntax.
-Require Import Logic.Semantics.
-Require Import Logic.Lib.
 Require Import Flocq.Core.Fcore_defs.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
@@ -19,7 +16,6 @@ Require Abstractor.Floats.
 Require Import ExtLib.Programming.Extras.
 Import FunNotation.
 
-Local Close Scope HP_scope.
 Delimit Scope SrcLang_scope with SL.
 Local Open Scope SrcLang_scope.
 
@@ -112,20 +108,6 @@ Require Import ExtLib.Data.String.
 Require Import ExtLib.Data.Option.
 
 (* Semantics *)
-Definition fstate := list (Var * (float)).
-
-Fixpoint fstate_lookup (f : fstate) (v : Var) : option (float) :=
-  match f with
-  | List.nil          => None
-  | (v',b) :: fs =>
-    if v ?[ eq ] v' then
-      Some b
-    else fstate_lookup fs v
-  end.
-
-Definition fstate_set (f : fstate) (v : Var) (val : float) : fstate :=
-  (v, val) :: f.
-
 Definition lift2 {T U V : Type} (f : T -> U -> V) (a : option T) (b : option U) : option V :=
   match a , b with
   | Some a , Some b => Some (f a b)
@@ -141,6 +123,14 @@ Definition float_minus (a b : float) : float :=
 
 Definition float_mult (a b : float) : float :=
   Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR a b.
+
+Definition float_max (a b : float) : float :=
+  match Fappli_IEEE_extra.Bcompare _ _ a b with
+  | Some Datatypes.Eq => a
+  | Some Datatypes.Lt => b
+  | Some Datatypes.Gt => a
+  | None => a
+  end.
 
 (* This replaces a validity proof in the floating-point representation and replaces it with
    eq_refl (this is possible since boolean equality is decidable). Doing this optimization
@@ -207,4 +197,14 @@ Definition float_le (a b : float) : bool :=
   | B754_infinity _ _ is_neg => is_neg
   | B754_nan _ _ is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
   | B754_finite _ _ is_neg _ _ _ => is_neg
+  end.
+
+Definition fzero : float := Fappli_IEEE.B754_zero 24 128 false.
+Definition fnegzero : float := Fappli_IEEE.B754_zero 24 128 true.
+
+Definition F2OR (f : float) : option R :=
+  match f with
+  | Fappli_IEEE.B754_zero   _ _ _       => Some (FloatToR f)
+  | Fappli_IEEE.B754_finite _ _ _ _ _ _ => Some (FloatToR f)
+  | _                                   => None
   end.
