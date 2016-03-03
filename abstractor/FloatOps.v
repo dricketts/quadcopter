@@ -7,10 +7,8 @@ Require Import Coq.micromega.Psatz.
 Require Import Coq.Reals.Rdefinitions.
 Require Import List.
 Import ListNotations.
-Require Import Flocq.Core.Fcore_defs.
 Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Flocq.Appli.Fappli_IEEE_bits.
-Require Import Abstractor.Fappli_IEEE_extra.
 Require Abstractor.Floats.
 
 Require Import ExtLib.Programming.Extras.
@@ -102,10 +100,6 @@ Definition nat_to_float (n : nat) : float :=
 Definition FloatToR : (float) -> R := B2R custom_prec custom_emax.
 
 Coercion Pos.of_nat : nat >-> positive.
-
-Require Import ExtLib.Core.RelDec.
-Require Import ExtLib.Data.String.
-Require Import ExtLib.Data.Option.
 
 (* Semantics *)
 Definition lift2 {T U V : Type} (f : T -> U -> V) (a : option T) (b : option U) : option V :=

@@ -5,18 +5,9 @@
 
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Strings.String.
-Require Import Coq.micromega.Psatz.
 Require Import Coq.Lists.List.
-
 Require Import ExtLib.Core.RelDec.
-Require Import ExtLib.Data.Option.
-Require Import ExtLib.Tactics.
-
-Require Import Flocq.Core.Fcore_float_prop.
-Require Import Flocq.Core.Fcore_Zaux.
-Require Import Flocq.Core.Fcore_ulp.
-Require Import Flocq.Appli.Fappli_IEEE.
-
+Require Import ExtLib.Data.String.
 Require Import Abstractor.FloatOps.
 
 Definition Var := string.

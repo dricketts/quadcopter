@@ -7,11 +7,10 @@ Require Import Coq.Reals.Rbase.
 Require Import Coq.Strings.String.
 Require Import Coq.micromega.Psatz.
 Require Import Coq.Classes.Morphisms.
+Require Import Coq.Lists.List.
 
 Require Import Logic.Syntax.
-Require Import Logic.Semantics.
 Require Import Logic.Automation.
-Require Import Logic.ArithFacts.
 
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.Option.
@@ -19,13 +18,12 @@ Require Import ExtLib.Tactics.
 
 Require Import Flocq.Core.Fcore_float_prop.
 Require Import Flocq.Core.Fcore_Zaux.
-Require Import Flocq.Core.Fcore_ulp.
 Require Import Flocq.Appli.Fappli_IEEE.
 
 Require Import Abstractor.FloatOps.
 Require Import Abstractor.FloatLang.
 Require Import Abstractor.Embed.
-Require Import Abstractor.Bound2.
+Require Import Abstractor.Bound.
 
 
 Inductive pl_eq : float -> float -> Prop :=
@@ -428,15 +426,6 @@ Module FloatEmbed <: EMBEDDING.
 
   Definition pl_eq_lift := Roption pl_eq.
 
-(*
-  Definition pl_eq_lift (of1 of2 : option float) : Prop :=
-    match of1, of2 with
-    | None, None => True
-    | Some f1, Some f2 => pl_eq f1 f2
-    | _, _ => False
-    end.
-*)
-
   Lemma INR_gt_zero :
     forall (n : nat), (INR n >= 0)%R.
   Proof.
@@ -542,7 +531,6 @@ Module FloatEmbed <: EMBEDDING.
     red. eapply pl_trans.
   Qed.
 
-
   Instance Proper_lift2 {T : Type} {R : T -> T -> Prop} f
     : Proper (R ==> R ==> R) f ->
       Proper (Roption R ==> Roption R ==> Roption R) (lift2 f).
@@ -552,6 +540,121 @@ Module FloatEmbed <: EMBEDDING.
     destruct H1; constructor.
     eapply H; eauto.
   Qed.
+
+  Instance Proper_float_plus_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_plus.
+  Proof.
+    red. red.
+    induction 1; red.
+    { induction 1; try solve [ constructor ].
+      simpl; smashs; constructor.
+      simpl; smashs; constructor.
+      + eapply pl_symm.
+        eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+        simpl; smashs; constructor.
+      + eapply pl_trans; [ eapply IHpl_eq1 | ].
+        eapply pl_trans; [ | eapply IHpl_eq2 ].
+        simpl; smashs; constructor. }
+    { induction 1;
+      try solve [ constructor
+                | eapply pl_symm;
+                  eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+                  simpl; smashs; repeat constructor
+                | eapply pl_trans; [ eapply IHpl_eq1 | ];
+                  eapply pl_trans; [ | eapply IHpl_eq2 ];
+                  simpl; smashs; repeat constructor
+                | simpl; smashs; repeat constructor ]. }
+    { simpl. constructor. }
+    { simpl. destruct x; try constructor.
+      smashs; repeat constructor. }
+    { induction 1; try solve [ constructor
+                             | eapply pl_symm; eassumption
+                             | etransitivity; eauto
+                             | destruct p1; simpl; solve [ constructor
+                                                         | smashs; constructor ]
+                             | destruct p1; simpl; smashs; repeat constructor ]. }
+    { red in IHpl_eq.
+      intros. eapply pl_symm.
+      eapply IHpl_eq. eapply pl_symm; eauto. }
+    { intros. etransitivity. eapply IHpl_eq1. eassumption.
+      eapply IHpl_eq2. reflexivity. }
+  Qed.
+
+  Instance Proper_float_minus_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_minus.
+  Proof.
+    red. red.
+    induction 1; red.
+    { induction 1; try solve [ constructor ].
+      simpl; smashs; constructor.
+      simpl; smashs; constructor.
+      + eapply pl_symm.
+        eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+        simpl; smashs; constructor.
+      + eapply pl_trans; [ eapply IHpl_eq1 | ].
+        eapply pl_trans; [ | eapply IHpl_eq2 ].
+        simpl; smashs; constructor. }
+    { induction 1;
+      try solve [ constructor
+                | eapply pl_symm;
+                  eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+                  simpl; smashs; repeat constructor
+                | eapply pl_trans; [ eapply IHpl_eq1 | ];
+                  eapply pl_trans; [ | eapply IHpl_eq2 ];
+                  simpl; smashs; repeat constructor
+                | simpl; smashs; repeat constructor ]. }
+    { simpl. constructor. }
+    { simpl. destruct x; try constructor.
+      smashs; repeat constructor. }
+    { induction 1; try solve [ constructor
+                             | eapply pl_symm; eassumption
+                             | etransitivity; eauto
+                             | destruct p1; simpl; solve [ constructor
+                                                         | smashs; constructor ]
+                             | destruct p1; simpl; smashs; repeat constructor ]. }
+    { red in IHpl_eq.
+      intros. eapply pl_symm.
+      eapply IHpl_eq. eapply pl_symm; eauto. }
+    { intros. etransitivity. eapply IHpl_eq1. eassumption.
+      eapply IHpl_eq2. reflexivity. }
+  Qed.
+
+  Instance Proper_float_mult_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_mult.
+  Proof.
+    red. red.
+    induction 1; red.
+    { induction 1; try solve [ constructor
+                             | destruct p1; simpl; try solve [ constructor ] ].
+      + eapply pl_symm.
+        eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+        simpl; smashs; constructor.
+      + eapply pl_trans; [ eapply IHpl_eq1 | ].
+        eapply pl_trans; [ | eapply IHpl_eq2 ].
+        simpl; smashs; constructor. }
+    { induction 1;
+      try solve [ constructor
+                | eapply pl_symm;
+                  eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+                  simpl; smashs; repeat constructor
+                | eapply pl_trans; [ eapply IHpl_eq1 | ];
+                  eapply pl_trans; [ | eapply IHpl_eq2 ];
+                  simpl; smashs; repeat constructor
+                | simpl; smashs; repeat constructor ]. }
+    { simpl. constructor. }
+    { simpl. destruct x; try constructor. }
+    { induction 1; try solve [ constructor
+                             | eapply pl_symm; eassumption
+                             | etransitivity; eauto
+                             | destruct p1; simpl; solve [ constructor
+                                                         | smashs; constructor ]
+                             | destruct p1; simpl; smashs; repeat constructor ]. }
+    { red in IHpl_eq.
+      intros. eapply pl_symm.
+      eapply IHpl_eq. eapply pl_symm; eauto. }
+    { intros. etransitivity. eapply IHpl_eq1. eassumption.
+      eapply IHpl_eq2. reflexivity. }
+  Qed.
+
+  Instance Proper_float_max_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_max.
+  Proof. Abort.
 
   Lemma states_iso_fexprD :
     forall ist ist',
@@ -581,89 +684,15 @@ Module FloatEmbed <: EMBEDDING.
         congruence. }
       { constructor. } }
     { simpl. constructor. reflexivity. }
-(*
     { simpl.
-      unfold pl_eq_lift in IHfx1. unfold pl_eq_lift in IHfx2.
-      unfold lift2, pl_eq_lift.
-      inversion IHfx1; try constructor; clear IHfx1.
-      inversion IHfx2; try constructor; clear IHfx2.
-      (* begin experiment *)
-      unfold fplus, Bplus.
-      admit. (*
-      smashs; try solve [ constructor
-                        | apply pl_symm; constructor
-                        | apply pl_eq_F2OR in IHfx1; simpl in IHfx1; congruence
-                        | apply pl_finite_neq_zero in IHfx1; contradiction
-                        | apply pl_symm in IHfx1; apply pl_finite_neq_zero in IHfx1; contradiction
-                        | apply pl_eq_F2OR in IHfx2; simpl in IHfx2; congruence
-                        | apply pl_finite_neq_zero in IHfx2; contradiction
-                        | apply pl_symm in IHfx2; apply pl_finite_neq_zero in IHfx2; contradiction ].
-      apply pl_eq_finite_eq in IHfx1. apply pl_eq_finite_eq in IHfx2.
-      inversion IHfx1; inversion IHfx2; subst.
-      apply pl_refl. *) }
-    (* copypasta *)
+      destruct IHfx1; try constructor.
+      destruct IHfx2; try constructor; eapply Proper_float_plus_pl_eq; eauto. }
     { simpl.
-      unfold pl_eq_lift in IHfx1. unfold pl_eq_lift in IHfx2.
-      unfold lift2, pl_eq_lift.
-      smashs; try congruence; auto.
-      (* begin experiment *)
-      unfold fminus, Bplus, Bminus, Bplus. (* wtf *)
-      smashs; try solve [constructor]; try solve [apply pl_symm; constructor];
-      try solve [apply pl_eq_F2OR in IHfx1; simpl in IHfx1; congruence];
-      try solve [apply pl_finite_neq_zero in IHfx1; contradiction];
-      try solve [apply pl_symm in IHfx1; apply pl_finite_neq_zero in IHfx1; contradiction];
-      try solve [apply pl_eq_F2OR in IHfx2; simpl in IHfx2; congruence];
-      try solve [unfold Bopp in *; consider f0; consider f2; intros; subst; try congruence;
-                 apply pl_eq_F2OR in IHfx2; simpl in IHfx2; congruence];
-      try solve [unfold Bopp in *; consider f0; consider f2; intros; subst; try congruence;
-                 apply pl_symm in IHfx2; apply pl_finite_neq_zero in IHfx2; contradiction];
-      try solve [unfold Bopp in *; consider f0; consider f2; intros; subst; try congruence;
-                 apply pl_finite_neq_zero in IHfx2; contradiction].
-      { unfold Bopp in *; consider f0; consider f2; intros; subst; try congruence.
-        apply pl_eq_finite_eq in IHfx2.
-        inversion IHfx2; subst; clear IHfx2.
-        inversion H7; subst; clear H7.
-        inversion H2; subst; clear H2.
-        cutrewrite (eq e0 e2); [apply pl_refl|].
-        generalize (Coq.Logic.Eqdep_dec.UIP_dec Bool.bool_dec).
-        intros.
-        auto. }
-      { unfold Bopp in *; consider f0; consider f2; intros; subst; try congruence.
-        apply pl_eq_finite_eq in IHfx1.
-        inversion IHfx1; subst; clear IHfx1.
-        inversion H2; subst; clear H2.
-        inversion H7; subst; clear H7.
-        apply pl_eq_finite_eq in IHfx2.
-        inversion IHfx2; subst; clear IHfx2.
-        apply pl_refl. } }
-    (* copypasta *)
+      destruct IHfx1; try constructor.
+      destruct IHfx2; try constructor; eapply Proper_float_minus_pl_eq; eauto. }
     { simpl.
-      unfold pl_eq_lift in IHfx1. unfold pl_eq_lift in IHfx2.
-      unfold lift2, pl_eq_lift.
-      smashs; try congruence; auto.
-      unfold fmult, Bmult.
-      smashs; try solve [constructor]; try solve [apply pl_symm; constructor];
-      try solve [apply pl_eq_F2OR in IHfx1; simpl in IHfx1; congruence];
-      try solve [apply pl_finite_neq_zero in IHfx1; contradiction];
-      try solve [apply pl_symm in IHfx1; apply pl_finite_neq_zero in IHfx1; contradiction];
-      try solve [apply pl_eq_F2OR in IHfx2; simpl in IHfx2; congruence];
-      try solve [apply pl_finite_neq_zero in IHfx2; contradiction];
-      try solve [apply pl_symm in IHfx2; apply pl_finite_neq_zero in IHfx2; contradiction].
-      { apply pl_eq_finite_eq in IHfx1.
-        inversion IHfx1; subst; clear IHfx1.
-        apply pl_eq_finite_eq in IHfx2.
-        inversion IHfx2; subst; clear IHfx2.
-        cutrewrite (eq e0 e4).
-        { cutrewrite (eq e2 e6).
-          { apply pl_refl. }
-          { generalize (Coq.Logic.Eqdep_dec.UIP_dec Bool.bool_dec).
-            intros.
-            auto. } }
-        { generalize (Coq.Logic.Eqdep_dec.UIP_dec Bool.bool_dec).
-          intros.
-          auto. } } }
-    { simpl.
-*)
+      destruct IHfx1; try constructor.
+      destruct IHfx2; try constructor; eapply Proper_float_mult_pl_eq; eauto. }
   Admitted.
 
   Instance Proper_float_lt : Proper (pl_eq ==> pl_eq ==> iff) float_lt.
@@ -903,7 +932,6 @@ Fixpoint bound_fexpr (fx : fexpr) : All_predInt :=
   | FVar v =>
     {| lb := fun fst => fstate_lookup_force fst v;
        ub := fun fst => fstate_lookup_force fst v;
-       (* TODO: this premise is suspect; perhaps with fwp it can be eliminated *)
        premise := fun fst => isVarValid v fst |} :: nil
   | FConst f => absFloatConst f :: nil
   | FPlus fx1 fx2 =>
@@ -992,119 +1020,119 @@ Proof.
     eapply absFloatConst_ok. }
 Qed.
 
-  (* Useful prop combinator *)
-  Fixpoint AnyOf (Ps : list Prop) : Prop :=
-    match Ps with
-    | nil => False
-    | P :: Ps => P \/ AnyOf Ps
-    end%type.
+(* Useful prop combinator *)
+Fixpoint AnyOf (Ps : list Prop) : Prop :=
+  match Ps with
+  | nil => False
+  | P :: Ps => P \/ AnyOf Ps
+  end%type.
 
-  (* Lemmas aboutt Forall, needed for HoareA_ex_asn *)
-  Lemma Forall_impl : forall T (P Q : T -> Prop) ls,
-      List.Forall (fun x => P x -> Q x) ls ->
-      (List.Forall P ls -> List.Forall Q ls).
-  Proof.
-    induction 2.
-    - constructor.
-    - inversion H; clear H; subst.
-      constructor; eauto.
-  Qed.
+(* Lemmas aboutt Forall, needed for HoareA_ex_asn *)
+Lemma Forall_impl : forall T (P Q : T -> Prop) ls,
+    List.Forall (fun x => P x -> Q x) ls ->
+    (List.Forall P ls -> List.Forall Q ls).
+Proof.
+  induction 2.
+  - constructor.
+  - inversion H; clear H; subst.
+    constructor; eauto.
+Qed.
 
-  Lemma Forall_tauto : forall T (P : T -> Prop) ls,
-      (forall x, P x) ->
-      List.Forall P ls.
-  Proof.
-    induction ls; simpl; intros; eauto.
-  Qed.
+Lemma Forall_tauto : forall T (P : T -> Prop) ls,
+    (forall x, P x) ->
+    List.Forall P ls.
+Proof.
+  induction ls; simpl; intros; eauto.
+Qed.
 
-  Lemma Hoare_conseq : forall (P P' Q Q' : _ -> Prop) c,
-      Hoare_ P c Q ->
-      (forall fst, P' fst -> P fst) ->
-      (forall fst, Q fst -> Q' fst) ->
-      Hoare_ P' c Q'.
-  Proof.
-    unfold Hoare_, Hoare. intros.
-    eapply H0 in H2. eapply H in H2.
-    destruct H2.
-    split; eauto.
-  Qed.
+Lemma Hoare_conseq : forall (P P' Q Q' : _ -> Prop) c,
+    Hoare_ P c Q ->
+    (forall fst, P' fst -> P fst) ->
+    (forall fst, Q fst -> Q' fst) ->
+    Hoare_ P' c Q'.
+Proof.
+  unfold Hoare_, Hoare. intros.
+  eapply H0 in H2. eapply H in H2.
+  destruct H2.
+  split; eauto.
+Qed.
 
-  (* original *)
-  Lemma Hoare__bound_asn :
-    forall (P : _ -> Prop) v e,
-      Hoare_ (fun fst : fstate =>
-                exists res, fexprD e fst = Some res /\
-                       (forall res',
-                           All_predIntD (bound_fexpr e) res' fst ->
-                           P (fstate_set fst v res')))
-             (FAsn v e)
-             P.
-  Proof.
-    intros.
-    eapply Hoare_conseq; [ eapply Hoare__asn | | exact (fun _ x => x) ].
-    intros. forward_reason.
-    eexists; split; eauto.
-    eapply H0.
-    eapply bound_fexpr_sound; auto.
-  Qed.
+(* original *)
+Lemma Hoare__bound_asn :
+  forall (P : _ -> Prop) v e,
+    Hoare_ (fun fst : fstate =>
+              exists res, fexprD e fst = Some res /\
+                          (forall res',
+                              All_predIntD (bound_fexpr e) res' fst ->
+                              P (fstate_set fst v res')))
+           (FAsn v e)
+           P.
+Proof.
+  intros.
+  eapply Hoare_conseq; [ eapply Hoare__asn | | exact (fun _ x => x) ].
+  intros. forward_reason.
+  eexists; split; eauto.
+  eapply H0.
+  eapply bound_fexpr_sound; auto.
+Qed.
 
-  (* A couple of lemmas used for ITE rule *)
-  Lemma Hoare__or :
-    forall (P1 P2 Q : _ -> Prop) c,
-      Hoare_ P1 c Q ->
-      Hoare_ P2 c Q ->
-      Hoare_ (fun st => P1 st \/ P2 st)%type c Q.
-  Proof.
-    intros.
-    unfold Hoare_, Hoare in *.
-    intros.
-    destruct H1; eauto.
-  Qed.
+(* A couple of lemmas used for ITE rule *)
+Lemma Hoare__or :
+  forall (P1 P2 Q : _ -> Prop) c,
+    Hoare_ P1 c Q ->
+    Hoare_ P2 c Q ->
+    Hoare_ (fun st => P1 st \/ P2 st)%type c Q.
+Proof.
+  intros.
+  unfold Hoare_, Hoare in *.
+  intros.
+  destruct H1; eauto.
+Qed.
 
-  Lemma Hoare__False :
-    forall (P : _ -> Prop) c,
-      Hoare_ (fun _ => False) c P.
-  Proof.
-    intros.
-    unfold Hoare_, Hoare. intros. contradiction.
-  Qed.
+Lemma Hoare__False :
+  forall (P : _ -> Prop) c,
+    Hoare_ (fun _ => False) c P.
+Proof.
+  intros.
+  unfold Hoare_, Hoare. intros. contradiction.
+Qed.
 
-  Lemma or_distrib_imp :
-    forall A B C : Prop,
-      (A \/ B -> C) <->
-      (A -> C) /\ (B -> C).
-  Proof. tauto. Qed.
+Lemma or_distrib_imp :
+  forall A B C : Prop,
+    (A \/ B -> C) <->
+    (A -> C) /\ (B -> C).
+Proof. tauto. Qed.
 
-  Lemma and_distrib_or :
-    forall A B C : Prop,
-      A /\ (B \/ C) <->
-      (A /\ B) \/ (A /\ C).
-  Proof. tauto. Qed.
+Lemma and_distrib_or :
+  forall A B C : Prop,
+    A /\ (B \/ C) <->
+    (A /\ B) \/ (A /\ C).
+Proof. tauto. Qed.
 
-  Lemma float_lt_ge_trichotomy :
-    forall f f', (float_lt f f' \/ float_ge f f').
-  Proof.
-    intros. unfold float_lt, float_ge.
-    lra.
-  Qed.
+Lemma float_lt_ge_trichotomy :
+  forall f f', (float_lt f f' \/ float_ge f f').
+Proof.
+  intros. unfold float_lt, float_ge.
+  lra.
+Qed.
 
-  Lemma float_lt_ge_trichotomy_contra :
-    forall f f', float_lt f f' /\ float_ge f f' -> False.
-  Proof.
-    intros. unfold float_lt, float_ge in H. lra.
-  Qed.
+Lemma float_lt_ge_trichotomy_contra :
+  forall f f', float_lt f f' /\ float_ge f f' -> False.
+Proof.
+  intros. unfold float_lt, float_ge in H. lra.
+Qed.
 
-  Definition maybe_lt0 (api : All_predInt) (fst : fstate) : Prop :=
-    AnyOf (List.map
-             (fun sbt =>
-                (lb sbt fst <  0)%R /\
-                (premise sbt fst)) api).
+Definition maybe_lt0 (api : All_predInt) (fst : fstate) : Prop :=
+  AnyOf (List.map
+           (fun sbt =>
+              (lb sbt fst <  0)%R /\
+              (premise sbt fst)) api).
 
-  Definition maybe_ge0 (api : All_predInt) (fst : fstate) : Prop :=
-    AnyOf (List.map
-             (fun sbt =>
-                (ub sbt fst >=  0)%R /\
-                (premise sbt fst)) api).
+Definition maybe_ge0 (api : All_predInt) (fst : fstate) : Prop :=
+  AnyOf (List.map
+           (fun sbt =>
+              (ub sbt fst >=  0)%R /\
+              (premise sbt fst)) api).
 
 Lemma Hoare__ite :
   forall P Q1 Q2 ex c1 c2,
@@ -1212,27 +1240,27 @@ Proof.
     rewrite is_finite_FloatToR in H7 by eauto. psatz R. }
 Qed.
 
-  Fixpoint fexpr_check (e : fexpr) (vs : list Var) : bool :=
-    match e with
-    | FVar v => if in_dec string_dec v vs then true else false
-    | FConst _ => true
-    | FPlus e1 e2
-    | FMinus e1 e2
-    | FMult e1 e2
-    | FMax e1 e2 => andb (fexpr_check e1 vs) (fexpr_check e2 vs)
-    end.
+Fixpoint fexpr_check (e : fexpr) (vs : list Var) : bool :=
+  match e with
+  | FVar v => if in_dec string_dec v vs then true else false
+  | FConst _ => true
+  | FPlus e1 e2
+  | FMinus e1 e2
+  | FMult e1 e2
+  | FMax e1 e2 => andb (fexpr_check e1 vs) (fexpr_check e2 vs)
+  end.
 
-  Definition fstate_has_vars vs fst : Prop :=
-    List.Forall (fun x => fstate_lookup fst x <> None)%type vs.
+Definition fstate_has_vars vs fst : Prop :=
+  List.Forall (fun x => fstate_lookup fst x <> None)%type vs.
 
-  Lemma fexpr_check_sound :
-    forall fx vs,
-      fexpr_check fx vs = true ->
-      forall fst,
-        fstate_has_vars vs fst ->
-        exists (d : float), fexprD fx fst = Some d.
-  Proof.
-    induction fx; intros; simpl in *;
+Lemma fexpr_check_sound :
+  forall fx vs,
+    fexpr_check fx vs = true ->
+    forall fst,
+      fstate_has_vars vs fst ->
+      exists (d : float), fexprD fx fst = Some d.
+Proof.
+  induction fx; intros; simpl in *;
     (* take care of recursive cases *)
     try (unfold lift2;
          apply Bool.andb_true_iff in H; fwd;
@@ -1241,213 +1269,201 @@ Qed.
          fwd;
          rewrite H2; rewrite H3;
          eexists; reflexivity).
-    { destruct (in_dec string_dec v vs); try congruence.
-      eapply Forall_forall in H0; eauto.
-      destruct (fstate_lookup fst v); intuition. eauto. }
-    { eexists; reflexivity. }
-  Qed.
+  { destruct (in_dec string_dec v vs); try congruence.
+    eapply Forall_forall in H0; eauto.
+    destruct (fstate_lookup fst v); intuition. eauto. }
+  { eexists; reflexivity. }
+Qed.
 
-  (* new weakest-precondition function *)
-  (* P is postcondition *)
-  (* vs is var list going into the command *)
+(** Weakest pre-condition function
+ **)
+Fixpoint fpig_vcgen (c : fcmd) (vs : list Var)
+: (list Var * forall P : fstate -> Prop, fstate -> Prop) :=
+  match c with
+  | FSkip => (vs, fun P => P)
+  | FSeq c1 c2 =>
+    let (vs', t1) := fpig_vcgen c1 vs in
+    let (vs'', t2) := fpig_vcgen c2 vs' in
+    (vs'', fun P => t1 (t2 P))
+  | FAsn v e =>
+    if fexpr_check e vs then
+      (v :: vs,
+       fun (P : fstate -> Prop) fst  =>
+         forall res',
+           All_predIntD (bound_fexpr e) res' fst ->
+           P (fstate_set fst v res'))
+    else
+      (v :: vs, fun P _ => False)
+  | FIte e c1 c2 =>
+    if fexpr_check e vs then
+      let (_,P1) := fpig_vcgen c1 vs in
+      let (_,P2) := fpig_vcgen c2 vs in
+      let bs := bound_fexpr e in
+      (vs, fun (P : fstate -> Prop) fs =>
+             (maybe_lt0 bs fs -> P1 P fs) /\
+             (maybe_ge0 bs fs -> P2 P fs) /\
+             AnyOf
+               (map
+                  (fun pi : predInt =>
+                     let '(prem, _) := predInt_to_pair pi fs in prem)
+                  bs))
+    else
+      (vs, fun P _ => False)
+  | FFail => (vs, (fun P _ => False))
+  end.
 
-  Fixpoint fpig_vcgen (c : fcmd) (vs : list Var)
-  : (list Var * forall P : fstate -> Prop, fstate -> Prop) :=
-    match c with
-    | FSkip => (vs, fun P => P)
-    | FSeq c1 c2 =>
-      let (vs', t1) := fpig_vcgen c1 vs in
-      let (vs'', t2) := fpig_vcgen c2 vs' in
-      (vs'', fun P => t1 (t2 P))
-    | FAsn v e =>
-      if fexpr_check e vs then
-        (v :: vs,
-         fun (P : fstate -> Prop) fst  =>
-           forall res',
-             All_predIntD (bound_fexpr e) res' fst ->
-             P (fstate_set fst v res'))
-(*
-           AnyOf
-             (map
-                (fun pi : predInt =>
-                   let '(pred, bound) := predInt_to_pair pi fs in
-                   pred /\
-                   (forall (val : float) (r : R),
-                       F2OR val = Some r ->
-                       bound r -> P (fstate_set fs v val)))
-                (bound_fexpr e))) *)
-      else
-        (v :: vs, fun P _ => False)
-    | FIte e c1 c2 =>
-      if fexpr_check e vs then
-        let (_,P1) := fpig_vcgen c1 vs in
-        let (_,P2) := fpig_vcgen c2 vs in
-        let bs := bound_fexpr e in
-        (vs, fun (P : fstate -> Prop) fs =>
-               (maybe_lt0 bs fs -> P1 P fs) /\
-               (maybe_ge0 bs fs -> P2 P fs) /\
-               AnyOf
-                 (map
-                    (fun pi : predInt =>
-                       let '(prem, _) := predInt_to_pair pi fs in prem)
-                    bs))
-      else
-        (vs, fun P _ => False)
-    | FFail => (vs, (fun P _ => False))
-    end.
-
-  Lemma fstate_has_var_fstate_set :
-    forall vs fst v val,
-      fstate_has_vars vs fst ->
-      fstate_has_vars (v :: vs) (fstate_set fst v val).
-  Proof.
-    intros. constructor.
-    simpl. consider (v ?[ eq ] v); eauto. congruence.
-    unfold fstate_set; simpl.
-    induction vs.
-    - constructor.
-    - inversion H; clear H; subst.
-      constructor; eauto.
-      destruct (a ?[ eq ] v); eauto. congruence.
-  Qed.
+Lemma fstate_has_var_fstate_set :
+  forall vs fst v val,
+    fstate_has_vars vs fst ->
+    fstate_has_vars (v :: vs) (fstate_set fst v val).
+Proof.
+  intros. constructor.
+  simpl. consider (v ?[ eq ] v); eauto. congruence.
+  unfold fstate_set; simpl.
+  induction vs.
+  - constructor.
+  - inversion H; clear H; subst.
+    constructor; eauto.
+    destruct (a ?[ eq ] v); eauto. congruence.
+Qed.
 
 
-  Lemma fpig_vcgen_correct_lem :
-    forall (c : fcmd) (vs vs' : list Var)
-           (P : (fstate -> Prop) -> fstate -> Prop),
-      fpig_vcgen c vs = (vs', P) ->
-      (forall fs, fstate_has_vars vs' fs -> fstate_has_vars vs fs) /\
-      forall Q,
-        Hoare_ (fun fst => P Q fst /\ fstate_has_vars vs fst)
-               c
-               (fun fst' => Q fst' /\ fstate_has_vars vs' fst').
-  Proof.
-    induction c; simpl; intros.
-    { specialize (IHc1 vs).
-      destruct (fpig_vcgen c1 vs).
-      specialize (IHc1 _ _ eq_refl).
-      specialize (IHc2 l).
-      destruct (fpig_vcgen c2 l).
-      specialize (IHc2 _ _ eq_refl).
-      inversion H; clear H; subst.
-      fwd. split; eauto.
+Lemma fpig_vcgen_correct_lem :
+  forall (c : fcmd) (vs vs' : list Var)
+         (P : (fstate -> Prop) -> fstate -> Prop),
+    fpig_vcgen c vs = (vs', P) ->
+    (forall fs, fstate_has_vars vs' fs -> fstate_has_vars vs fs) /\
+    forall Q,
+      Hoare_ (fun fst => P Q fst /\ fstate_has_vars vs fst)
+             c
+             (fun fst' => Q fst' /\ fstate_has_vars vs' fst').
+Proof.
+  induction c; simpl; intros.
+  { specialize (IHc1 vs).
+    destruct (fpig_vcgen c1 vs).
+    specialize (IHc1 _ _ eq_refl).
+    specialize (IHc2 l).
+    destruct (fpig_vcgen c2 l).
+    specialize (IHc2 _ _ eq_refl).
+    inversion H; clear H; subst.
+    fwd. split; eauto.
+    intros.
+    eapply Hoare__seq; eauto. }
+  { inversion H; clear H; subst.
+    split; eauto using Hoare__skip. }
+  { generalize (fexpr_check_sound f vs).
+    destruct (fexpr_check f vs).
+    { intros. inversion H; clear H; subst.
+      split; [ inversion 1; auto | ].
       intros.
-      eapply Hoare__seq; eauto. }
-    { inversion H; clear H; subst.
-      split; eauto using Hoare__skip. }
-    { generalize (fexpr_check_sound f vs).
-      destruct (fexpr_check f vs).
-      { intros. inversion H; clear H; subst.
-        split; [ inversion 1; auto | ].
-        intros.
-        eapply Hoare_conseq.
-        eapply Hoare__bound_asn.
-        2: exact (fun _ x => x).
-        simpl. intros.
-        fwd.
-        specialize (H0 _ H1).
-        fwd. eexists; split; eauto.
-        intros.
-        eapply H in H2. split; eauto.
-        eapply fstate_has_var_fstate_set.
-        eauto. }
-      { intros. inversion H; clear H; subst.
-        split; [ inversion 1; auto | ]; intros.
-        eapply Hoare_conseq.
-        eapply Hoare__False.
-        tauto.
-        exact (fun _ x => x). } }
-    { generalize (fexpr_check_sound f vs).
-      destruct (fexpr_check f vs).
-      { specialize (IHc1 vs).
-        specialize (IHc2 vs).
-        destruct (fpig_vcgen c1 vs);
+      eapply Hoare_conseq.
+      eapply Hoare__bound_asn.
+      2: exact (fun _ x => x).
+      simpl. intros.
+      fwd.
+      specialize (H0 _ H1).
+      fwd. eexists; split; eauto.
+      intros.
+      eapply H in H2. split; eauto.
+      eapply fstate_has_var_fstate_set.
+      eauto. }
+    { intros. inversion H; clear H; subst.
+      split; [ inversion 1; auto | ]; intros.
+      eapply Hoare_conseq.
+      eapply Hoare__False.
+      tauto.
+      exact (fun _ x => x). } }
+  { generalize (fexpr_check_sound f vs).
+    destruct (fexpr_check f vs).
+    { specialize (IHc1 vs).
+      specialize (IHc2 vs).
+      destruct (fpig_vcgen c1 vs);
         destruct (fpig_vcgen c2 vs).
-        inversion H; clear H; subst.
-        specialize (IHc1 _ _ eq_refl).
-        specialize (IHc2 _ _ eq_refl).
-        split; eauto.
+      inversion H; clear H; subst.
+      specialize (IHc1 _ _ eq_refl).
+      specialize (IHc2 _ _ eq_refl).
+      split; eauto.
+      intros.
+      eapply Hoare_conseq.
+      eapply Hoare__bound_ite.
+      4: exact (fun _ x => x).
+      + eapply Hoare_conseq; [ eapply IHc1 | exact (fun _ x => x) | simpl ].
+        intros. destruct H0. split. apply H0.
+        destruct IHc1; eauto.
+      + eapply Hoare_conseq; [ eapply IHc2 | exact (fun _ x => x) | simpl ].
+        intros. destruct H0. split. apply H0.
+        destruct IHc2; eauto.
+      + simpl.
         intros.
-        eapply Hoare_conseq.
-        eapply Hoare__bound_ite.
-        4: exact (fun _ x => x).
-        + eapply Hoare_conseq; [ eapply IHc1 | exact (fun _ x => x) | simpl ].
-          intros. destruct H0. split. apply H0.
-          destruct IHc1; eauto.
-        + eapply Hoare_conseq; [ eapply IHc2 | exact (fun _ x => x) | simpl ].
-          intros. destruct H0. split. apply H0.
-          destruct IHc2; eauto.
-        + simpl.
-          intros.
-          fwd.
-          specialize (H fst H1).
-          fwd.
-          eexists; split; eauto.
-          split; eauto. }
-      { inversion H; clear H; subst.
-        intros.
-        split; auto; intros.
-        eapply Hoare_conseq.
-        eapply Hoare__False.
-        tauto.
-        exact (fun _ x => x). } }
+        fwd.
+        specialize (H fst H1).
+        fwd.
+        eexists; split; eauto.
+        split; eauto. }
     { inversion H; clear H; subst.
+      intros.
       split; auto; intros.
       eapply Hoare_conseq.
       eapply Hoare__False.
       tauto.
-      exact (fun _ x => x). }
-  Qed.
+      exact (fun _ x => x). } }
+  { inversion H; clear H; subst.
+    split; auto; intros.
+    eapply Hoare_conseq.
+    eapply Hoare__False.
+    tauto.
+    exact (fun _ x => x). }
+Qed.
 
-  Fixpoint fstate_has_vars_b (fst : fstate) (vs : list Var) :=
-    match vs with
-    | nil => true
-    | v :: vs' => andb (match fstate_lookup fst v with
-                        | None => false
-                        | Some _ => true
-                        end)
-                       (fstate_has_vars_b fst vs')
-    end.
+Fixpoint fstate_has_vars_b (fst : fstate) (vs : list Var) :=
+  match vs with
+  | nil => true
+  | v :: vs' => andb (match fstate_lookup fst v with
+                      | None => false
+                      | Some _ => true
+                      end)
+                     (fstate_has_vars_b fst vs')
+  end.
 
-  Lemma fstate_has_vars_b_ok : forall fs vs,
-      fstate_has_vars_b fs vs = true ->
-      fstate_has_vars vs fs.
-  Proof.
-    induction vs; simpl; intros.
-    - constructor.
-    - eapply Bool.andb_true_iff in H.
-      destruct H.
-      constructor; [ | eapply IHvs; eauto ].
-      destruct (fstate_lookup fs a); congruence.
-  Qed.
+Lemma fstate_has_vars_b_ok : forall fs vs,
+    fstate_has_vars_b fs vs = true ->
+    fstate_has_vars vs fs.
+Proof.
+  induction vs; simpl; intros.
+  - constructor.
+  - eapply Bool.andb_true_iff in H.
+    destruct H.
+    constructor; [ | eapply IHvs; eauto ].
+    destruct (fstate_lookup fs a); congruence.
+Qed.
 
-  Theorem fpig_vcgen_correct :
-    forall (c : fcmd) (vs : list Var) (P : fstate -> Prop),
-      let (vs',P') := fpig_vcgen c vs in
-       Hoare_ (fun fst => if fstate_has_vars_b fst vs then P' P fst
-                          else False)
-              c
-              (fun fst' => P fst').
-  Proof.
-    intros.
-    generalize (fpig_vcgen_correct_lem c vs).
-    destruct (fpig_vcgen c vs).
-    intros.
-    specialize (H _ _ eq_refl).
-    destruct H. clear H.
-    specialize (H0 P).
-    eapply Hoare_conseq. eassumption.
-    2: simpl; intros; tauto.
-    simpl.
-    intros.
-    generalize (fstate_has_vars_b_ok fst vs).
-    destruct (fstate_has_vars_b fst vs); tauto.
-  Qed.
+Theorem fpig_vcgen_correct :
+  forall (c : fcmd) (vs : list Var) (P : fstate -> Prop),
+    let (vs',P') := fpig_vcgen c vs in
+    Hoare_ (fun fst => if fstate_has_vars_b fst vs then P' P fst
+                       else False)
+           c
+           (fun fst' => P fst').
+Proof.
+  intros.
+  generalize (fpig_vcgen_correct_lem c vs).
+  destruct (fpig_vcgen c vs).
+  intros.
+  specialize (H _ _ eq_refl).
+  destruct H. clear H.
+  specialize (H0 P).
+  eapply Hoare_conseq. eassumption.
+  2: simpl; intros; tauto.
+  simpl.
+  intros.
+  generalize (fstate_has_vars_b_ok fst vs).
+  destruct (fstate_has_vars_b fst vs); tauto.
+Qed.
 
-  (* Finally here is a rule for using the vc gen in rewrting
+(* Finally here is a rule for using the vc gen in rewrting
      (see Postprocess*.v *)
-  Lemma Hoare__embed_rw
-  : forall (c : fcmd) (vs : list string),
+Lemma Hoare__embed_rw
+: forall (c : fcmd) (vs : list string),
     fembed_ex vs c |--
     Forall Q : fstate -> Prop,
       let (vs', P) := fpig_vcgen c vs in
