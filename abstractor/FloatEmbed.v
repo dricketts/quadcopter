@@ -237,24 +237,6 @@ Module FloatEmbed <: EmbeddedLang.
     - intros. subst. rewrite states_iso_iso'. unfold states_iso'. simpl. auto.
   Qed.
 
-  Lemma fstate_lookup_update_match :
-    forall fst v val,
-      Some val = fstate_lookup (fstate_set fst v val) v.
-  Proof.
-    intros.
-    simpl.
-    consider (v ?[eq] v); intro; subst; congruence.
-  Qed.
-
-  Lemma fstate_lookup_irrelevant_update :
-    forall fst v v' val,
-      v <> v' ->
-      fstate_lookup fst v = fstate_lookup (fstate_set fst v' val) v.
-  Proof.
-    intros.
-    simpl.
-    consider (v ?[eq] v'); intro; subst; congruence.
-  Qed.
 
   Lemma fstate_lookup_fm_lookup :
     forall fst v,
@@ -657,7 +639,8 @@ Module FloatEmbed <: EmbeddedLang.
    **  equality
    **)
   Instance Proper_float_max_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_max.
-  Proof. Abort.
+  Proof.
+  Admitted.
 
   Lemma states_iso_fexprD :
     forall ist ist',
@@ -696,7 +679,10 @@ Module FloatEmbed <: EmbeddedLang.
     { simpl.
       destruct IHfx1; try constructor.
       destruct IHfx2; try constructor; eapply Proper_float_mult_pl_eq; eauto. }
-  Admitted.
+    { simpl.
+      destruct IHfx1; try constructor.
+      destruct IHfx2; try constructor; eapply Proper_float_max_pl_eq; eauto. }
+  Qed.
 
   Instance Proper_float_lt : Proper (pl_eq ==> pl_eq ==> iff) float_lt.
   Proof.
@@ -840,11 +826,6 @@ Proof.
   - intros. inversion H1; subst; clear H1.
     rewrite H6 in H. inversion H; subst; clear H. assumption.
 Qed.
-
-(** NOTE(gmalecha): Get rid fo the alias **)
-About fm_lookup.
-About fstate_lookup.
-
 
 Definition fstate_lookup_force (fs : fstate) (v : Var) : R :=
   match fstate_lookup fs v with
@@ -1407,24 +1388,28 @@ Lemma Hoare__embed_rw
                   exists fst' : fstate, models vs fst' st' /\ Q fst')).
 Proof.
   intros.
-  breakAbstraction.
-  intros.
-  fwd.
   generalize (fpig_vcgen_correct_lem c vs); intro Hfpc.
   destruct (fpig_vcgen c vs); intros.
-  unfold Hoare in *. simpl.
-  eexists x0. split; auto.
-  intros.
-  specialize (Hfpc _ _ eq_refl). destruct Hfpc.
-  exists x1. split; auto.
-  eapply H4; eauto.
-  split; auto.
-  clear - H.
-  unfold fstate_has_vars, models in *.
-  rewrite Forall_forall. intros.
-  eapply H in H0.
+  specialize (Hfpc _ _ eq_refl).
+  destruct Hfpc.
+  eapply lforallR. intro Q.
+  specialize (H0 Q).
+  eapply Hoare__embed with (vs:=vs) in H0.
+  charge_revert.
+  rewrite H0. clear - H.
+  breakAbstraction; intros.
   fwd.
-  clear - H0.
-  unfold FloatEmbed.pl_data in H0.
-  rewrite FloatEmbed.fstate_lookup_fm_lookup. congruence.
+  eexists; split; eauto.
+  intros.
+  destruct H2.
+  - intuition.
+    clear - H0.
+    unfold models, fstate_has_vars in *.
+    rewrite Forall_forall; intros.
+    eapply H0 in H.
+    fwd.
+    rewrite FloatEmbed.fstate_lookup_fm_lookup.
+    clear - H.
+    unfold M.pl_data in *. congruence.
+  - fwd. eexists; eauto.
 Qed.

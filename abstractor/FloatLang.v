@@ -8,6 +8,7 @@ Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Require Import ExtLib.Core.RelDec.
 Require Import ExtLib.Data.String.
+Require Import ExtLib.Tactics.Consider.
 Require Import Abstractor.FloatOps.
 
 Definition Var := string.
@@ -25,7 +26,6 @@ Fixpoint fstate_lookup (f : fstate) (v : Var) : option (float) :=
 
 Definition fstate_set (f : fstate) (v : Var) (val : float) : fstate :=
   (v, val) :: f.
-
 
 Inductive fexpr :=
 | FVar   : Var -> fexpr
@@ -95,3 +95,22 @@ Inductive feval : fstate -> fcmd -> fstate -> Prop :=
       feval s c2 os' ->
       feval s (FIte ex c1 c2) os'
 .
+
+Lemma fstate_lookup_update_match :
+  forall fst v val,
+    Some val = fstate_lookup (fstate_set fst v val) v.
+Proof.
+  intros.
+  simpl.
+  consider (v ?[eq] v); intro; subst; congruence.
+Qed.
+
+Lemma fstate_lookup_irrelevant_update :
+  forall fst v v' val,
+    v <> v' ->
+    fstate_lookup fst v = fstate_lookup (fstate_set fst v' val) v.
+Proof.
+  intros.
+  simpl.
+  consider (v ?[eq] v'); intro; subst; congruence.
+Qed.

@@ -211,7 +211,7 @@ Module Type EMBEDDING_THEOREMS.
 End EMBEDDING_THEOREMS.
 
 (** NOTE(gmalecha): Do we ever use this? **)
-Module Embedding (M : EmbeddedLang) <: EMBEDDING_THEOREMS with Module M := M.
+Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
   Module M := M.
   Import M.
 
