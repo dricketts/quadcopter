@@ -36,12 +36,14 @@ Inductive pl_eq : float -> float -> Prop :=
 | pl_trans : forall p1 p2 p3, pl_eq p1 p2 -> pl_eq p2 p3 -> pl_eq p1 p3
 .
 
+Local Ltac fwd := forward_reason.
+
 Definition real_float (r : R) (f : float) : Prop :=
   (F2OR f = Some r)%type.
 
 (* Instantiate our general embedding module for our particular case
    (floating-point, non-looping, imperative language) *)
-Module FloatEmbed <: EMBEDDING.
+Module FloatEmbed <: EmbeddedLang.
   Definition ast := fcmd.
   Definition pl_data := float.
   Definition eval := feval.
@@ -422,8 +424,6 @@ Module FloatEmbed <: EMBEDDING.
         consider (fstate_lookup ist s); intros; subst; eauto. }
   Qed.
 
-  Ltac fwd := forward_reason.
-
   Definition pl_eq_lift := Roption pl_eq.
 
   Lemma INR_gt_zero :
@@ -774,6 +774,7 @@ Module FloatEmbed <: EMBEDDING.
     intros. eapply eval_det'; eauto.
   Qed.
 
+
   Lemma asReal_det :
     forall (p p' : pl_data) (r : R),
       asReal p r ->
@@ -784,93 +785,15 @@ Module FloatEmbed <: EMBEDDING.
     intros. rewrite <- H in H0.
     apply F2OR_pl_eq in H0. apply pl_symm. auto.
   Qed.
-
-  Definition models (vars : list string) (ist : istate) (sst : Syntax.state)
-  : Prop :=
-    forall (s : string),
-      (In s vars ->
-      exists (d : pl_data),
-        fm_lookup ist s = Some d /\
-        asReal d (sst s)) /\
-      (~In s vars -> fm_lookup ist s = None).
-
-  Definition embedding : Type := list string -> ast -> Syntax.Formula.
-
-  Definition embedding_correct1 (embed : embedding) : Prop :=
-    forall (v : list string) (prg : ast) (is is' : istate)
-           (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
-      models v is ls ->
-      models v is' ls' ->
-      eval is prg is' ->
-      Semantics.eval_formula
-        (embed v prg)
-        (Stream.Cons ls (Stream.Cons ls' tr)).
-
-  Definition embedding_correct2 (embed : embedding) : Prop :=
-    forall (v : list string) (prg : ast) (is : istate) (ls : Syntax.state)
-           (tr : Stream.stream Syntax.state),
-      models v is ls ->
-      ~(exists is', eval is prg is') ->
-      ~(Semantics.eval_formula
-        (Enabled (embed v prg))
-        (Stream.Cons ls tr)).
-
-  (* Here is a correct embedding function.
-     Note that its correctness depends on the semantics being
-     deterministic *)
-  Definition embed_ex (v : list string) (prg : ast) : Syntax.Formula :=
-    Syntax.Embed (fun lpre lpost =>
-                    exists cpre cpost,
-                      models v cpre lpre /\
-                      models v cpost lpost /\
-                      eval cpre prg cpost).
-
-
-  (** Next, some definitions for Hoare-style reasoning about programs.
-      We use this to implement weakest-precondition.
-   **)
-  Section Hoare.
-    Variables (P : istate -> Prop) (c : ast) (Q : istate -> Prop).
-
-    Definition HoareProgress : Prop :=
-      forall s, P s -> exists s', eval s c s'.
-
-    Definition HoarePreservation : Prop :=
-      forall s, P s ->
-           forall s', eval s c s' ->
-                 Q s'.
-
-    (* safety no longer needed *)
-
-    Definition Hoare' : Prop :=
-      (HoareProgress /\ HoarePreservation)%type.
-
-    Definition Hoare : Prop :=
-      (forall s, P s ->
-            (exists s', eval s c s') /\
-            (forall s', eval s c s' -> Q s'))%type.
-
-  End Hoare.
-
 End FloatEmbed.
 
-(* The following is an axiomatic semantics for the floating point language in
- * terms of REAL numbers *)
-Import FloatEmbed.
-
-(** NOTE(gmalecha): What is the purpose of these synonyms? **)
-Definition vmodels := models.
-
-Definition Hoare_ := Hoare.
-
-Definition fembed_ex :=
-  embed_ex.
+Module Import Embedding := Embedding FloatEmbed.
 
 Lemma Hoare__skip :
-  forall (P : istate -> Prop),
-    Hoare_ P FSkip P.
+  forall (P : fstate -> Prop),
+    Hoare P FSkip P.
 Proof.
-  red. red. intros.
+  red. intros.
   split.
   { eexists; constructor. }
   { intros. inversion H0. subst. auto. }
@@ -878,30 +801,31 @@ Qed.
 
 Lemma Hoare__seq :
   forall P Q R c1 c2,
-    Hoare_ P c1 Q ->
-    Hoare_ Q c2 R ->
-    Hoare_ P (FSeq c1 c2) R.
+    Hoare P c1 Q ->
+    Hoare Q c2 R ->
+    Hoare P (FSeq c1 c2) R.
 Proof.
-  unfold Hoare_, Hoare.
+  unfold Hoare.
   intros.
   split.
   { eapply H in H1.
-    forward_reason.
+    fwd.
     specialize (H0 _ (H2 _ H1)).
     forward_reason.
     eexists. econstructor; eauto. }
   { intros. inversion H2; subst; clear H2.
-    specialize (H _ H1). fwd.
+    specialize (H _ H1).
+    forward_reason.
     specialize (H2 _ H6).
     specialize (H0 _ H2).
-    fwd; auto. }
+    forward_reason; auto. }
 Qed.
 
 (* this plus consequence should be enough to get our real assignment rule
    that talks about bounds *)
 Lemma Hoare__asn :
   forall P v e,
-    Hoare_
+    Hoare
       (fun fs : fstate =>
          exists val : float,
            fexprD e fs = Some val /\
@@ -909,7 +833,7 @@ Lemma Hoare__asn :
       (FAsn v e)
       P.
 Proof.
-  intros. red. red.
+  intros. red.
   intros. fwd.
   split.
   - eexists. constructor. eassumption.
@@ -917,7 +841,7 @@ Proof.
     rewrite H6 in H. inversion H; subst; clear H. assumption.
 Qed.
 
-(** TODO: Only one of these **)
+(** NOTE(gmalecha): Get rid fo the alias **)
 About fm_lookup.
 About fstate_lookup.
 
@@ -947,19 +871,6 @@ Fixpoint bound_fexpr (fx : fexpr) : All_predInt :=
   | FMax fx1 fx2 =>
     lift absFloatMax' (bound_fexpr fx1) (bound_fexpr fx2)
   end.
-
-Lemma fstate_lookup_miss :
-  forall fs v f,
-    fstate_lookup fs v = Some f ->
-    forall v' f',
-      v <> v' ->
-      fstate_lookup ((v',f') :: fs) v = Some f.
-Proof.
-  induction fs; simpl; intros.
-  { congruence. }
-  { destruct a.
-    consider (v ?[eq] v'); intros; congruence. }
-Qed.
 
 Definition predInt_to_pair (p : predInt) (fst : fstate) :=
   match p with
@@ -1050,12 +961,12 @@ Proof.
 Qed.
 
 Lemma Hoare_conseq : forall (P P' Q Q' : _ -> Prop) c,
-    Hoare_ P c Q ->
+    Hoare P c Q ->
     (forall fst, P' fst -> P fst) ->
     (forall fst, Q fst -> Q' fst) ->
-    Hoare_ P' c Q'.
+    Hoare P' c Q'.
 Proof.
-  unfold Hoare_, Hoare. intros.
+  unfold Hoare. intros.
   eapply H0 in H2. eapply H in H2.
   destruct H2.
   split; eauto.
@@ -1064,13 +975,13 @@ Qed.
 (* original *)
 Lemma Hoare__bound_asn :
   forall (P : _ -> Prop) v e,
-    Hoare_ (fun fst : fstate =>
-              exists res, fexprD e fst = Some res /\
-                          (forall res',
-                              All_predIntD (bound_fexpr e) res' fst ->
-                              P (fstate_set fst v res')))
-           (FAsn v e)
-           P.
+    Hoare (fun fst : fstate =>
+             exists res, fexprD e fst = Some res /\
+                         (forall res',
+                             All_predIntD (bound_fexpr e) res' fst ->
+                             P (fstate_set fst v res')))
+          (FAsn v e)
+          P.
 Proof.
   intros.
   eapply Hoare_conseq; [ eapply Hoare__asn | | exact (fun _ x => x) ].
@@ -1083,22 +994,22 @@ Qed.
 (* A couple of lemmas used for ITE rule *)
 Lemma Hoare__or :
   forall (P1 P2 Q : _ -> Prop) c,
-    Hoare_ P1 c Q ->
-    Hoare_ P2 c Q ->
-    Hoare_ (fun st => P1 st \/ P2 st)%type c Q.
+    Hoare P1 c Q ->
+    Hoare P2 c Q ->
+    Hoare (fun st => P1 st \/ P2 st)%type c Q.
 Proof.
   intros.
-  unfold Hoare_, Hoare in *.
+  unfold Hoare in *.
   intros.
   destruct H1; eauto.
 Qed.
 
 Lemma Hoare__False :
   forall (P : _ -> Prop) c,
-    Hoare_ (fun _ => False) c P.
+    Hoare (fun _ => False) c P.
 Proof.
   intros.
-  unfold Hoare_, Hoare. intros. contradiction.
+  unfold Hoare. intros. contradiction.
 Qed.
 
 Lemma or_distrib_imp :
@@ -1140,9 +1051,9 @@ Definition maybe_ge0 (api : All_predInt) (fst : fstate) : Prop :=
 
 Lemma Hoare__ite :
   forall P Q1 Q2 ex c1 c2,
-    Hoare_ Q1 c1 P ->
-    Hoare_ Q2 c2 P ->
-    Hoare_
+    Hoare Q1 c1 P ->
+    Hoare Q2 c2 P ->
+    Hoare
       (fun fs : fstate =>
          exists val : float,
            fexprD ex fs = Some val /\
@@ -1151,7 +1062,7 @@ Lemma Hoare__ite :
       (FIte ex c1 c2)
       P.
 Proof.
-  intros. red. red.
+  intros. red.
   intros. fwd.
   destruct (float_lt_ge_trichotomy x fzero).
   { specialize (H2 H4). eapply H in H2.
@@ -1171,8 +1082,6 @@ Proof.
       eapply float_lt_ge_trichotomy_contra; split; eauto. } }
 Qed.
 
-
-
 Lemma AnyOf_exists : forall Ps,
     AnyOf Ps <->
     exists P, In P Ps /\ P.
@@ -1191,9 +1100,9 @@ Qed.
 Lemma Hoare__bound_ite :
   forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
     let bs := bound_fexpr ex in
-    Hoare_ Q1 c1 P ->
-    Hoare_ Q2 c2 P ->
-    Hoare_ (fun fst => exists res, fexprD ex fst = Some res
+    Hoare Q1 c1 P ->
+    Hoare Q2 c2 P ->
+    Hoare (fun fst => exists res, fexprD ex fst = Some res
               /\ (maybe_lt0 bs fst -> Q1 fst)
               /\ (maybe_ge0 bs fst -> Q2 fst)
               /\ (AnyOf (List.map
@@ -1307,8 +1216,6 @@ Fixpoint fpig_vcgen (c : fcmd) (vs : list Var)
                      F2OR val = Some r ->
                      bound r -> P (fstate_set fst v val)))
               (bound_fexpr e)))
-
-         
     else
       (v :: vs, fun P _ => False)
   | FIte e c1 c2 =>
@@ -1351,9 +1258,9 @@ Lemma fpig_vcgen_correct_lem :
     fpig_vcgen c vs = (vs', P) ->
     (forall fs, fstate_has_vars vs' fs -> fstate_has_vars vs fs) /\
     forall Q,
-      Hoare_ (fun fst => P Q fst /\ fstate_has_vars vs fst)
-             c
-             (fun fst' => Q fst' /\ fstate_has_vars vs' fst').
+      Hoare (fun fst => P Q fst /\ fstate_has_vars vs fst)
+            c
+            (fun fst' => Q fst' /\ fstate_has_vars vs' fst').
 Proof.
   induction c; simpl; intros.
   { specialize (IHc1 vs).
@@ -1466,10 +1373,10 @@ Qed.
 Theorem fpig_vcgen_correct :
   forall (c : fcmd) (vs : list Var) (P : fstate -> Prop),
     let (vs',P') := fpig_vcgen c vs in
-    Hoare_ (fun fst => if fstate_has_vars_b fst vs then P' P fst
-                       else False)
-           c
-           (fun fst' => P fst').
+    Hoare (fun fst => if fstate_has_vars_b fst vs then P' P fst
+                      else False)
+          c
+          (fun fst' => P fst').
 Proof.
   intros.
   generalize (fpig_vcgen_correct_lem c vs).
@@ -1490,14 +1397,14 @@ Qed.
      (see Postprocess*.v *)
 Lemma Hoare__embed_rw
 : forall (c : fcmd) (vs : list string),
-    fembed_ex vs c |--
+    embed_ex vs c |--
     Forall Q : fstate -> Prop,
       let (vs', P) := fpig_vcgen c vs in
       Embed (fun st st' : state =>
                exists fst : fstate,
-                 vmodels vs fst st /\
+                 models vs fst st /\
                  (P Q fst ->
-                  exists fst' : fstate, vmodels vs fst' st' /\ Q fst')).
+                  exists fst' : fstate, models vs fst' st' /\ Q fst')).
 Proof.
   intros.
   breakAbstraction.
@@ -1505,8 +1412,7 @@ Proof.
   fwd.
   generalize (fpig_vcgen_correct_lem c vs); intro Hfpc.
   destruct (fpig_vcgen c vs); intros.
-  unfold Hoare_, Hoare in *. simpl.
-  unfold vmodels in *.
+  unfold Hoare in *. simpl.
   eexists x0. split; auto.
   intros.
   specialize (Hfpc _ _ eq_refl). destruct Hfpc.
@@ -1519,5 +1425,6 @@ Proof.
   eapply H in H0.
   fwd.
   clear - H0.
-  rewrite fstate_lookup_fm_lookup. congruence.
+  unfold FloatEmbed.pl_data in H0.
+  rewrite FloatEmbed.fstate_lookup_fm_lookup. congruence.
 Qed.

@@ -16,6 +16,8 @@ Require Import Rdefinitions.
 Require Import ExtLib.Core.RelDec.
 Require Import Coq.Reals.Rbase.
 
+Require Import ExtLib.Data.Option.
+
 Require Import micromega.Psatz.
 Require Import ExtLib.Tactics.
 Require Import FunctionalExtensionality.
@@ -38,26 +40,30 @@ Qed.
 
 (* state utility functions *)
 (* finite map lookup *)
-Fixpoint fm_lookup {T : Type} (l : list (string * T)) (s : string): option T :=
-  match l with
-  | nil => None
-  | (var, val) :: l' =>
-    if string_dec s var
-    then Some val
-    else fm_lookup l' s
-  end.
+Section lookup.
+  Context {T :Type}.
 
-(* finite map update *)
-Fixpoint fm_update {T : Type} (l : list (string * T)) (s : string) (t : T) : list (string * T) :=
-  match l with
-  | nil => [(s,t)]
-  | (var, val) :: l' =>
-    if string_dec s var
-    then (var, t) :: l'
-    else (var, val) :: fm_update l' s t
-  end.
+  Fixpoint fm_lookup  (l : list (string * T)) (s : string): option T :=
+    match l with
+    | nil => None
+    | (var, val) :: l' =>
+      if string_dec s var
+      then Some val
+      else fm_lookup l' s
+    end.
 
-Module Type EMBEDDING.
+  (* finite map update *)
+  Fixpoint fm_update (l : list (string * T)) (s : string) (t : T) : list (string * T) :=
+    match l with
+    | nil => [(s,t)]
+    | (var, val) :: l' =>
+      if string_dec s var
+      then (var, t) :: l'
+      else (var, val) :: fm_update l' s t
+    end.
+End lookup.
+
+Module Type EmbeddedLang.
   Parameter ast : Type.
   Parameter pl_data : Type.
 
@@ -78,7 +84,7 @@ Module Type EMBEDDING.
 
   Definition states_iso (st st' : istate) : Prop :=
     forall (s : string),
-      match (fm_lookup st s), (fm_lookup st' s) with
+      match fm_lookup st s , fm_lookup st' s with
       | None, None => True
       | Some f1, Some f2 => pl_equ f1 f2
       | _, _ => False
@@ -107,6 +113,17 @@ Module Type EMBEDDING.
     forall (p1 p2 : pl_data) (r : R),
       pl_equ p1 p2 -> asReal p1 r -> asReal p2 r.
 
+End EmbeddedLang.
+
+(** NOTE(gmalecha): Do we ever use this? **)
+Module Type EMBEDDING_THEOREMS.
+  Declare Module M : EmbeddedLang.
+  Import M.
+
+   (* Here is a correct embedding function.
+     As we'll see below though, we depend on certain determinism properties *)
+  Parameter embed_ex : list string -> ast -> Syntax.Formula.
+
   (* relate concrete to abstract states *)
   (* should all variables not in the list must be None *)
   Definition models (vars : list string) (ist : istate) (sst : Syntax.state)
@@ -118,39 +135,33 @@ Module Type EMBEDDING.
         asReal d (sst s)) /\
       (~In s vars -> fm_lookup ist s = None).
 
-  (* type of embeddings *)
-  Definition embedding : Type := list string -> ast -> Syntax.Formula.
+  Axiom states_iso_symm :
+    forall (st st' : M.istate),
+      M.states_iso st st' -> M.states_iso st' st.
 
-  (* "preservation" - loosely *)
-  (* this one doesn't consider terminating programs. *)
-  Definition embedding_correct1 (embed : embedding) : Prop :=
+  Axiom models_det :
+    forall (v : list string) (sst : Syntax.state) (ist ist' : M.istate),
+      models v ist sst -> models v ist' sst ->
+      M.states_iso ist ist'.
+
+  Axiom embed_ex_correct1 :
     forall (v : list string) (prg : ast) (is is' : istate)
            (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
       models v is ls ->
       models v is' ls' ->
       eval is prg is' ->
       Semantics.eval_formula
-        (embed v prg)
+        (embed_ex v prg)
         (Stream.Cons ls (Stream.Cons ls' tr)).
 
-  (* correctness in the case of crashing programs *)
-  Definition embedding_correct2 (embed : embedding) : Prop :=
+  Axiom embed_ex_correct2 :
     forall (v : list string) (prg : ast) (is : istate) (ls : Syntax.state)
            (tr : Stream.stream Syntax.state),
       models v is ls ->
       ~(exists is', eval is prg is') ->
       ~(Semantics.eval_formula
-        (Enabled (embed v prg))
+        (Enabled (embed_ex v prg))
         (Stream.Cons ls tr)).
-
-  (* Here is a correct embedding function.
-     As we'll see below though, we depend on certain determinism properties *)
-  Definition embed_ex (v : list string) (prg : ast) : Syntax.Formula :=
-    Syntax.Embed (fun lpre lpost =>
-                    exists cpre cpost,
-                      models v cpre lpre /\
-                      models v cpost lpost /\
-                      eval cpre prg cpost).
 
   (** Next, some definitions for Hoare-style reasoning about programs.
       We use this to implement weakest-precondition.
@@ -158,66 +169,68 @@ Module Type EMBEDDING.
   Section Hoare.
     Variables (P : istate -> Prop) (c : ast) (Q : istate -> Prop).
 
-    Definition HoareProgress : Prop :=
-      forall s, P s -> exists s', eval s c s'.
-
-    Definition HoarePreservation : Prop :=
-      forall s, P s ->
-                forall s', eval s c s' ->
-                      Q s'.
-
-    Definition Hoare' : Prop :=
-      (HoareProgress /\ HoarePreservation)%type.
-
     Definition Hoare : Prop :=
       (forall s, P s ->
             (exists s', eval s c s') /\
             (forall s', eval s c s' -> Q s'))%type.
 
-  End Hoare.
-End EMBEDDING.
+  (* End Hoare. *)
 
-(** NOTE(gmalecha): Do we ever use this? **)
-Module Type EMBEDDING_THEOREMS.
-  Declare Module M : EMBEDDING.
 
-  Axiom states_iso_symm :
-    forall (st st' : M.istate),
-      M.states_iso st st' -> M.states_iso st' st.
-
-  Axiom models_det :
-    forall (v : list string) (sst : Syntax.state) (ist ist' : M.istate),
-      M.models v ist sst -> M.models v ist' sst ->
-      M.states_iso ist ist'.
-
-  Axiom embed_ex_correct1 :
-    M.embedding_correct1 M.embed_ex.
-
-  Axiom embed_ex_correct2 :
-    M.embedding_correct2 M.embed_ex.
-
-  Axiom Hoare_Hoare' : forall (P : M.istate -> Prop) (c : M.ast)
-                              (Q : M.istate -> Prop),
-      M.Hoare P c Q <-> M.Hoare' P c Q.
+  (* Axiom Hoare_Hoare' : forall (P : M.istate -> Prop) (c : M.ast) *)
+  (*                             (Q : M.istate -> Prop), *)
+  (*     Hoare P c Q <-> M.Hoare' P c Q. *)
 
   Axiom Hoare__embed :
-    forall P c Q vs,
-      M.Hoare P c Q ->
-      (|-- M.embed_ex vs c -->>
+    forall vs,
+      Hoare ->
+      (|-- embed_ex vs c -->>
            Embed (fun st st' =>
                     exists fst,
-                      M.models vs fst st /\
+                      models vs fst st /\
                       (P fst ->
                        exists fst',
-                         M.models vs fst' st' /\
+                         models vs fst' st' /\
                          Q fst'))).
+
+
+  (* (* type of embeddings *) *)
+  (* Definition embedding : Type := list string -> ast -> Syntax.Formula. *)
+
+  (* (* "Preservation" - loosely *) *)
+  (* (* this one doesn't consider terminating programs. *) *)
+  (* Definition embedding_correct1 (embed : embedding) : Prop := *)
+
+  (* (* correctness in the case of crashing programs *) *)
+  (* Definition embedding_correct2 (embed : embedding) : Prop := *)
+  (*   . *)
+
+  End Hoare.
+
 
 End EMBEDDING_THEOREMS.
 
 (** NOTE(gmalecha): Do we ever use this? **)
-Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
+Module Embedding (M : EmbeddedLang) <: EMBEDDING_THEOREMS with Module M := M.
   Module M := M.
   Import M.
+
+  Definition models (vars : list string) (ist : istate) (sst : Syntax.state)
+  : Prop :=
+    forall (s : string),
+      (In s vars ->
+      exists (d : pl_data),
+        fm_lookup ist s = Some d /\
+        asReal d (sst s)) /\
+      (~In s vars -> fm_lookup ist s = None).
+
+
+  Definition embed_ex (v : list string) (prg : ast) : Syntax.Formula :=
+    Syntax.Embed (fun lpre lpost =>
+                    exists cpre cpost,
+                      models v cpre lpre /\
+                      models v cpost lpost /\
+                      eval cpre prg cpost).
 
   Lemma states_iso_symm :
     forall (st st' : istate),
@@ -259,7 +272,14 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
 
   (* "progress" in the sense of taking into account the possibility of failure to progress *)
   Lemma embed_ex_correct1 :
-    embedding_correct1 embed_ex.
+    forall (v : list string) (prg : ast) (is is' : istate)
+           (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
+      models v is ls ->
+      models v is' ls' ->
+      eval is prg is' ->
+      Semantics.eval_formula
+        (embed_ex v prg)
+        (Stream.Cons ls (Stream.Cons ls' tr)).
   Proof.
     red.
     simpl. intros.
@@ -268,53 +288,59 @@ Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
   Qed.
 
   Lemma embed_ex_correct2 :
-    embedding_correct2 embed_ex.
+    forall (v : list string) (prg : ast) (is : istate) (ls : Syntax.state)
+           (tr : Stream.stream Syntax.state),
+      models v is ls ->
+      ~(exists is', eval is prg is') ->
+      ~(Semantics.eval_formula
+        (Enabled (embed_ex v prg))
+        (Stream.Cons ls tr)).
   Proof.
     red.
     intros.
-    simpl. intro.
-    repeat destruct H1.
-    destruct H2.
+    simpl in H1.
     apply H0.
+    forward_reason.
     generalize (models_det v ls is x0 H H1); intro Hmf.
     apply states_iso_symm in Hmf.
-    generalize eval_det; intro Hed3.
-    specialize (Hed3  _ _ _ _ Hmf H3).
-    forward_reason.
-    eauto.
+    eapply eval_det in Hmf; eauto.
+    forward_reason; eauto.
   Qed.
 
-  Theorem Hoare_Hoare' : forall (P : M.istate -> Prop) (c : M.ast) (Q : M.istate -> Prop), M.Hoare P c Q <-> M.Hoare' P c Q.
-  Proof.
-    unfold Hoare, Hoare', HoareProgress, HoarePreservation.
-    intuition; forward_reason.
-    { specialize (H _ H0). destruct H. auto. }
-    { specialize (H _ H0). destruct H. auto. }
-    { eauto. }
-  Qed.
+  Section Hoare.
+    Variables (P : istate -> Prop) (c : ast) (Q : istate -> Prop).
 
-  Theorem Hoare__embed :
-    forall P c Q vs,
-      M.Hoare P c Q ->
-      (|-- M.embed_ex vs c -->>
-           Embed (fun st st' =>
-                    exists fst,
-                      M.models vs fst st /\
-                      (P fst ->
-                       exists fst',
-                         M.models vs fst' st' /\
-                         Q fst'))).
-  Proof.
-    simpl. intros. unfold tlaEntails. simpl.
-    intros.
-    forward_reason.
-    unfold Hoare in H.
-    exists x. unfold models. split; auto.
-    intros.
-    exists x0.
-    split; auto.
-    specialize (H _ H4). forward_reason.
-    auto.
-  Qed.
 
-End EmbeddingProofs.
+    Definition Hoare : Prop :=
+      (forall s, P s ->
+                 (exists s', eval s c s') /\
+                 (forall s', eval s c s' -> Q s'))%type.
+
+
+    Theorem Hoare__embed :
+      forall vs,
+        Hoare ->
+        (|-- embed_ex vs c -->>
+             Embed (fun st st' =>
+                      exists fst,
+                        models vs fst st /\
+                        (P fst ->
+                         exists fst',
+                           models vs fst' st' /\
+                           Q fst'))).
+    Proof.
+      simpl. intros. unfold tlaEntails. simpl.
+      intros.
+      forward_reason.
+      unfold Hoare in H.
+      exists x. unfold models. split; auto.
+      intros.
+      exists x0.
+      split; auto.
+      specialize (H _ H4). forward_reason.
+      auto.
+    Qed.
+  End Hoare.
+
+End Embedding.
+
