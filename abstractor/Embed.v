@@ -16,6 +16,12 @@ Require Import Rdefinitions.
 Require Import ExtLib.Core.RelDec.
 Require Import Coq.Reals.Rbase.
 
+Require Import micromega.Psatz.
+Require Import ExtLib.Tactics.
+Require Import FunctionalExtensionality.
+Require Import ExtLib.Data.Option.
+
+
 (* We need to add an (axiomatized) decider for the reals, since the one in
    the standard library returns a value that cannot be matched on *)
 Definition my_req_dec : forall (a b : R),
@@ -29,11 +35,6 @@ destruct (Rle_dec a b).
 { right. red; intro. subst. apply n.
   apply Rle_refl. }
 Qed.
-
-Require Import micromega.Psatz.
-Require Import ExtLib.Tactics.
-Require Import FunctionalExtensionality.
-Require Import ExtLib.Data.Option.
 
 (* state utility functions *)
 (* finite map lookup *)
@@ -176,6 +177,7 @@ Module Type EMBEDDING.
   End Hoare.
 End EMBEDDING.
 
+(** NOTE(gmalecha): Do we ever use this? **)
 Module Type EMBEDDING_THEOREMS.
   Declare Module M : EMBEDDING.
 
@@ -212,6 +214,7 @@ Module Type EMBEDDING_THEOREMS.
 
 End EMBEDDING_THEOREMS.
 
+(** NOTE(gmalecha): Do we ever use this? **)
 Module EmbeddingProofs (M : EMBEDDING) <: EMBEDDING_THEOREMS with Module M := M.
   Module M := M.
   Import M.

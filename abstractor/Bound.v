@@ -238,6 +238,117 @@ Proof.
   + eapply roundUp_relative_round; psatz R.
 Qed.
 
+(** * roundUp and roundDown facts **)
+Local Open Scope R_scope.
+Lemma roundDown_fact :
+  forall (r : R),
+    (r <= -floatMin /\ roundDown r = r * (1 + error))%R \/
+    (r >= floatMin /\ roundDown r = r * (1 - error)) \/
+    (r > -floatMin /\ r < floatMin /\ roundDown r = -floatMin).
+Proof.
+  intros.
+  generalize (Rle_dec r 0); intros.
+  destruct H.
+  { generalize (Rle_dec r (-floatMin)); intros.
+    destruct H.
+    { left. unfold roundDown.
+      split; try lra.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin); intros.
+      { apply Fcore_Raux.Rabs_lt_inv in r2. lra. }
+      { unfold roundDown_relative. unfold Rsign.
+        consider (Rlt_dec r 0); intros; try lra.
+        consider (Rlt_dec 0 r); intros; try lra.
+        assert (r = 0) by lra. subst. lra. } }
+    { assert (r >= -floatMin) by lra.
+      right. right.
+      split; try lra. split; try lra.
+      unfold roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin); intros.
+      { reflexivity. }
+      { assert (floatMin <= Rbasic_fun.Rabs r) by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } } }
+  { assert (r > 0) by lra.
+    right.
+    generalize (Rlt_dec r floatMin); intros.
+    destruct H0.
+    { right. split; try lra. split; try lra.
+      unfold roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin).
+      { reflexivity. }
+      { unfold roundDown_relative.
+        assert (floatMin <= Rbasic_fun.Rabs r)%R by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } }
+    { assert (r >= floatMin) by lra.
+      left.
+      split; try lra.
+      unfold roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin); intros.
+      { apply Fcore_Raux.Rabs_lt_inv in r0. lra. }
+      { unfold roundDown_relative. unfold Rsign.
+        consider (Rlt_dec r 0); try lra.
+        consider (Rlt_dec 0 r); lra. } } }
+Qed.
+
+Local Ltac considif := match goal with | |- context[if ?X then _ else _] => consider X end.
+
+Lemma roundUp_fact :
+  forall (r : R),
+    (r <= -floatMin /\ roundUp r = r * (1 - error)) \/
+    (r >= floatMin /\ roundUp r = r * (1 + error)) \/
+    (r > -floatMin /\ r < floatMin /\ roundUp r = floatMin).
+Proof.
+  intros.
+  generalize (Rle_dec r 0); intros.
+  destruct H.
+  { generalize (Rle_dec r (-floatMin)); intros.
+    destruct H.
+    { left. split; try lra.
+      unfold roundUp.
+      considif.
+      { apply Fcore_Raux.Rabs_lt_inv in r2. lra. }
+      { unfold roundUp_relative.
+        unfold Rsign.
+        consider (Rlt_dec r 0); try lra.
+        consider (Rlt_dec 0 r); try lra.
+        assert (r = 0) by lra. subst. lra. } }
+    { assert (r > -floatMin) by lra.
+      right. right.
+      split; try lra. split; try lra.
+      unfold roundUp.
+      considif.
+      { reflexivity. }
+      { assert (floatMin <= Rbasic_fun.Rabs r) by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } } }
+  { assert (r > 0) by lra.
+    right.
+    generalize (Rlt_dec r floatMin); intros.
+    destruct H0.
+    { right.
+      split; try lra.
+      split; try lra.
+      unfold roundUp.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin).
+      { reflexivity. }
+      { assert (floatMin <= Rbasic_fun.Rabs r) by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } }
+    { assert (r >= floatMin) by lra.
+      left.
+      split; try lra.
+      unfold roundUp.
+      considif.
+      { apply Fcore_Raux.Rabs_lt_inv in r0. lra. }
+      { unfold roundUp_relative.
+        unfold Rsign.
+        considif; try lra.
+        considif; lra. } } }
+Qed.
+
+Close Scope R_scope.
+
 Definition float_bounded (r : R) : Prop :=
   (- floatMax < r < floatMax)%R.
 

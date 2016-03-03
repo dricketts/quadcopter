@@ -653,6 +653,9 @@ Module FloatEmbed <: EMBEDDING.
       eapply IHpl_eq2. reflexivity. }
   Qed.
 
+  (** TODO: Need to change the definition of float_max so that it respects our
+   **  equality
+   **)
   Instance Proper_float_max_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_max.
   Proof. Abort.
 
@@ -855,6 +858,7 @@ End FloatEmbed.
  * terms of REAL numbers *)
 Import FloatEmbed.
 
+(** NOTE(gmalecha): What is the purpose of these synonyms? **)
 Definition vmodels := models.
 
 Definition Hoare_ := Hoare.
@@ -1289,9 +1293,22 @@ Fixpoint fpig_vcgen (c : fcmd) (vs : list Var)
     if fexpr_check e vs then
       (v :: vs,
        fun (P : fstate -> Prop) fst  =>
+(*
          forall res',
            All_predIntD (bound_fexpr e) res' fst ->
            P (fstate_set fst v res'))
+*)
+         AnyOf
+           (map
+              (fun pi : predInt =>
+                 let '(pred, bound) := predInt_to_pair pi fst in
+                 pred /\
+                 (forall (val : float) (r : R),
+                     F2OR val = Some r ->
+                     bound r -> P (fstate_set fst v val)))
+              (bound_fexpr e)))
+
+         
     else
       (v :: vs, fun P _ => False)
   | FIte e c1 c2 =>
@@ -1356,17 +1373,26 @@ Proof.
     { intros. inversion H; clear H; subst.
       split; [ inversion 1; auto | ].
       intros.
-      eapply Hoare_conseq.
-      eapply Hoare__bound_asn.
-      2: exact (fun _ x => x).
+      eapply Hoare_conseq; [ eapply Hoare__bound_asn | | exact (fun _ x => x) ].
       simpl. intros.
       fwd.
       specialize (H0 _ H1).
       fwd. eexists; split; eauto.
       intros.
-      eapply H in H2. split; eauto.
-      eapply fstate_has_var_fstate_set.
-      eauto. }
+      red in H2.
+      eapply AnyOf_exists in H; fwd.
+      eapply in_map_iff in H.
+      fwd.
+      eapply Forall_forall in H2; eauto.
+      red in H2.
+      subst.
+      destruct x1; simpl in *.
+      split; eauto using fstate_has_var_fstate_set.
+      destruct H3.
+      specialize (H2 H).
+      destruct H2.
+      eapply H3 in H5; eauto.
+      clear - H2. destruct res'; simpl in *; congruence. }
     { intros. inversion H; clear H; subst.
       split; [ inversion 1; auto | ]; intros.
       eapply Hoare_conseq.
