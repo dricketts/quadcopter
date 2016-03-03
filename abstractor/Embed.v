@@ -115,7 +115,6 @@ Module Type EmbeddedLang.
 
 End EmbeddedLang.
 
-(** NOTE(gmalecha): Do we ever use this? **)
 Module Type EMBEDDING_THEOREMS.
   Declare Module M : EmbeddedLang.
   Import M.
@@ -174,43 +173,22 @@ Module Type EMBEDDING_THEOREMS.
             (exists s', eval s c s') /\
             (forall s', eval s c s' -> Q s'))%type.
 
-  (* End Hoare. *)
+    Axiom Hoare__embed :
+      forall vs,
+        Hoare ->
+        (|-- embed_ex vs c -->>
+             Embed (fun st st' =>
+                      exists fst,
+                        models vs fst st /\
+                        (P fst ->
+                         exists fst',
+                           models vs fst' st' /\
+                           Q fst'))).
 
-
-  (* Axiom Hoare_Hoare' : forall (P : M.istate -> Prop) (c : M.ast) *)
-  (*                             (Q : M.istate -> Prop), *)
-  (*     Hoare P c Q <-> M.Hoare' P c Q. *)
-
-  Axiom Hoare__embed :
-    forall vs,
-      Hoare ->
-      (|-- embed_ex vs c -->>
-           Embed (fun st st' =>
-                    exists fst,
-                      models vs fst st /\
-                      (P fst ->
-                       exists fst',
-                         models vs fst' st' /\
-                         Q fst'))).
-
-
-  (* (* type of embeddings *) *)
-  (* Definition embedding : Type := list string -> ast -> Syntax.Formula. *)
-
-  (* (* "Preservation" - loosely *) *)
-  (* (* this one doesn't consider terminating programs. *) *)
-  (* Definition embedding_correct1 (embed : embedding) : Prop := *)
-
-  (* (* correctness in the case of crashing programs *) *)
-  (* Definition embedding_correct2 (embed : embedding) : Prop := *)
-  (*   . *)
 
   End Hoare.
-
-
 End EMBEDDING_THEOREMS.
 
-(** NOTE(gmalecha): Do we ever use this? **)
 Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
   Module M := M.
   Import M.
