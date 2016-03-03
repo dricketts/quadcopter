@@ -473,7 +473,8 @@ Proof.
       destruct (Rle_dec 0 r1); try_elim;
       destruct (Rle_dec 0 r2); try_elim;
       destruct (Rle_dec 0 r3); try_elim;
-      destruct (Rle_dec 0 r4); try_elim.
+      destruct (Rle_dec 0 r4); try_elim;
+        solve [ right; right; right; psatz R ].
     }
   }
       
