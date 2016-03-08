@@ -131,19 +131,14 @@ Module Type EMBEDDING_THEOREMS.
       (In s vars ->
       exists (d : pl_data),
         fm_lookup ist s = Some d /\
-        asReal d (sst s)) /\
-      (~In s vars -> fm_lookup ist s = None).
+        asReal d (sst s)).
 
-  Axiom states_iso_symm :
-    forall (st st' : M.istate),
-      M.states_iso st st' -> M.states_iso st' st.
-
-  Axiom models_det :
-    forall (v : list string) (sst : Syntax.state) (ist ist' : M.istate),
-      models v ist sst -> models v ist' sst ->
-      M.states_iso ist ist'.
-
-  Axiom embed_ex_correct1 :
+  (** This ensures that all possible runs of the program are included
+   ** in the final trace.
+   **
+   ** It is a soundness property.
+   **)
+  Axiom embed_ex_sound :
     forall (v v' : list string) (prg : ast) (is is' : istate)
            (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
       models v is ls ->
@@ -153,17 +148,21 @@ Module Type EMBEDDING_THEOREMS.
         (embed_ex v v' prg)
         (Stream.Cons ls (Stream.Cons ls' tr)).
 
-  Axiom embed_ex_correct2 :
-    forall (v v' : list string) (prg : ast) (is : istate) (ls : Syntax.state)
+  (** This ensures that only possible runs of the program are included in
+   ** the final trace.
+   **
+   ** This is a partial completeness property.
+   **)
+  Axiom embed_ex_complete :
+    forall (v v' : list string) (prg : ast) (ls : Syntax.state)
            (tr : Stream.stream Syntax.state),
-      models v is ls ->
-      ~(exists is', eval is prg is') ->
-      ~(Semantics.eval_formula
-        (Enabled (embed_ex v v' prg))
-        (Stream.Cons ls tr)).
+      Semantics.eval_formula (embed_ex v v' prg) (Stream.Cons ls tr) ->
+      exists is is', models v is ls
+                  /\ models v' is' (Stream.hd tr)
+                  /\ eval is prg is'.
 
   (** Next, some definitions for Hoare-style reasoning about programs.
-      We use this to implement weakest-precondition.
+   ** We use this to implement weakest-precondition.
    **)
   Section Hoare.
     Variables (P : istate -> Prop) (c : ast) (Q : istate -> Prop).
@@ -198,8 +197,7 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
       (In s vars ->
       exists (d : pl_data),
         fm_lookup ist s = Some d /\
-        asReal d (sst s)) /\
-      (~In s vars -> fm_lookup ist s = None).
+        asReal d (sst s)).
 
 
   Definition embed_ex (v v' : list string) (prg : ast) : Syntax.Formula :=
@@ -231,25 +229,8 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
         apply pl_equ_symm. auto.
   Qed.
 
-  Lemma models_det :
-    forall (v : list string) (sst : Syntax.state) (ist ist' : istate),
-      models v ist sst -> models v ist' sst ->
-      ist ~~ ist'.
-  Proof.
-    unfold models, states_iso.
-    intros.
-    specialize (H s). specialize (H0 s).
-    consider (In_dec string_dec s v).
-    - forward_reason.
-      specialize (asReal_det _ _ _ H3 H4).
-      intro; subst. rewrite H. rewrite H0. apply pl_equ_symm. auto.
-    - forward_reason.
-      rewrite H2. rewrite H1. auto.
-  Qed.
-
-  (* "progress" in the sense of taking into account the possibility of failure to progress *)
-  Lemma embed_ex_correct1 :
-    forall (v v' : list string) (prg : ast) (is is' : istate)
+  Theorem embed_ex_sound
+  : forall (v v' : list string) (prg : ast) (is is' : istate)
            (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
       models v is ls ->
       models v' is' ls' ->
@@ -264,6 +245,20 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
     intuition.
   Qed.
 
+  Theorem embed_ex_complete
+  : forall (v v' : list string) (prg : ast) (ls : Syntax.state)
+           (tr : Stream.stream Syntax.state),
+      Semantics.eval_formula (embed_ex v v' prg) (Stream.Cons ls tr) ->
+         (exists is is', models v is ls
+                      /\ models v' is' (Stream.hd tr)
+                      /\ eval is prg is').
+  Proof.
+    simpl; intros.
+    forward_reason.
+    do 2 eexists; eauto.
+  Qed.
+
+(*
   Lemma embed_ex_correct2 :
     forall (v v' : list string) (prg : ast) (is : istate) (ls : Syntax.state)
            (tr : Stream.stream Syntax.state),
@@ -276,13 +271,15 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
     red.
     intros.
     simpl in H1.
-    apply H0.
+    apply H0; clear H0.
+    Printi
     forward_reason.
     generalize (models_det v ls is x0 H H1); intro Hmf.
     apply states_iso_symm in Hmf.
     eapply eval_det in Hmf; eauto.
     forward_reason; eauto.
   Qed.
+*)
 
   Section Hoare.
     Variables (P : istate -> Prop) (c : ast) (Q : istate -> Prop).
@@ -322,7 +319,6 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
    ** This seems generic to Hoare, not specific to fpig_vcgen_correct
    ** This suggests that this should be in Embed.v?
    **)
-  
   (* TODO: do i need a single varmap or two? *)
   (*
     Lemma float_embed_ex_enabled :
@@ -356,11 +352,9 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
     generalize (models_fstate_has_vars vs nil fst st); intros. simpl in H2. fwd.
     rewrite H2 in H. fwd.
     specialize (H3 _ H).
-    SearchAbout embed_ex.
     exists (Stream.Cons st' (Stream.forever st')).
     eapply embed_ex_correct1; [| | eapply H]; auto.
   Qed.
 *)
 
 End Embedding.
-
