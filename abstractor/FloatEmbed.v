@@ -50,8 +50,10 @@ Module FloatEmbed <: EmbeddedLang.
   Definition istate := list (string * float).
   Definition pl_equ := pl_eq.
   Definition pl_equ_refl : forall p : pl_data, pl_equ p p := pl_refl.
-  Definition pl_equ_trans : forall p p' p'' : pl_data, pl_equ p p' -> pl_equ p' p'' -> pl_equ p p'' := pl_trans.
-  Definition pl_equ_symm : forall p p' : pl_data, pl_equ p p' -> pl_equ p' p := pl_symm.
+  Definition pl_equ_trans : forall p p' p'' : pl_data,
+      pl_equ p p' -> pl_equ p' p'' -> pl_equ p p'' := pl_trans.
+  Definition pl_equ_symm : forall p p' : pl_data, pl_equ p p' -> pl_equ p' p :=
+    pl_symm.
 
   (* Definition required by EMBEDDING *)
   Definition states_iso (st st' : istate) : Prop :=
@@ -119,7 +121,8 @@ Module FloatEmbed <: EmbeddedLang.
   Proof.
     intros.
     unfold F2OR in H.
-    consider f; consider f'; intros; subst; simpl in *; try constructor; try congruence.
+    consider f; consider f'; intros; subst; simpl in *;
+      try constructor; try congruence.
     { consider b; intros; subst.
       { simpl in *.
         unfold Fcore_defs.F2R, Fcore_Raux.Z2R, Fcore_defs.Fnum in H0.
@@ -128,7 +131,9 @@ Module FloatEmbed <: EmbeddedLang.
         inversion H0.
         generalize (pos_INR_nat_of_P m); intro Hpinr.
         generalize (bpow_nonzero radix2 e); intro Hbpnz.
-        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m)) (Fcore_Raux.bpow radix2 e)); intro Hric.
+        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m))
+                                                  (Fcore_Raux.bpow radix2 e));
+          intro Hric.
         destruct Hric.
         { split. lra. lra. }
         lra. }
@@ -138,7 +143,9 @@ Module FloatEmbed <: EmbeddedLang.
         simpl in H0. inversion H0.
         generalize (pos_INR_nat_of_P m); intro Hpinr.
         generalize (bpow_nonzero radix2 e); intro Hbpnz.
-        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m)) (Fcore_Raux.bpow radix2 e)); intro Hric.
+        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m))
+                                                  (Fcore_Raux.bpow radix2 e));
+          intro Hric.
         destruct Hric.
         { split. lra. lra. }
         lra. } }
@@ -152,7 +159,9 @@ Module FloatEmbed <: EmbeddedLang.
         inversion H0.
         generalize (pos_INR_nat_of_P m); intro Hpinr.
         generalize (bpow_nonzero radix2 e); intro Hbpnz.
-        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m)) (Fcore_Raux.bpow radix2 e)); intro Hric.
+        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m))
+                                                  (Fcore_Raux.bpow radix2 e));
+          intro Hric.
         destruct Hric.
         { split. lra. lra. }
         lra. }
@@ -162,7 +171,9 @@ Module FloatEmbed <: EmbeddedLang.
         simpl in H0. inversion H0.
         generalize (pos_INR_nat_of_P m); intro Hpinr.
         generalize (bpow_nonzero radix2 e); intro Hbpnz.
-        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m)) (Fcore_Raux.bpow radix2 e)); intro Hric.
+        generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m))
+                                                  (Fcore_Raux.bpow radix2 e));
+          intro Hric.
         destruct Hric.
         { split. lra. lra. }
         lra. } }
@@ -171,14 +182,18 @@ Module FloatEmbed <: EmbeddedLang.
       apply Bool.andb_true_iff in e2'. apply Bool.andb_true_iff in e0'.
       forward_reason.
       inversion H1.
-      generalize (Fcore_generic_fmt.canonic_unicity radix2 (Fcore_FLT.FLT_exp (3 - custom_emax - custom_prec) custom_prec)); intro Huni.
-      eapply canonic_canonic_mantissa in H2. eapply canonic_canonic_mantissa in H.
+      generalize (Fcore_generic_fmt.canonic_unicity radix2
+          (Fcore_FLT.FLT_exp (3 - custom_emax - custom_prec) custom_prec));
+        intro Huni.
+      eapply canonic_canonic_mantissa in H2.
+      eapply canonic_canonic_mantissa in H.
       symmetry in H5.
       specialize (Huni _ _ H2 H H5).
       inversion Huni.
       subst.
       eapply F2R_eq_reg in H5.
-      consider b; consider b0; intros; subst; try solve [simpl in *; congruence].
+      consider b; consider b0; intros; subst;
+        try solve [simpl in *; congruence].
       { simpl in H6. inversion H6.
         subst.
         clear.
@@ -206,7 +221,8 @@ Module FloatEmbed <: EmbeddedLang.
       consider (fm_lookup st s); intros; subst.
       { consider (fm_lookup st' s); intros; subst; try contradiction.
         apply pl_eq_F2OR in H1. eexists; split; eauto. }
-      { consider (fm_lookup st' s); intros; subst; try contradiction; try reflexivity. } }
+      { consider (fm_lookup st' s); intros; subst; try contradiction;
+        try reflexivity. } }
     { intros. unfold states_iso, states_iso' in *.
       intro s. specialize (H s).
       consider (fm_lookup st s); intros; subst.
@@ -217,9 +233,10 @@ Module FloatEmbed <: EmbeddedLang.
   Qed.
 
   Definition asReal (f : float) (r : R) :=
-    (F2OR f = Some r)%type.
+    (F2OR f = Some (the_round r))%type.
 
-  Definition asReal_is : asReal = (fun f r => F2OR f = Some r)%type := eq_refl.
+  Definition asReal_is :
+    asReal = (fun f r => F2OR f = Some (the_round r))%type := eq_refl.
 
   (* we may need a notion of validity *)
   Lemma states_iso_nil :
@@ -283,31 +300,40 @@ Module FloatEmbed <: EmbeddedLang.
     induction H0.
     { intros.
       consider (string_dec v s); intros; subst.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
         eexists. split; reflexivity.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         rewrite <- fstate_lookup_fm_lookup in H.
         consider (fstate_lookup ist s); intros; subst.
         + forward_reason. eexists. split.
-          * rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; auto.
+          * rewrite <- fstate_lookup_fm_lookup.
+            rewrite <- fstate_lookup_irrelevant_update; auto.
             rewrite <- fstate_lookup_fm_lookup in H0. eauto.
           * auto.
-        + rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; auto.
+        + rewrite <- fstate_lookup_fm_lookup.
+          rewrite <- fstate_lookup_irrelevant_update; auto.
           rewrite fstate_lookup_fm_lookup. auto. }
     { intros.
       consider (string_dec v s); intros; subst.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
         eexists; eauto.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
           forward_reason.
           exists x. split.
-          * rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; eauto.
+          * rewrite <- fstate_lookup_fm_lookup.
+            rewrite <- fstate_lookup_irrelevant_update; eauto.
             rewrite fstate_lookup_fm_lookup. eauto.
           * auto.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
@@ -317,16 +343,20 @@ Module FloatEmbed <: EmbeddedLang.
     (* the following three are copy-paste of the previous block *)
     { intros.
       consider (string_dec v s); intros; subst.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
         eexists; eauto.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
           forward_reason.
           exists x. split.
-          * rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; eauto.
+          * rewrite <- fstate_lookup_fm_lookup.
+            rewrite <- fstate_lookup_irrelevant_update; eauto.
             rewrite fstate_lookup_fm_lookup. eauto.
           * auto.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
@@ -335,16 +365,20 @@ Module FloatEmbed <: EmbeddedLang.
           rewrite fstate_lookup_fm_lookup. auto. }
     { intros.
       consider (string_dec v s); intros; subst.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
         eexists; eauto.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
           forward_reason.
           exists x. split.
-          * rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; eauto.
+          * rewrite <- fstate_lookup_fm_lookup.
+            rewrite <- fstate_lookup_irrelevant_update; eauto.
             rewrite fstate_lookup_fm_lookup. eauto.
           * auto.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
@@ -353,16 +387,20 @@ Module FloatEmbed <: EmbeddedLang.
           rewrite fstate_lookup_fm_lookup. auto. }
     { intros.
       consider (string_dec v s); intros; subst.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
         eexists; eauto.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_irrelevant_update; [| auto].
         specialize (H s).
         consider (fm_lookup ist s); intros; subst.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
           forward_reason.
           exists x. split.
-          * rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; eauto.
+          * rewrite <- fstate_lookup_fm_lookup.
+            rewrite <- fstate_lookup_irrelevant_update; eauto.
             rewrite fstate_lookup_fm_lookup. eauto.
           * auto.
         + rewrite fstate_lookup_fm_lookup. rewrite H.
@@ -373,14 +411,20 @@ Module FloatEmbed <: EmbeddedLang.
     { intros.
       specialize (IHpl_eq s).
       consider (string_dec v s); intros; subst.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_update_match.
-        rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_update_match in IHpl_eq.
-        rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_update_match in IHpl_eq.
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_update_match.
+        rewrite <- fstate_lookup_fm_lookup in IHpl_eq.
+        rewrite <- fstate_lookup_update_match in IHpl_eq.
+        rewrite <- fstate_lookup_fm_lookup in IHpl_eq.
+        rewrite <- fstate_lookup_update_match in IHpl_eq.
         forward_reason. inversion H1; subst.
         eexists; eauto.
-      - rewrite <- fstate_lookup_fm_lookup. rewrite <- fstate_lookup_irrelevant_update; [| auto].
-        rewrite <- fstate_lookup_fm_lookup in IHpl_eq. rewrite <- fstate_lookup_irrelevant_update in IHpl_eq; [|auto].
+      - rewrite <- fstate_lookup_fm_lookup.
+        rewrite <- fstate_lookup_irrelevant_update; [| auto].
+        rewrite <- fstate_lookup_fm_lookup in IHpl_eq.
+        rewrite <- fstate_lookup_irrelevant_update in IHpl_eq; [|auto].
         specialize (H s). rewrite <- fstate_lookup_fm_lookup in H.
         consider (fstate_lookup ist s); intros; subst.
         + rewrite <- fstate_lookup_fm_lookup.
@@ -392,16 +436,22 @@ Module FloatEmbed <: EmbeddedLang.
           rewrite <- fstate_lookup_irrelevant_update in H2; auto. }
     { intros. specialize (IHpl_eq1 s). specialize (IHpl_eq2 s).
       consider (string_dec v s); intros; subst.
-      - do 2 (rewrite <- fstate_lookup_fm_lookup; rewrite <- fstate_lookup_update_match).
-        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq1; rewrite <- fstate_lookup_update_match in IHpl_eq1).
-        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq2; rewrite <- fstate_lookup_update_match in IHpl_eq2).
+      - do 2 (rewrite <- fstate_lookup_fm_lookup;
+              rewrite <- fstate_lookup_update_match).
+        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq1;
+              rewrite <- fstate_lookup_update_match in IHpl_eq1).
+        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq2;
+              rewrite <- fstate_lookup_update_match in IHpl_eq2).
         forward_reason.
         inversion H1; subst. inversion H0; subst.
         eexists.
         split; eauto. rewrite <- H2. auto.
-      - do 2 (rewrite <- fstate_lookup_fm_lookup; rewrite <- fstate_lookup_irrelevant_update; [|auto]).
-        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq1; rewrite <- fstate_lookup_irrelevant_update in IHpl_eq1; [|auto]).
-        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq2; rewrite <- fstate_lookup_irrelevant_update in IHpl_eq2; [|auto]).
+      - do 2 (rewrite <- fstate_lookup_fm_lookup;
+              rewrite <- fstate_lookup_irrelevant_update; [|auto]).
+        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq1;
+              rewrite <- fstate_lookup_irrelevant_update in IHpl_eq1; [|auto]).
+        do 2 (rewrite <- fstate_lookup_fm_lookup in IHpl_eq2;
+              rewrite <- fstate_lookup_irrelevant_update in IHpl_eq2; [|auto]).
         specialize (H s). rewrite <- fstate_lookup_fm_lookup in H.
         consider (fstate_lookup ist s); intros; subst; eauto. }
   Qed.
@@ -489,7 +539,9 @@ Module FloatEmbed <: EmbeddedLang.
       rewrite Fcore_Raux.P2R_INR in H0.
       generalize (pos_INR_nat_of_P m); intro Hpinr.
       generalize (bpow_nonzero radix2 e); intro Hbpnz.
-      generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m)) (Fcore_Raux.bpow radix2 e)); intro Hric.
+      generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m))
+                                                (Fcore_Raux.bpow radix2 e));
+        intro Hric.
       destruct Hric.
       { split. lra. lra. }
       lra. }
@@ -497,7 +549,9 @@ Module FloatEmbed <: EmbeddedLang.
       rewrite Fcore_Raux.P2R_INR in H0.
       generalize (pos_INR_nat_of_P m); intro Hpinr.
       generalize (bpow_nonzero radix2 e); intro Hbpnz.
-      generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m)) (Fcore_Raux.bpow radix2 e)); intro Hric.
+      generalize (Rmult_integral_contrapositive (INR (Pos.to_nat m))
+                                                (Fcore_Raux.bpow radix2 e));
+        intro Hric.
       destruct Hric.
       { split. lra. lra. }
       lra. }
@@ -523,7 +577,48 @@ Module FloatEmbed <: EmbeddedLang.
     eapply H; eauto.
   Qed.
 
-  Instance Proper_float_plus_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_plus.
+  Instance Proper_float_plus_pl_eq
+  : Proper (pl_eq ==> pl_eq ==> pl_eq) float_plus.
+  Proof.
+    red. red.
+    induction 1; red.
+    { induction 1; try solve [ constructor ].
+      simpl; smashs; constructor.
+      simpl; smashs; constructor.
+      + eapply pl_symm.
+        eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+        simpl; smashs; constructor.
+      + eapply pl_trans; [ eapply IHpl_eq1 | ].
+        eapply pl_trans; [ | eapply IHpl_eq2 ].
+        simpl; smashs; constructor. }
+    { induction 1;
+      try solve [ constructor
+                | eapply pl_symm;
+                  eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
+                  simpl; smashs; repeat constructor
+                | eapply pl_trans; [ eapply IHpl_eq1 | ];
+                  eapply pl_trans; [ | eapply IHpl_eq2 ];
+                  simpl; smashs; repeat constructor
+                | simpl; smashs; repeat constructor ]. }
+    { simpl. constructor. }
+    { simpl. destruct x; try constructor.
+      smashs; repeat constructor. }
+    { induction 1; try solve [ constructor
+                             | eapply pl_symm; eassumption
+                             | etransitivity; eauto
+                             | destruct p1; simpl; solve [ constructor
+                                                         | smashs; constructor ]
+                             | destruct p1; simpl; smashs;
+                               repeat constructor ]. }
+    { red in IHpl_eq.
+      intros. eapply pl_symm.
+      eapply IHpl_eq. eapply pl_symm; eauto. }
+    { intros. etransitivity. eapply IHpl_eq1. eassumption.
+      eapply IHpl_eq2. reflexivity. }
+  Qed.
+
+  Instance Proper_float_minus_pl_eq
+  : Proper (pl_eq ==> pl_eq ==> pl_eq) float_minus.
   Proof.
     red. red.
     induction 1; red.
@@ -561,45 +656,8 @@ Module FloatEmbed <: EmbeddedLang.
       eapply IHpl_eq2. reflexivity. }
   Qed.
 
-  Instance Proper_float_minus_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_minus.
-  Proof.
-    red. red.
-    induction 1; red.
-    { induction 1; try solve [ constructor ].
-      simpl; smashs; constructor.
-      simpl; smashs; constructor.
-      + eapply pl_symm.
-        eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
-        simpl; smashs; constructor.
-      + eapply pl_trans; [ eapply IHpl_eq1 | ].
-        eapply pl_trans; [ | eapply IHpl_eq2 ].
-        simpl; smashs; constructor. }
-    { induction 1;
-      try solve [ constructor
-                | eapply pl_symm;
-                  eapply pl_trans; [ eapply pl_trans ; [ | eassumption ] | ];
-                  simpl; smashs; repeat constructor
-                | eapply pl_trans; [ eapply IHpl_eq1 | ];
-                  eapply pl_trans; [ | eapply IHpl_eq2 ];
-                  simpl; smashs; repeat constructor
-                | simpl; smashs; repeat constructor ]. }
-    { simpl. constructor. }
-    { simpl. destruct x; try constructor.
-      smashs; repeat constructor. }
-    { induction 1; try solve [ constructor
-                             | eapply pl_symm; eassumption
-                             | etransitivity; eauto
-                             | destruct p1; simpl; solve [ constructor
-                                                         | smashs; constructor ]
-                             | destruct p1; simpl; smashs; repeat constructor ]. }
-    { red in IHpl_eq.
-      intros. eapply pl_symm.
-      eapply IHpl_eq. eapply pl_symm; eauto. }
-    { intros. etransitivity. eapply IHpl_eq1. eassumption.
-      eapply IHpl_eq2. reflexivity. }
-  Qed.
-
-  Instance Proper_float_mult_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_mult.
+  Instance Proper_float_mult_pl_eq
+  : Proper (pl_eq ==> pl_eq ==> pl_eq) float_mult.
   Proof.
     red. red.
     induction 1; red.

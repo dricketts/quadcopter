@@ -49,7 +49,7 @@ Proof.
 Qed.
 
 (** * Rounding Approximation **)
-Let the_round : R -> R :=
+Definition the_round : R -> R :=
   round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
         (round_mode mode_ZR).
 
