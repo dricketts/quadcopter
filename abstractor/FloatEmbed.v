@@ -1377,15 +1377,15 @@ Qed.
 (* Finally here is a rule for using the vc gen in rewrting
      (see Postprocess*.v *)
 Lemma Hoare__embed_rw
-: forall (c : fcmd) (vs : list string),
-    embed_ex vs c |--
+: forall (c : fcmd) (vs vs' : list string),
+    embed_ex vs vs' c |--
     Forall Q : fstate -> Prop,
-      let (vs', P) := fpig_vcgen c vs in
+      let (_, P) := fpig_vcgen c vs in
       Embed (fun st st' : state =>
                exists fst : fstate,
                  models vs fst st /\
                  (P Q fst ->
-                  exists fst' : fstate, models vs fst' st' /\ Q fst')).
+                  exists fst' : fstate, models vs' fst' st' /\ Q fst')).
 Proof.
   intros.
   generalize (fpig_vcgen_correct_lem c vs); intro Hfpc.
