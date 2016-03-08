@@ -20,12 +20,6 @@ Require Import Coq.Classes.Morphisms.
 Require Import ExtLib.Tactics.
 Require Import Abstractor.Automation.
 
-Lemma Z3Test : forall (a : R), (a + 1 = 3)%R%type -> ((a + 2 = 3)%R /\ ((1+1)%R=2%R)%R)%type.
-Proof.
-  intros.
-  (* z3 solve. *)
-  Abort.
-
 (* Implementation of postprocessing automation for the Abstractor,
    using the Z3 plugin to simplify the terms produced b ythe abstractor *)
 
@@ -40,9 +34,6 @@ Definition proportional_controller : fcmd :=
 Definition proportional_controller_ivs : list (Var * Var) :=
   [("a", "a"); ("x", "x")].
 
-(* "Pushing" Embed through connectives *)
-(*Fact fwp_simple : |-- "x" > 0 //\\ [](oembed_fcmd simple_prog_ivs simple_prog_ivs simple_prog) -->> []("x" > 0).*)
-Locate embed_ex.
 Import Embedding.
 
 Definition simple_prog_ivs : list (Var) :=
@@ -120,16 +111,6 @@ Proof.
   }
 Qed.
 
-Lemma F2OR_FloatToR :
-  forall (f : float) (r r' : R),
-    F2OR f = Some r ->
-    FloatToR f = r' ->
-    r = r'.
-Proof.
-  intros.
-  unfold F2OR, FloatToR in *.
-  destruct f; try congruence.
-Qed.
 
 (* generalized version of Enabled_action, needed to prove
    enabledness goals *)
@@ -144,46 +125,6 @@ Proof.
   eapply H. eassumption.
   reflexivity.
 Qed.
- *)
-  
-
-Ltac show_value val :=
-  let x := eval compute in val in
-      assert (val = x) by reflexivity.
-
-(*
-Ltac try_it HH :=
-  unfold premise;
-  show_value error; show_value floatMin; show_value floatMax;
-  intros;
-  repeat match goal with
-         | H: context[Fappli_IEEE.B2R ?x1 ?x2 ?x3] |- _ => 
-           let X2 := eval lazy in (Fappli_IEEE.B2R x1 x2 x3) in change (Fappli_IEEE.B2R x1 x2 x3) with X2 in H
-         end;
-  repeat match goal with
-         | H : context[Fcore_Raux.bpow ?x1 ?x2] |- _ =>
-           let X2 := eval compute in (Fcore_Raux.bpow x1 x2) in
-               change (Fcore_Raux.bpow x1 x2) with X2 in H
-         end;
-  repeat match type of HH with
-         | context[nat_to_float ?x1]  =>
-           idtac "1" x1 ; 
-             let X2 := eval lazy in (nat_to_float x1) in
-                 idtac "2" ;
-               change (nat_to_float x1) with X2 in HH
-         end;
-  repeat match goal with
-         | H : _ = _ |- _ => rewrite H in *
-         end;
-  try (z3 solve; admit).
-*)
-
-
-(*
-Fact fwp_velshim_full : preVarIsFloat "a" //\\ preVarIsFloat "v" //\\ 
-                                      (embed_ex velshim_vs velshim)
-                                                   (*(Enabled (embed_ex velshim_ivs velshim_ivs velshim) -->> lfalse))*)
-                                      |-- (VarNextT "a" = 0 \\// "v" + ((VarNextT "a") * NatT 1) < NatT 10 )%HP.
  *)
 
 
@@ -274,9 +215,8 @@ Definition preVarPred (pred : R -> Prop) (v : Var) : Formula :=
 Definition pred1 (r : R) : Prop :=
   (-(100000*100000) < r < (100000*100000))%R.
 
-
+(*
 Require Import ClassicalFacts.
-
 Axiom pe_ax : prop_extensionality.
 
 Lemma F2OR_quant_rew :
@@ -295,6 +235,7 @@ Proof.
     rewrite H0.
     specialize (H _ _ H0). apply H. 
 Qed.
+*)
 
 Definition posshim_tla : Formula :=
   ("a"! = (-1/2)%R) \\//
@@ -302,35 +243,6 @@ Definition posshim_tla : Formula :=
 
 Require Import Rbasic_fun.
 
-Require Import Coq.Logic.FunctionalExtensionality.
-
-Fixpoint fstate_lookup_force' (fst : fstate) (v : Var) : R :=
-  match fst with
-  | nil => 0%R
-  | cons (v', b) t =>
-    if v ?[eq] v' then FloatToR b else fstate_lookup_force' t v
-  end.
-
-Lemma fstate_lookup_force_eq :
-  fstate_lookup_force = fstate_lookup_force'.
-Proof.
-  apply functional_extensionality.
-  induction x.
-  - reflexivity.
-  - unfold fstate_lookup_force. simpl. destruct a.
-    apply functional_extensionality.
-    intros.
-    consider (x0 ?[eq] v); intros.
-    + reflexivity.
-    + rewrite <- IHx. reflexivity. 
-Qed.
-
-Lemma F2OR_is_finite :
-  forall f r,
-    F2OR f = Some r -> Fappli_IEEE.is_finite f = true.
-Proof.
-  intros; consider f; intros; simpl in *; congruence.
-Qed.
 
 (* for playing Ltac tricks *)
 Definition isVarValid' := isVarValid.
@@ -339,117 +251,6 @@ Definition roundDown' := Bound.roundDown.
 Definition Rmax' := Rmax.
 
 
-Ltac proveVarValid v vs fs Hmodels :=
-  assert (isVarValid v fs); [
-    specialize (Hmodels v);
-    destruct (in_dec string_dec v vs) eqn:Hindec; simpl in Hindec; [clear Hindec | solve[inversion Hindec]];
-    destruct Hmodels as [H Hdead]; destruct H; [assumption|]; destruct H as [H H'];
-    unfold isVarValid; try (rewrite <- FloatEmbed.fstate_lookup_fm_lookup in Hmodels);
-    eexists; split; [|eapply F2OR_is_finite]; eassumption
-   |].
-
-Lemma isVarValid_fstate_set :
-  forall fst v,
-    isVarValid v fst ->
-    forall v' f,
-      Fappli_IEEE.is_finite f = true ->
-      isVarValid v (fstate_set fst v' f).
-Proof.
-  unfold isVarValid; simpl; intros.
-  fwd.
-  consider (v ?[eq] v'); intros; subst;
-  eexists; split; eauto.
-Qed.
-
-Fixpoint AllOf
-         (Ps : list Prop) : Prop :=
-  match Ps with
-  | nil => True
-  (*        | P :: nil => P*)
-  | P :: Ps' => P /\ AllOf Ps'
-  end.
-
-(* used to get more useful information out of models *)
-Lemma models_exploit :
-  forall vs fs ss,
-    models vs fs ss ->
-    AllOf (map (fun v => (exists d : float, fstate_lookup fs v = Some d /\ F2OR d = Some (ss v))) vs).
-Proof.
-  intros.
-  unfold models in H.
-  assert (forall s : string, In s vs -> exists d : M.pl_data, fm_lookup fs s = Some d /\ M.asReal d (ss s)).
-  { intros. specialize (H s). fwd. eexists; split; eauto. }
-  clear H.
-  revert H0; revert ss; revert fs.
-  induction vs; simpl; intros; auto.
-  split.
-  { specialize (H0 a). destruct H0; [left; auto|].
-    fwd.
-    eexists; split; try eassumption.
-    rewrite FloatEmbed.fstate_lookup_fm_lookup; eassumption. }
-  { eapply IHvs. intros.
-    specialize (H0 s); destruct H0; [right; auto|].
-    fwd.
-    eexists; split; eassumption. }
-Qed.
-
-(* another z3 hint *)
-Lemma Rmax_z3_fact :
-  forall r1 r2,
-    (Rmax r1 r2 = r2 /\ r1 < r2)%R \/
-    (Rmax r1 r2 = r1 /\ r1 >= r2)%R.
-Proof.
-  intros.
-  consider (Rlt_dec r1 r2); intros.
-  { left. split; auto.
-    apply Rmax_right. lra. }
-  { right. split.
-    { apply Rmax_left. lra. }
-    { lra. } }
-Qed.
-
-
-Ltac show_roundDown_z3_hint r :=
-  let H := fresh "H" in
-  generalize (Bound.roundDown_fact r); intro H;
-  generalize dependent (Bound.roundDown r); intros.
-
-Ltac show_roundUp_z3_hint r :=
-  let H := fresh "H" in
-  generalize (Bound.roundUp_fact r); intro H;
-  generalize dependent (Bound.roundUp r); intros.
-
-Ltac show_Rmax_z3_hint r1 r2 :=
-  let H := fresh "H" in
-  generalize (Rmax_z3_fact r1 r2); intro H;
-  generalize dependent (Rmax r1 r2); intros.
-
-Ltac show_z3_hints :=
-  repeat match goal with
-         | H : context[Bound.roundDown ?r] |- _ =>
-           show_roundDown_z3_hint r
-         | |- context[Bound.roundDown ?r] =>
-           show_roundDown_z3_hint r
-         | H : context[Bound.roundUp ?r] |- _ =>
-           show_roundUp_z3_hint r
-         | |- context[Bound.roundUp ?r] =>
-           show_roundUp_z3_hint r
-         | H : context[Rmax ?r1 ?r2] |- _ =>
-           show_Rmax_z3_hint r1 r2
-         | |- context[Rmax ?r1 ?r2] =>
-           show_Rmax_z3_hint r1 r2
-         end.
-
-Ltac show_values :=
-  show_value Bound.floatMax;
-  show_value Bound.floatMin;
-  show_value Bound.error.
-
-Ltac weaken_F2ORs :=
-  repeat match goal with
-         | H : F2OR ?f = Some ?r |- _ =>
-           apply F2OR_weaken in H
-         end.
 
 
 Theorem fwp_posshim :
@@ -603,32 +404,7 @@ Proof.
 
         Print Ltac show_z3_hints.
 
-        (* given a term to look for hints in *)
-        Ltac show_z3_hints' T tac :=
-          let has_bad_subterm T' :=
-              lazymatch T' with
-              | context[Bound.roundUp ?r] => fail
-              | context[Bound.roundDown ?r] => fail
-              | context[Rmax ?r1 ?r2] => fail
-              | _ => tac
-              end
-            in
-              match T with
-              | context[Bound.roundUp ?r] =>
-                
-          let rec show' T :=
-              repeat match T with
-                     | context[Bound.roundUp ?r] =>
-                       show' r; generalize dependent (Bound.roundUp r)
-                     | context[Bound.roundDown ?r] =>
-                       idtac "point 2"; show' r; generalize dependent (Bound.roundDown r)
-                     | context[Rmax ?r1 ?r2] =>
-                       show' r1; show' r2;
-                       generalize dependent (Rmax r1 r2)
-                     | _ => fail 1                                
-                     end
-          in show' T.
-
+        
         let H := type of H21 in
           show_z3_hints' H.
 

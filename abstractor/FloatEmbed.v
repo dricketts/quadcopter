@@ -696,10 +696,175 @@ Module FloatEmbed <: EmbeddedLang.
   (** TODO: Need to change the definition of float_max so that it respects our
    **  equality
    **)
-  Instance Proper_float_max_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_max.
-  Proof.
-  Admitted.
+  Print FloatOps.float_max.
 
+  (* NaN > +- inf > finite *)
+  Print float.
+  Print binary_float.
+
+  Definition float_max' (a b : float) : float :=
+    match a, b with
+    | B754_nan _ _ _ _, _ => a
+    | _, B754_nan _ _ _ _ => b
+    | B754_infinity _ _ _, _ => a
+    | _, B754_infinity _ _ _ => b
+    | _, _ =>
+      match Fappli_IEEE_extra.Bcompare custom_prec custom_emax a b with
+      | Some Datatypes.Eq => a
+      | Some Datatypes.Lt => b
+      | Some Datatypes.Gt => a
+      | None => a
+      end
+    end.
+
+  (* we need the following :
+     float_max 
+   *)
+
+  (*
+  Ltac stomp :=
+    first [solve [apply pl_symm; assumption]
+          |solve [inversion IHpl_eq; inversion H2]
+          |solve [apply pl_eq_F2OR in IHpl_eq; simpl in *; congruence]
+          |solve [apply pl_eq_F2OR in H2; simpl in *; congruence]
+          |solve [apply pl_eq_F2OR in H3; simpl in *; congruence]
+          |solve [apply pl_eq_F2OR in H4; simpl in *; congruence]].
+   *)
+
+  Check B754_zero.
+  Check B754_finite.
+
+  Print pl_eq.
+
+  Locate F2OR_pl_eq.
+
+  Lemma finite_nonzero :
+    forall b m z P,
+      (Some 0%R = F2OR (B754_finite _ _ b m z P)) -> False%R.
+  Proof.
+    intros.
+    inversion H.
+    symmetry in H1.
+    apply F2R_eq_0_reg in H1.
+    unfold bounded in P.
+    unfold cond_Zopp in H1.
+    consider b; intros; inversion H1.
+  Qed.
+  
+Lemma zero_pl_neq_finite :
+  forall b b' m z p,
+    pl_eq (B754_zero _ _ b) (B754_finite _ _ b' m z p) -> False.
+Proof.
+  intros.
+  apply pl_eq_F2OR in H. unfold F2OR in H at 1.
+  unfold FloatToR, B2R in H.
+  apply finite_nonzero in H.
+  auto.
+Qed.
+
+Lemma finite_pl_neq_zero :
+  forall b b' m z p,
+    pl_eq (B754_finite _ _ b' m z p) (B754_zero _ _ b) -> False.
+      intros.
+      apply pl_symm in H.
+      apply zero_pl_neq_finite in H.
+      assumption.
+Qed.
+
+Ltac convert_pl_eqs :=
+  repeat match goal with
+         | H : pl_eq ?f1 ?f2 |- _ =>
+           apply pl_eq_F2OR in H
+         end.
+
+Ltac finite_neq_zero_tac :=
+  repeat match goal with
+         | H : pl_eq ?f1 ?f2 |- _ =>
+           first [apply zero_pl_neq_finite in H | apply finite_pl_neq_zero in H]
+         end.
+
+Ltac invert_solve :=
+  repeat match goal with
+         | H : _ |- _ => try solve [inversion H]
+         end.
+
+Ltac fm_tac :=
+  solve [first [solve [constructor]
+               |solve [apply pl_symm; assumption]
+               |solve [invert_solve]
+               |solve [convert_pl_eqs; simpl in *; congruence]
+               |solve [finite_neq_zero_tac; exfalso; auto]
+               |solve [apply pl_except]
+               |solve [apply pl_symm; apply pl_except]
+               |solve [eapply pl_trans; eauto]
+        ]].
+  Instance Proper_float_max_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_max.
+  Proof. admit.
+  Admitted.
+  (* unfinished, extremely inefficient proof follows...  for float_max'*)
+  (*
+    red. red. red.
+    induction 1; simpl.
+    { induction 1; simpl; try fm_tac;
+      consider p1; intros; try fm_tac;
+      consider b0; intros; try fm_tac;
+      consider p2; intros; try fm_tac;
+      consider b1; intros; try fm_tac;
+      try (consider p3; intros; try fm_tac);
+      try (consider b2; intros; try fm_tac);
+      try fm_tac. }
+    { induction 1; simpl; try fm_tac;
+      consider p1; intros; try fm_tac;
+      consider b0; intros; try fm_tac;
+      consider p2; intros; try fm_tac;
+      consider b1; intros; try fm_tac;
+      try (consider p3; intros; try fm_tac);
+      try (consider b2; intros; try fm_tac);
+      try fm_tac. }
+    { intros.
+      apply pl_nan. }
+    { induction 1; simpl; try fm_tac;
+      consider p1; intros; try fm_tac;
+      consider b0; intros; try fm_tac;
+      consider p2; intros; try fm_tac;
+      consider b1; intros; try fm_tac;
+      try (consider p3; intros; try fm_tac);
+      try (consider b2; intros; try fm_tac);
+      try fm_tac. }
+    { induction 1; simpl; try fm_tac;
+      destruct p1; simpl; intros; try fm_tac;
+      try solve [destruct b0; simpl; intros; try fm_tac];
+      destruct p0; simpl; intros; try fm_tac;
+      destruct p3; simpl; intros; try fm_tac;
+      destruct b1; simpl; intros; try fm_tac;
+      destruct b0; simpl; intros; try fm_tac. }
+    { induction 1; simpl; try fm_tac;
+      destruct p1; simpl; intros; try fm_tac;
+      try solve [destruct b0; simpl; intros; try fm_tac];
+      destruct p2; simpl; intros; try fm_tac;
+      try solve [destruct b1; destruct b0; simpl; intros; try fm_tac].
+      destruct b1; destruct b0; try fm_tac.
+      apply pl_eq_F2OR in H. simpl in H.
+      inversion H.
+      unfold Fcore_defs.F2R, Fcore_Raux.Z2R, Fcore_Raux.bpow in H1.
+      simpl in H1.
+      do 2 rewrite Fcore_Raux.P2R_INR in H1.
+
+      (* need some kind of Fcore_sign lemma *)
+
+      destruct b0; simpl; intros; try fm_tac. 
+      Focus 2.
+      eapply pl_trans; eauto.
+      try solve [destruct b1; simpl; intros; try fm_tac].
+      destruct b1
+      try (consider p3; simpl; intros; try fm_tac);
+      try (consider b2; simpl; intros; try fm_tac);
+      try fm_tac. }
+    { }
+    { }
+  Qed.
+*)
+      
   Lemma states_iso_fexprD :
     forall ist ist',
       states_iso ist ist' ->

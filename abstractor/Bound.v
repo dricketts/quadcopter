@@ -588,13 +588,6 @@ Proof.
 Qed.
 
 (** * Max **)
-Definition float_max (a b : float) : float :=
-  match Fappli_IEEE_extra.Bcompare _ _ a b with
-  | Some Datatypes.Eq => a
-  | Some Datatypes.Lt => b
-  | Some Datatypes.Gt => a
-  | None => a
-  end.
 
 Definition absFloatMax' (l r : predInt) : predInt :=
   let min fst := Rmax (l.(lb) fst) (r.(lb) fst) in

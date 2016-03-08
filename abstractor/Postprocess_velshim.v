@@ -79,8 +79,13 @@ Definition velshim2 : fcmd :=
        (FAsn "a" (FConst fzero))
        (FAsn "a" (FVar "a")).
 
-Definition velshim_vs : list (Var) :=
+(* variables we read in *)
+Definition velshim_vs_in : list (Var) :=
   ["a"; "v"].
+
+(* variables we're allowed to modify *)
+Definition velshim_vs_out : list (Var) :=
+  ["a"].
 
 
 
@@ -114,16 +119,13 @@ Require Import Coq.micromega.Psatz.
 Definition pred1 (r : R) : Prop :=
   (-(100000*100000) < r < (100000*100000))%R.
 
-Print fstate_get_rval.
-
-
 Require Import Abstractor.Bound.
-
 Require Import Coq.micromega.Psatz.
+
 (* proof is 198 lines *)
 Theorem fwp_velshim2_full
 : preVarPred pred1 "a" //\\ preVarPred pred1 "v" //\\
-  (embed_ex velshim_vs velshim2)
+  (embed_ex velshim_vs_in velshim_vs_out velshim2)
   |-- (VarNextT "a" = 0 \\// (VarNextT "v") + ((VarNextT "a") * NatT 1) < NatT 10)%HP.
 Proof.
   rewrite landC. rewrite landA. rewrite landC. rewrite landA.
@@ -155,7 +157,7 @@ Proof.
 
       generalize (models_Forall _ _ _ H); intros.
       
-      unfold velshim_vs in H6. inversion H6 as [| Hk2 Hk3 Hnew Hrem]; clear H6.
+      unfold velshim_vs_in in H6. inversion H6 as [| Hk2 Hk3 Hnew Hrem]; clear H6.
       inversion Hrem; clear Hrem. subst. fwd.
 
       fwd.
@@ -200,6 +202,7 @@ Proof.
 
         generalize fstate_lookup_fstate_lookup_force; intros Hfls.
         unfold asReal in Hfls.
+        unfold fstate_lookup_force in *.
 
         repeat match goal with
                | H : fstate_lookup _ _ = Some _ |- _ =>
@@ -254,40 +257,30 @@ Proof.
         split; auto.
 
 
-        generalize fstate_lookup_fstate_lookup_force; intros Hfls.
+        (*generalize fstate_lookup_fstate_lookup_force; intros Hfls.
         unfold asReal in Hfls.
 
         repeat match goal with
                | H : fstate_lookup _ _ = Some _ |- _ =>
-                 try (rewrite H in *); try repeat erewrite (Hfls _ _ _ _ H) by eassumption; clear H
+                 try (rewrite H in * ); try repeat erewrite (Hfls _ _ _ _ H) by eassumption; clear H
                       end.
-
-        unfold float_bounded in *.
-
-        repeat match goal with
-               | |- context [roundUp ?r] =>
-                 generalize (roundUp_fact r);
-                   assert (dummy r (roundUp r)) by exact I;
-                   generalize dependent (roundUp r);
-                   intros
-               | |- context [roundDown ?r] =>
-                 generalize (roundDown_fact r);
-                   assert (dummy r (roundDown r)) by exact I;
-                   generalize dependent (roundDown r);
-                   intros
-               end.
+*)
+        unfold float_bounded, fstate_lookup_force in *.
 
         unfold asReal in *.
 
+        weaken_F2ORs.
+        do_F2Rs.
 
         repeat match goal with
-               | H : F2OR ?X = Some ?Y |- _ =>
-                 apply F2OR_FloatToR' in H
+               | H : fstate_lookup _ _ = Some _ |- _ =>
+                 try (rewrite H in * ); clear H
                end.
+        
+        show_z3_hints.
         show_value floatMin.
         show_value floatMax.
         show_value error.
-        do_F2Rs.
         unfold pred1 in *.
 
 
@@ -302,20 +295,24 @@ Proof.
         consider (fstate_lookup x0 "v"); intros; try contradiction.
         consider (F2OR f0); intros; try contradiction.
         unfold models in *.
+        Locate embed_ex.
         generalize (H "a"); generalize (H "v"); intros.
-        unfold velshim_vs in *.
+        clear H.
+        unfold velshim_vs_out in *.
         simpl in *.
         destruct H5; destruct H6.
-        destruct H5;  auto.
         destruct H6; auto.
+        assert ( ~ ("a" = "v" \/ False)).
+        { intro Hcon. destruct Hcon; [congruence | contradiction]. }
         fwd.
         rewrite <- fstate_lookup_fm_lookup in H5, H6.
         unfold asReal in *.
-        rewrite H5 in H2. inversion H2.
+(*        rewrite H5 in H2. inversion H2.*)
         rewrite H6 in H0. inversion H0.
+        rewrite H5 in H2. inversion H2.
         subst.
         rewrite H1 in H9. inversion H9.
-        rewrite H3 in H10. inversion H10.
+        show_z3_hints.
         z3 solve!. } }
                       Qed.
 
