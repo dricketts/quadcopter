@@ -41,9 +41,9 @@ ChargeTactics/Lemmas.v
 ChargeTactics/Indexed.v
 
 # examples/DiffEqSolutions.v
-# examples/System.v
+examples/System.v
 # examples/Quadcopter.v
-# examples/Velocity.v
+examples/Velocity.v
 # examples/Position.v
 # examples/UtilPosition.v
 # examples/Interval.v
@@ -59,4 +59,3 @@ abstractor/Fappli_IEEE_extra.v
 abstractor/FloatEmbed.v
 abstractor/Floats.v
 abstractor/Integers.v
-abstractor/Source.v

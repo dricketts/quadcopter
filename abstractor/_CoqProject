@@ -1,5 +1,6 @@
 -Q . Abstractor
 -Q ../logic Logic
+-Q ../examples Examples
 -Q ../ChargeTactics ChargeTactics
 
 FloatOps.v

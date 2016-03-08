@@ -320,5 +320,49 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
     Qed.
   End Hoare.
 
+  (** NOTE(gmalecha): This should probably go into FloatEmbed.
+   ** This seems generic to Hoare, not specific to fpig_vcgen_correct
+   ** This suggests that this should be in Embed.v?
+   **)
+  
+  (* TODO: do i need a single varmap or two? *)
+  (*
+    Lemma float_embed_ex_enabled :
+      forall (vs : list Var) (prg : ast) (st st' : state) (P Q : istate -> Prop),
+        Hoare (fun fst => models vs fst st) prg (fun fst' => models vs fst' st') ->
+(*        Hoare (fun fst => P fst /\ models vs fst st) prg (fun fst' => Q fst' /\ models vs fst' st') ->*)
+        forall (tr : trace),
+          Semantics.eval_formula (Enabled (embed_ex vs prg)) (Stream.Cons st tr).
+    Proof.
+      intros.
+      unfold Hoare in *.
+      Require Import Logic.Automation.
+      breakAbstraction.
+      unfold Hoare in H.
+
+  (* fstate version *)
+  Lemma float_embed_ex_enabled :
+    forall (vs : list Var) (prg : ast) (fst fst' : fstate) (st' : state),
+      let (_, P) := fpig_vcgen prg vs in
+      P (fun fst' => models vs fst' st') fst ->
+      forall (st : state) (tr : trace),
+        models vs fst st ->
+        Semantics.eval_formula (Enabled (embed_ex vs prg)) (Stream.Cons st tr).
+  Proof.
+    breakAbstraction.
+    intros.
+    generalize (fpig_vcgen_correct prg vs (fun fst'0 : fstate => models vs fst'0 st')); intros.
+    destruct (fpig_vcgen prg vs); intros.
+    unfold Hoare in *.
+    specialize (H fst).
+    generalize (models_fstate_has_vars vs nil fst st); intros. simpl in H2. fwd.
+    rewrite H2 in H. fwd.
+    specialize (H3 _ H).
+    SearchAbout embed_ex.
+    exists (Stream.Cons st' (Stream.forever st')).
+    eapply embed_ex_correct1; [| | eapply H]; auto.
+  Qed.
+*)
+
 End Embedding.
 

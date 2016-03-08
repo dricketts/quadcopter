@@ -196,9 +196,11 @@ Definition float_le (a b : float) : bool :=
 Definition fzero : float := Fappli_IEEE.B754_zero 24 128 false.
 Definition fnegzero : float := Fappli_IEEE.B754_zero 24 128 true.
 
+
 Definition F2OR (f : float) : option R :=
   match f with
   | Fappli_IEEE.B754_zero   _ _ _       => Some (FloatToR f)
   | Fappli_IEEE.B754_finite _ _ _ _ _ _ => Some (FloatToR f)
   | _                                   => None
   end.
+
