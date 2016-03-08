@@ -597,6 +597,15 @@ Definition absFloatMax' (l r : predInt) : predInt :=
    ; lb := min
    ; ub := max |}%R.
 
+Lemma Rcompare_eq :
+  forall x, Rcompare x x = Eq.
+Proof.
+  SearchAbout Rcompare.
+  intros.
+  generalize (Rcompare_spec x x); intros.
+  inversion H; try lra; reflexivity.
+Qed.
+
 Theorem absFloatMax'_ok : forall lp lv rp rv fs,
     predIntD lp lv fs ->
     predIntD rp rv fs ->
@@ -606,12 +615,17 @@ Proof.
   forward_reason.
   unfold float_max.
   rewrite (@Fappli_IEEE_extra.Bcompare_finite_correct _ _ _ _ H H0).
-  case (Rcompare_spec (B2R custom_prec custom_emax lv)
-                      (B2R custom_prec custom_emax rv));
-    intros; subst; split; auto;
-  generalize dependent (B2R custom_prec custom_emax lv);
-  generalize dependent (B2R custom_prec custom_emax rv); intros;
-    split; eapply Rmax_case_strong; psatz R.
+  unfold is_finite in H.
+  consider lv; intros; try congruence;
+  consider rv; intros; try congruence; simpl;
+  split; simpl; auto;
+  try match goal with
+  | |- context[match (Rcompare ?x ?y) with | _ => _ end] =>
+    case (Rcompare_spec x y)
+      end; intros; simpl in *; try reflexivity; try lra;
+  split;
+  apply Rmax_case_strong; intros; try lra;
+  subst; congruence.
 Qed.
 
 (** * Intersections of Predicated Intervals **)

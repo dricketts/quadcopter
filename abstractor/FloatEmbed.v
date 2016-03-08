@@ -521,6 +521,7 @@ Module FloatEmbed <: EmbeddedLang.
     in
     match goal with
     | |- ?G => smash' G
+    | H1 : ?H |- _ => smash' H
     end.
 
   Ltac smashs := repeat smash.
@@ -693,51 +694,6 @@ Module FloatEmbed <: EmbeddedLang.
       eapply IHpl_eq2. reflexivity. }
   Qed.
 
-  (** TODO: Need to change the definition of float_max so that it respects our
-   **  equality
-   **)
-  Print FloatOps.float_max.
-
-  (* NaN > +- inf > finite *)
-  Print float.
-  Print binary_float.
-
-  Definition float_max' (a b : float) : float :=
-    match a, b with
-    | B754_nan _ _ _ _, _ => a
-    | _, B754_nan _ _ _ _ => b
-    | B754_infinity _ _ _, _ => a
-    | _, B754_infinity _ _ _ => b
-    | _, _ =>
-      match Fappli_IEEE_extra.Bcompare custom_prec custom_emax a b with
-      | Some Datatypes.Eq => a
-      | Some Datatypes.Lt => b
-      | Some Datatypes.Gt => a
-      | None => a
-      end
-    end.
-
-  (* we need the following :
-     float_max 
-   *)
-
-  (*
-  Ltac stomp :=
-    first [solve [apply pl_symm; assumption]
-          |solve [inversion IHpl_eq; inversion H2]
-          |solve [apply pl_eq_F2OR in IHpl_eq; simpl in *; congruence]
-          |solve [apply pl_eq_F2OR in H2; simpl in *; congruence]
-          |solve [apply pl_eq_F2OR in H3; simpl in *; congruence]
-          |solve [apply pl_eq_F2OR in H4; simpl in *; congruence]].
-   *)
-
-  Check B754_zero.
-  Check B754_finite.
-
-  Print pl_eq.
-
-  Locate F2OR_pl_eq.
-
   Lemma finite_nonzero :
     forall b m z P,
       (Some 0%R = F2OR (B754_finite _ _ b m z P)) -> False%R.
@@ -799,71 +755,47 @@ Ltac fm_tac :=
                |solve [eapply pl_trans; eauto]
         ]].
   Instance Proper_float_max_pl_eq : Proper (pl_eq ==> pl_eq ==> pl_eq) float_max.
-  Proof. admit.
-  Admitted.
-  (* unfinished, extremely inefficient proof follows...  for float_max'*)
-  (*
+  Proof.
     red. red. red.
-    induction 1; simpl.
-    { induction 1; simpl; try fm_tac;
-      consider p1; intros; try fm_tac;
-      consider b0; intros; try fm_tac;
-      consider p2; intros; try fm_tac;
-      consider b1; intros; try fm_tac;
-      try (consider p3; intros; try fm_tac);
-      try (consider b2; intros; try fm_tac);
-      try fm_tac. }
-    { induction 1; simpl; try fm_tac;
-      consider p1; intros; try fm_tac;
-      consider b0; intros; try fm_tac;
-      consider p2; intros; try fm_tac;
-      consider b1; intros; try fm_tac;
-      try (consider p3; intros; try fm_tac);
-      try (consider b2; intros; try fm_tac);
-      try fm_tac. }
-    { intros.
-      apply pl_nan. }
-    { induction 1; simpl; try fm_tac;
-      consider p1; intros; try fm_tac;
-      consider b0; intros; try fm_tac;
-      consider p2; intros; try fm_tac;
-      consider b1; intros; try fm_tac;
-      try (consider p3; intros; try fm_tac);
-      try (consider b2; intros; try fm_tac);
-      try fm_tac. }
-    { induction 1; simpl; try fm_tac;
-      destruct p1; simpl; intros; try fm_tac;
-      try solve [destruct b0; simpl; intros; try fm_tac];
-      destruct p0; simpl; intros; try fm_tac;
-      destruct p3; simpl; intros; try fm_tac;
-      destruct b1; simpl; intros; try fm_tac;
-      destruct b0; simpl; intros; try fm_tac. }
-    { induction 1; simpl; try fm_tac;
-      destruct p1; simpl; intros; try fm_tac;
-      try solve [destruct b0; simpl; intros; try fm_tac];
-      destruct p2; simpl; intros; try fm_tac;
-      try solve [destruct b1; destruct b0; simpl; intros; try fm_tac].
-      destruct b1; destruct b0; try fm_tac.
-      apply pl_eq_F2OR in H. simpl in H.
-      inversion H.
-      unfold Fcore_defs.F2R, Fcore_Raux.Z2R, Fcore_Raux.bpow in H1.
-      simpl in H1.
-      do 2 rewrite Fcore_Raux.P2R_INR in H1.
-
-      (* need some kind of Fcore_sign lemma *)
-
-      destruct b0; simpl; intros; try fm_tac. 
-      Focus 2.
+    induction 1; try solve [constructor].
+    { induction 1; smashs; simpl in *; smashs;
+      try solve [constructor | congruence | eapply pl_trans; eauto | eapply pl_symm; eauto |
+                 eapply pl_trans; apply pl_symm; eauto; constructor |
+                 match goal with
+                 | H : pl_eq (B754_zero _ _ _) (B754_finite _ _ _ _ _ _) |- _ => generalize (zero_pl_neq_finite _ _ _ _ _ H); intros; contradiction
+                 | H : pl_eq (B754_finite _ _ _ _ _ _) (B754_zero _ _ _) |- _ => generalize (finite_pl_neq_zero _ _ _ _ _ H); intros; contradiction
+                 end
+                ]. }
+    { induction 1; smashs; simpl in *; smashs;
+      try solve [constructor | congruence | eapply pl_trans; eauto | eapply pl_symm; eauto |
+                 eapply pl_trans; apply pl_symm; eauto; constructor |
+                 match goal with
+                 | H : pl_eq (B754_zero _ _ _) (B754_finite _ _ _ _ _ _) |- _ => generalize (zero_pl_neq_finite _ _ _ _ _ H); intros; contradiction
+                 | H : pl_eq (B754_finite _ _ _ _ _ _) (B754_zero _ _ _) |- _ => generalize (finite_pl_neq_zero _ _ _ _ _ H); intros; contradiction
+                 end
+                ]. }
+    { induction 1; smashs; simpl in *; smashs;
+      try solve [constructor | congruence | eapply pl_trans; eauto | eapply pl_symm; eauto |
+                 eapply pl_trans; apply pl_symm; eauto; constructor |
+                 match goal with
+                 | H : pl_eq (B754_zero _ _ _) (B754_finite _ _ _ _ _ _) |- _ => generalize (zero_pl_neq_finite _ _ _ _ _ H); intros; contradiction
+                 | H : pl_eq (B754_finite _ _ _ _ _ _) (B754_zero _ _ _) |- _ => generalize (finite_pl_neq_zero _ _ _ _ _ H); intros; contradiction
+                 end
+                ]. }
+    { induction 1; try solve [ constructor
+                             | eapply pl_symm; eassumption
+                             | etransitivity; eauto
+                             | destruct p1; simpl; solve [ constructor
+                                                         | smashs; constructor ]
+                             | destruct p1; simpl; smashs;
+                               repeat constructor ]. }
+    { intros. apply pl_symm. apply IHpl_eq. apply pl_symm. assumption. }
+    { intros. specialize (IHpl_eq1 _ _ H1).
       eapply pl_trans; eauto.
-      try solve [destruct b1; simpl; intros; try fm_tac].
-      destruct b1
-      try (consider p3; simpl; intros; try fm_tac);
-      try (consider b2; simpl; intros; try fm_tac);
-      try fm_tac. }
-    { }
-    { }
+      eapply IHpl_eq2. constructor. }
+    Unshelve.
+     auto. auto. auto. auto.
   Qed.
-*)
       
   Lemma states_iso_fexprD :
     forall ist ist',

@@ -119,12 +119,20 @@ Definition float_mult (a b : float) : float :=
   Bmult custom_prec custom_emax custom_precGt0 custom_precLtEmax custom_nan mode_ZR a b.
 
 Definition float_max (a b : float) : float :=
-  match Fappli_IEEE_extra.Bcompare _ _ a b with
-  | Some Datatypes.Eq => a
-  | Some Datatypes.Lt => b
-  | Some Datatypes.Gt => a
-  | None => a
-  end.
+    match a, b with
+    | B754_nan _ _ _ _, _ => a
+    | _, B754_nan _ _ _ _ => b
+    | B754_infinity _ _ _, _ => a
+    | _, B754_infinity _ _ _ => b
+    | _, _ =>
+      match Fappli_IEEE_extra.Bcompare custom_prec custom_emax a b with
+      | Some Datatypes.Eq => a
+      | Some Datatypes.Lt => b
+      | Some Datatypes.Gt => a
+      | None => a
+      end
+    end.
+
 
 (* This replaces a validity proof in the floating-point representation and replaces it with
    eq_refl (this is possible since boolean equality is decidable). Doing this optimization
