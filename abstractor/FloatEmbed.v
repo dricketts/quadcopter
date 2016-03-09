@@ -232,11 +232,11 @@ Module FloatEmbed <: EmbeddedLang.
       { rewrite H0. auto. } }
   Qed.
 
-  Definition asReal (f : float) (r : R) :=
+  Definition asReal_in (f : float) (r : R) : Prop :=
     (F2OR f = Some (the_round r))%type.
 
-  Definition asReal_is :
-    asReal = (fun f r => F2OR f = Some (the_round r))%type := eq_refl.
+  Definition asReal_out (f : float) (r : R) : Prop :=
+    (F2OR f = Some r)%type.
 
   (* we may need a notion of validity *)
   Lemma states_iso_nil :
@@ -268,6 +268,7 @@ Module FloatEmbed <: EmbeddedLang.
       + consider (string_dec v v0); try congruence.
   Qed.
 
+  (*
   Lemma pl_eq_asReal' :
     forall (p1 p2 : pl_data) (r : R),
       pl_equ p1 p2 -> (asReal p1 r <-> asReal p2 r).
@@ -285,6 +286,49 @@ Module FloatEmbed <: EmbeddedLang.
     intros.
     generalize (pl_eq_asReal' p1 p2 r H). intro Hplear.
     destruct Hplear. auto.
+  Qed.
+   *)
+
+  Lemma asReal_in_det :
+    forall (p p' : pl_data) (r : R),
+      asReal_in p r ->
+      asReal_in p' r ->
+      pl_eq p p'.
+  Proof.
+    unfold asReal_in.
+    intros.
+    apply F2OR_pl_eq. rewrite <- H in H0. auto.
+  Qed.
+
+  Lemma asReal_in_equ' :
+    forall (p p' : pl_data),
+      pl_eq p p' -> forall r, asReal_in p r <-> asReal_in p' r.
+  Proof.
+    intros p p' H.
+    induction H; split; auto; intros;
+    try (edestruct IHpl_eq);
+    try (edestruct IHpl_eq1);
+    try (edestruct IHpl_eq2);
+    eauto.
+  Qed.
+
+  Lemma asReal_in_equ :
+    forall (p p' : pl_data),
+      pl_eq p p' -> forall (r : R), asReal_in p r -> asReal_in p' r.
+  Proof.
+    intros.
+    generalize (asReal_in_equ' _ _ H r); intros.
+    destruct H1. auto.
+  Qed.
+
+  Lemma asReal_out_det :
+    forall (p : pl_data) (r r' : R),
+      asReal_out p r ->
+      asReal_out p r' ->
+      r = r'.
+  Proof.
+    unfold asReal_out. intros.
+    rewrite H0 in H. inversion H. reflexivity.
   Qed.
 
   Lemma states_iso_set' :
@@ -915,17 +959,6 @@ Ltac fm_tac :=
     intros. eapply eval_det'; eauto.
   Qed.
 
-
-  Lemma asReal_det :
-    forall (p p' : pl_data) (r : R),
-      asReal p r ->
-      asReal p' r ->
-      pl_eq p p'.
-  Proof.
-    unfold asReal.
-    intros. rewrite <- H in H0.
-    apply F2OR_pl_eq in H0. apply pl_symm. auto.
-  Qed.
 End FloatEmbed.
 
 Module Import Embedding := Embedding FloatEmbed.
@@ -1531,6 +1564,7 @@ Qed.
 
 (* Finally here is a rule for using the vc gen in rewrting
      (see Postprocess*.v *)
+
 Lemma Hoare__embed_rw
 : forall (c : fcmd) (vs vs' : list string),
     embed_ex vs vs' c |--
@@ -1538,9 +1572,9 @@ Lemma Hoare__embed_rw
       let (_, P) := fpig_vcgen c vs in
       Embed (fun st st' : state =>
                exists fst : fstate,
-                 models vs fst st /\
+                 models M.asReal_in vs fst st /\
                  (P Q fst ->
-                  exists fst' : fstate, models vs' fst' st' /\ Q fst')).
+                  exists fst' : fstate, models M.asReal_out vs' fst' st' /\ Q fst')).
 Proof.
   intros.
   generalize (fpig_vcgen_correct_lem c vs); intro Hfpc.
@@ -1557,7 +1591,7 @@ Proof.
   eexists; split; eauto.
   intros.
   destruct H2.
-  - intuition.
+  - split; auto.
     clear - H0.
     unfold models, fstate_has_vars in *.
     rewrite Forall_forall; intros.

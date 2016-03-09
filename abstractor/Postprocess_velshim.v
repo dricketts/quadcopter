@@ -166,6 +166,7 @@ Proof.
 
       split.
       {
+        simpl.
         (* 9 - (a + v) < 0 -> 9 < a + v *)
         intros.
         simpl.
@@ -176,6 +177,8 @@ Proof.
         simpl.
         rewrite H6. rewrite H12.
         rewrite H8.
+
+        Print fstate_get_rval.
         left.
 
         lra.
@@ -185,6 +188,7 @@ Proof.
         intros.
         left.
         simpl.
+
         assert (isVarValid "a" x) by (eapply varIsValid; eauto).
         split; eauto.
         intros.
@@ -295,25 +299,25 @@ Proof.
         consider (fstate_lookup x0 "v"); intros; try contradiction.
         consider (F2OR f0); intros; try contradiction.
         unfold models in *.
-        Locate embed_ex.
-        generalize (H "a"); generalize (H "v"); intros.
+        generalize (H "a"). 
         clear H.
         unfold velshim_vs_out in *.
-        simpl in *.
-        destruct H5; destruct H6.
-        destruct H6; auto.
-        assert ( ~ ("a" = "v" \/ False)).
-        { intro Hcon. destruct Hcon; [congruence | contradiction]. }
+        simpl in *.  intros.
+        destruct H.
+        left; auto.
+        fwd.
+        destruct H4; [left | right].
+        { unfold M.asReal in *.
+          rewrite <- fstate_lookup_fm_lookup in H. assert (f = x1) by congruence.
+          subst.
+          rewrite H1 in H5; inversion H5.
+          (* nope... need to fix models *)
         fwd.
         rewrite <- fstate_lookup_fm_lookup in H5, H6.
         unfold asReal in *.
 (*        rewrite H5 in H2. inversion H2.*)
         rewrite H6 in H0. inversion H0.
-        rewrite H5 in H2. inversion H2.
-        subst.
-        rewrite H1 in H9. inversion H9.
-        show_z3_hints.
-        z3 solve!. } }
+        rewrite H5 in H2. inversion H2. } }
                       Qed.
 
 

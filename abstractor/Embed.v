@@ -100,18 +100,38 @@ Module Type EmbeddedLang.
       eval isti prg istf ->
       exists istf', istf ~~ istf' /\ eval isti' prg istf'.
 
-  (* relate concrete to abstract variables *)
-  Parameter asReal : pl_data -> R -> Prop.
+  (* relate concrete to abstract variables on inputs.
+     e.g. in floating point inputs will be the rounding of real-world values *)
+  Parameter asReal_in : pl_data -> R -> Prop.
 
-  Axiom asReal_det :
+  (* relate concrete to abstract variables on outputs.
+     e.g. *)
+  Parameter asReal_out : pl_data -> R -> Prop.
+
+  Axiom asReal_in_det :
     forall (p p' : pl_data) (r : R),
-      asReal p r ->
-      asReal p' r ->
+      asReal_in p r ->
+      asReal_in p' r ->
       pl_equ p p'. (* was p = p' *)
 
-  Axiom pl_eq_asReal :
-    forall (p1 p2 : pl_data) (r : R),
-      pl_equ p1 p2 -> asReal p1 r -> asReal p2 r.
+  Axiom asReal_in_equ :
+    forall (p p' : pl_data),
+      pl_equ p p' -> forall (r : R), asReal_in p r -> asReal_in p' r.
+
+  Axiom asReal_out_det :
+    forall (p : pl_data) (r r' : R),
+      asReal_out p r ->
+      asReal_out p r' ->
+      r = r'.
+
+  (* we get this one for free I think *)
+  (*
+  Axiom asReal_out_equ :
+    forall (p : pl_data) (r r' : R),
+      r = r' ->
+      asReal_out p r ->
+      asReal_out p r'.
+   *)
 
 End EmbeddedLang.
 
@@ -124,8 +144,8 @@ Module Type EMBEDDING_THEOREMS.
   Parameter embed_ex : list string -> list string -> ast -> Syntax.Formula.
 
   (* relate concrete to abstract states *)
-  (* should all variables not in the list must be None *)
-  Definition models (vars : list string) (ist : istate) (sst : Syntax.state)
+  (* should all variables not in the list must be None? *)
+  Definition models (asReal : pl_data -> R -> Prop) (vars : list string) (ist : istate) (sst : Syntax.state)
   : Prop :=
     forall (s : string),
       (In s vars ->
@@ -141,8 +161,8 @@ Module Type EMBEDDING_THEOREMS.
   Axiom embed_ex_sound :
     forall (v v' : list string) (prg : ast) (is is' : istate)
            (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
-      models v is ls ->
-      models v' is' ls' ->
+      models asReal_in v is ls ->
+      models asReal_out v' is' ls' ->
       eval is prg is' ->
       Semantics.eval_formula
         (embed_ex v v' prg)
@@ -157,8 +177,8 @@ Module Type EMBEDDING_THEOREMS.
     forall (v v' : list string) (prg : ast) (ls : Syntax.state)
            (tr : Stream.stream Syntax.state),
       Semantics.eval_formula (embed_ex v v' prg) (Stream.Cons ls tr) ->
-      exists is is', models v is ls
-                  /\ models v' is' (Stream.hd tr)
+      exists is is', models asReal_in v is ls
+                  /\ models asReal_out v' is' (Stream.hd tr)
                   /\ eval is prg is'.
 
   (** Next, some definitions for Hoare-style reasoning about programs.
@@ -178,10 +198,10 @@ Module Type EMBEDDING_THEOREMS.
         (|-- embed_ex vs vs' c -->>
              Embed (fun st st' =>
                       exists fst,
-                        models vs fst st /\
+                        models asReal_in vs fst st /\
                         (P fst ->
                          exists fst',
-                           models vs' fst' st' /\
+                           models asReal_out vs' fst' st' /\
                            Q fst'))).
 
   End Hoare.
@@ -191,7 +211,7 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
   Module M := M.
   Import M.
 
-  Definition models (vars : list string) (ist : istate) (sst : Syntax.state)
+  Definition models (asReal : pl_data -> R -> Prop) (vars : list string) (ist : istate) (sst : Syntax.state)
   : Prop :=
     forall (s : string),
       (In s vars ->
@@ -203,8 +223,8 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
   Definition embed_ex (v v' : list string) (prg : ast) : Syntax.Formula :=
     Syntax.Embed (fun lpre lpost =>
                     exists cpre cpost,
-                      models v cpre lpre /\
-                      models v' cpost lpost /\
+                      models asReal_in v cpre lpre /\
+                      models asReal_out v' cpost lpost /\
                       eval cpre prg cpost).
 
   Lemma states_iso_symm :
@@ -232,8 +252,8 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
   Theorem embed_ex_sound
   : forall (v v' : list string) (prg : ast) (is is' : istate)
            (ls ls' : Syntax.state) (tr : Stream.stream Syntax.state),
-      models v is ls ->
-      models v' is' ls' ->
+      models asReal_in v is ls ->
+      models asReal_out v' is' ls' ->
       eval is prg is' ->
       Semantics.eval_formula
         (embed_ex v v' prg)
@@ -249,8 +269,8 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
   : forall (v v' : list string) (prg : ast) (ls : Syntax.state)
            (tr : Stream.stream Syntax.state),
       Semantics.eval_formula (embed_ex v v' prg) (Stream.Cons ls tr) ->
-         (exists is is', models v is ls
-                      /\ models v' is' (Stream.hd tr)
+         (exists is is', models asReal_in v is ls
+                      /\ models asReal_out v' is' (Stream.hd tr)
                       /\ eval is prg is').
   Proof.
     simpl; intros.
@@ -296,10 +316,10 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
         (|-- embed_ex vs vs' c -->>
              Embed (fun st st' =>
                       exists fst,
-                        models vs fst st /\
+                        models asReal_in vs fst st /\
                         (P fst ->
                          exists fst',
-                           models vs' fst' st' /\
+                           models asReal_out vs' fst' st' /\
                            Q fst'))).
     Proof.
       simpl. intros. unfold tlaEntails. simpl.
