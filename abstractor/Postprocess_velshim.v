@@ -122,15 +122,31 @@ Definition pred1 (r : R) : Prop :=
 Require Import Abstractor.Bound.
 Require Import Coq.micromega.Psatz.
 
+Require Import Examples.System.
+Require Import Examples.Velocity.
+
+Module MyVelocityShimParams <: VelocityShimParams.
+                                Definition ub := 10%R.
+                                Definition d := 1%R.
+                                Lemma d_gt_0 : (d > 0)%R.
+                                                 unfold d; lra.
+                                Qed.
+End MyVelocityShimParams.
+
+Module MyVelocityShim := VelocityShim(MyVelocityShimParams).
+Import MyVelocityShim.
+
+
 (* proof is 198 lines *)
 Theorem fwp_velshim2_full
 : preVarPred pred1 "a" //\\ preVarPred pred1 "v" //\\
-  (embed_ex velshim_vs_in velshim_vs_out velshim2)
-  |-- (VarNextT "a" = 0 \\// (VarNextT "v") + ((VarNextT "a") * NatT 1) < NatT 10)%HP.
+  (embed_ex_seal velshim_vs_in velshim_vs_out velshim2)
+  |-- Ctrl //\\ Lib.Unchanged ["v"]%HP.
 Proof.
   rewrite landC. rewrite landA. rewrite landC. rewrite landA.
   tlaRevert.
-  erewrite -> Hoare__embed_rw.
+
+    erewrite -> Hoare__embed_seal_rw.
   {
     eapply lforallL.
     instantiate (1 := (fstate_get_rval "a" (fun a =>
@@ -138,16 +154,35 @@ Proof.
     eapply lequiv_rewrite_left.
 
     {
+      cbn beta zeta iota delta [Lib.Unchanged list_minus string_dec velshim_vs_in velshim_vs_out in_dec string_dec].
+      
       cbn beta zeta iota delta -[bound_fexpr].
+      rewrite <- embed_push_And.
+      instantiate (2 := (fun x y => eq (x "v") (y "v"))).
+      2: reflexivity.
+      2: compute; intros; split; destruct tr; intros; destruct tr; fwd; auto.
+
       crunch_embeds.
+      simpl.
+      instantiate (1 := (Embed (fun x y : state => (x "v" = y "v")%type))).
+      split; breakAbstraction; auto.
     }
 
-    apply lexistsL. intros.
-    apply land_comm_left.
-
     apply landAdj.
-    apply land_curry1.
+    apply lexistsL.
+    intros.
+    apply land_comm_left.
+    charge_intro.
+    Print embed_ex_seal.
+Admitted.
+(*
+    apply and_assoc_left.
+    SearchAbout land.
+    apply landAdj. apply land_curry1.
 
+    (*apply landAdj.*)
+    apply land_curry1. apply landAdj. apply land_curry1.
+    
     apply lentail_cut2.
 
     { Opaque bound_fexpr.
@@ -155,15 +190,12 @@ Proof.
       Transparent bound_fexpr.
       intros. forward_reason.
 
-      generalize (models_Forall _ _ _ H); intros.
-      
-      unfold velshim_vs_in in H6. inversion H6 as [| Hk2 Hk3 Hnew Hrem]; clear H6.
-      inversion Hrem; clear Hrem. subst. fwd.
+      generalize (models_exploit _ _ _ _ H); intros Hme; simpl in Hme; fwd.
 
-      fwd.
       cbv beta zeta iota delta
           [lift2 float_plus float_mult float_one fzero Fappli_IEEE.Bopp Fappli_IEEE.Bplus Fappli_IEEE.Bmult custom_prec custom_emax prec emax custom_nan].
 
+      unfold M.asReal_in in *.
       split.
       {
         simpl.
@@ -175,12 +207,10 @@ Proof.
         intros.
         unfold fstate_get_rval.
         simpl.
-        rewrite H6. rewrite H12.
-        rewrite H8.
+        rewrite H7. rewrite H12.
+        rewrite H9.
 
-        Print fstate_get_rval.
         left.
-
         lra.
       }
       split.
@@ -195,29 +225,22 @@ Proof.
         unfold fstate_get_rval.
         simpl.
         rewrite H13.
-        rewrite H6.
-        rewrite H8.
+        rewrite H7.
+        rewrite H9.
 
-        unfold maybe_ge0 in H10.
-        simpl in H10.
+        unfold maybe_ge0 in H11.
+        simpl in H11.
+        fwd.
         do_F2Rs.
 
-        unfold isVarValid in *.
+        clear H12.
 
-        generalize fstate_lookup_fstate_lookup_force; intros Hfls.
-        unfold asReal in Hfls.
         unfold fstate_lookup_force in *.
 
-        repeat match goal with
-               | H : fstate_lookup _ _ = Some _ |- _ =>
-                 try (rewrite H in *);
-                 try erewrite (Hfls _ _ _ _ H) in H10 by eassumption;
-                 try erewrite (Hfls _ _ _ _ H) in H12 by eassumption;
-                 try erewrite (Hfls _ _ _ _ H) in H14 by eassumption; clear H
-               end.
+        rewrite H6 in *.
+        rewrite H7 in *.
 
-
-        unfold float_bounded, asReal in *.
+        unfold float_bounded in *.
 
         repeat match goal with
                | H : F2OR ?X = Some ?Y |- _ =>
@@ -228,23 +251,7 @@ Proof.
         show_value error.
         unfold pred1 in *.
 
-        simpl in H8.
-
-        repeat match goal with
-               | H : context [roundUp ?r] |- _ =>
-                 generalize (roundUp_fact r);
-                   assert (dummy r (roundUp r)) by exact I;
-                   generalize dependent (roundUp r);
-                   intros
-               | H : context [roundDown ?r] |- _ =>
-                 generalize (roundDown_fact r);
-                   assert (dummy r (roundDown r)) by exact I;
-                   generalize dependent (roundDown r);
-                   intros
-               end.
-
-        unfold float_bounded, fstate_lookup_force in *.
-        fwd.
+        show_z3_hints.
 
         z3 solve!.
       }
@@ -260,33 +267,17 @@ Proof.
         left.
         split; auto.
 
-
-        (*generalize fstate_lookup_fstate_lookup_force; intros Hfls.
-        unfold asReal in Hfls.
-
-        repeat match goal with
-               | H : fstate_lookup _ _ = Some _ |- _ =>
-                 try (rewrite H in * ); try repeat erewrite (Hfls _ _ _ _ H) by eassumption; clear H
-                      end.
-*)
         unfold float_bounded, fstate_lookup_force in *.
-
-        unfold asReal in *.
-
-        weaken_F2ORs.
-        do_F2Rs.
-
         repeat match goal with
                | H : fstate_lookup _ _ = Some _ |- _ =>
                  try (rewrite H in * ); clear H
                end.
-        
-        show_z3_hints.
-        show_value floatMin.
-        show_value floatMax.
-        show_value error.
-        unfold pred1 in *.
 
+        unfold pred1 in *.
+        do_F2Rs.
+        weaken_F2ORs.
+        show_z3_hints.
+        show_values. 
 
         z3 solve!. }
       }
@@ -307,38 +298,28 @@ Proof.
         left; auto.
         fwd.
         destruct H4; [left | right].
-        { unfold M.asReal in *.
+        { unfold M.asReal_out in *.
           rewrite <- fstate_lookup_fm_lookup in H. assert (f = x1) by congruence.
           subst.
           rewrite H1 in H5; inversion H5.
-          (* nope... need to fix models *)
+          reflexivity. }
+        { unfold M.asReal_out in *.
+          rewrite <- fstate_lookup_fm_lookup in H.
+          assert (f = x1) by congruence; subst.
+          assert (r = (Stream.hd (Stream.tl tr) "a")) by congruence; subst.
+          z3 solve.
+          rewrite H
         fwd.
         rewrite <- fstate_lookup_fm_lookup in H5, H6.
         unfold asReal in *.
-(*        rewrite H5 in H2. inversion H2.*)
+
         rewrite H6 in H0. inversion H0.
         rewrite H5 in H2. inversion H2. } }
                       Qed.
 
-
-                      Require Import Examples.System.
-                      Require Import Examples.Velocity.
-
-                      Module MyVelocityShimParams <: VelocityShimParams.
-                                                      Definition ub := 10%R.
-                                                      Definition d := 1%R.
-                                                      Lemma d_gt_0 : (d > 0)%R.
-                                                                            unfold d; lra.
-                                                      Qed.
-                      End MyVelocityShimParams.
-
-                      Module MyVelocityShim := VelocityShim(MyVelocityShimParams).
-                      Import MyVelocityShim.
+*)
                       
-                      Check (Sys (embed_ex velshim_vs velshim2) w 1).
-                      Print SysSystem.
-
-                      Definition MyNext := Sys (embed_ex velshim_vs velshim2 //\\ Logic.Lib.Unchanged ["v"]) w 1.
+                      Definition MyNext := Sys (embed_ex_seal velshim_vs_in velshim_vs_out velshim2) w 1.
 
                       (* need to prove versions of these *)
                       Theorem SysNeverStuck_Next
@@ -381,20 +362,47 @@ Proof.
                         rewrite <- TimedPreserves_Refine.
                         eapply MyVelocityShim.TimedPreserves_Next.
                         unfold Next.
+                        rewrite <- fwp_velshim2_full.
+                        
+                        unfold MyNext.
 
-                        Lemma Ctrl_connect_velshim :
-                          Logic.Lib.Unchanged ["v"] //\\
-                          (("a") ! = 0 \\// ("v") ! + ("a") ! * NatT 1 < NatT 10) |-- Ctrl //\\ Logic.Lib.Unchanged ["v"].
+                        (* we need to take a different var for a_proposed *)
+                        (* change input-rounding to round-with-truncate
+                           go to -FloatMax or FloatMax for Inf/NaN *)
+
+                        Print pred1.
+                        Lemma Sys_imp_env :
+                          forall P Q X,
+                            (P |-- Q -->> X) ->
+                            forall y z,
+                              (P |-- Sys Q y z) ->
+                              (P |-- Sys X y z).
                         Proof.
-                          breakAbstraction.
                           intros.
-                          unfold MyVelocityShimParams.ub, MyVelocityShimParams.d.
-                          lra.
+                          unfold Sys, Discr in *.
+                          apply landAdj in H.
+                          rewrite <- H.
+                          rewrite land_dup at 1.
+                          rewrite H0 at 1.
+                          charge_cases; charge_tauto.
                         Qed.
 
-                        rewrite <- Ctrl_connect_velshim.
-                        rewrite <- fwp_velshim2_full.
-                        unfold MyNext.
+                        idtac.
+                        charge_intros.
+                        eapply Sys_imp_env.
+                        2: charge_assumption.
+                        charge_intro.
+                        rewrite <- landA.
+                        charge_split; [|charge_assumption].
+                        charge_assert IndInv; [charge_assumption|].
+                        charge_clear.
+
+                        breakAbstraction.
+                        intros.
+                        split.
+                        {
+
+                        
                         unfold IndInv.
                         unfold MyVelocityShimParams.d, MyVelocityShimParams.ub in *.
 
