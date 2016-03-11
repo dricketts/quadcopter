@@ -396,7 +396,7 @@ Hint Resolve
 Ltac crunch_embeds :=
   progress repeat
            match goal with
-           | |- Embed (fun x y => models _ _ _) -|- _ => reflexivity
+           | |- Embed (fun x y => models _ _ _ _) -|- _ => reflexivity
            | |- Embed (fun x y => _ -> _) -|- _ => eapply embed_push_Imp
            | |- Embed (fun x y => _ \/ _) -|- _ => eapply embed_push_Or
            | |- Embed (fun x y => _ /\ _) -|- _ => eapply embed_push_And
@@ -648,23 +648,8 @@ Definition dummy (r1 r2 : R) : Prop :=
 Definition preVarPred (pred : R -> Prop) (v : Var) : Formula :=
   Syntax.Exists float
                 (fun f : float =>
-                   RealT (FloatToR f) = VarNowT v //\\
-                                                PropF (exists r : R, (F2OR f = Some r)%type /\ pred r)).
-
-(*
-Lemma models_Forall :
-  forall vs fst st,
-    models vs fst st ->
-    List.Forall (fun v => exists f, eq (fstate_lookup fst v) (Some f) /\ M.asReal f (st v)) vs.
-Proof.
-  intros.
-  unfold models in H.
-  apply Forall_forall; intros.
-  specialize (H x); fwd.
-  rewrite <- fstate_lookup_fm_lookup in H.
-  eexists; split; eauto.
-Qed.
-*)
+                   Embed (fun st _ => FloatToR f = Bound.the_round (st v) /\
+                                     pred (st v))).
 
 (* find F2R's; remember them; pull them; compute them *)
 Ltac do_F2Rs :=
@@ -849,30 +834,6 @@ Ltac show_z3_hints :=
                  show_Rmax_z3_hint r1 r2
              end.
 
-
-      (*
-Ltac show_z3_hints' T :=
-  
-    in
-      match T with
-      | context[Bound.roundUp ?r] =>
-        has_bad_subterm r;
-        
-        let rec show' T :=
-            repeat match T with
-                   | context[Bound.roundUp ?r] =>
-                     show' r; generalize dependent (Bound.roundUp r)
-                   | context[Bound.roundDown ?r] =>
-                     idtac "point 2"; show' r; generalize dependent (Bound.roundDown r)
-                   | context[Rmax ?r1 ?r2] =>
-                     show' r1; show' r2;
-                     generalize dependent (Rmax r1 r2)
-                   | _ => fail 1                                
-                   end
-        in show' T.
-*)
-
-
 Ltac show_values :=
   show_value Bound.floatMax;
   show_value Bound.floatMin;
@@ -883,3 +844,39 @@ Ltac weaken_F2ORs :=
          | H : F2OR ?f = Some ?r |- _ =>
            apply F2OR_weaken in H
          end.
+
+(* used to embed a program and assert that all vars
+   other than outputs are unchanged *)
+Fixpoint list_minus {T : Type} (dec : forall (x y : T), ({x = y} + {x <> y})) (l1 l2 : list T) : list T :=
+  match l1 with
+  | nil => nil
+  | h :: l1t => if in_dec dec h l2 then list_minus dec l1t l2
+               else h :: list_minus dec l1t l2
+  end.
+
+Definition embed_ex_seal
+           (vis vos : list string) (prg : fcmd) : Formula :=
+  embed_ex vis vos prg //\\ Lib.Unchanged (list_minus Coq.Strings.String.string_dec vis vos).
+
+(* rewriting rule for using "sealed" embed *)
+Lemma Hoare__embed_seal_rw :
+  forall (c : fcmd) (vis vos : list string),
+    embed_ex_seal vis vos c |--
+                  Forall Q : fstate -> Prop,
+  (let (_, P) := fpig_vcgen c vis in
+   Embed
+     (fun st st' : state =>
+        exists fst : fstate,
+          models M.asReal_in vis fst st /\
+          (P Q fst ->
+           exists fst' : fstate,
+             models M.asReal_out vos fst' st' /\ Q fst'))) //\\
+                                                          Lib.Unchanged (list_minus string_dec vis vos
+                                                                        ).
+Proof.
+  intros.
+  generalize (Hoare__embed_rw); intros.
+  unfold embed_ex_seal.
+  rewrite H.
+  tlaIntuition.
+Qed.
