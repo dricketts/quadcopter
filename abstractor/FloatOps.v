@@ -183,10 +183,14 @@ Qed.
 (* and here is how we add them *)
 Definition new_float_one' := Eval lazy in (concretize_float (float_plus custom_float_zero (nat_to_float 1))).
 
+
 (* Floating-point comparisons *)
 (* NB: sign bit is true if negative *)
-Definition float_lt (a b : float) : bool :=
-  match float_minus a b with
+
+(*
+Definition float_lt (a b : float) : option bool :=
+  Fappli_IEEE_extra.Bcompare _ _ a b.
+  | Some
   | B754_zero _ _ _ => false
   | B754_infinity _ _ is_neg => is_neg
   | B754_nan _ _ is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
@@ -200,6 +204,7 @@ Definition float_le (a b : float) : bool :=
   | B754_nan _ _ is_neg _ => is_neg (* should never happen for non-exceptional operands... *)
   | B754_finite _ _ is_neg _ _ _ => is_neg
   end.
+ *)
 
 Definition fzero : float := Fappli_IEEE.B754_zero 24 128 false.
 Definition fnegzero : float := Fappli_IEEE.B754_zero 24 128 true.
