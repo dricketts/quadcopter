@@ -20,10 +20,73 @@ Definition floatMin : R := bpow radix2 custom_emin%Z.
 Arguments is_finite {_ _} _.
 
 (** * Predicated Intervals **)
-Record predInt : Type :=
+(* old domain, doesn't allow us to represent exceptional values *)
+(* Record predInt : Type :=
   mkPI { lb : fstate -> R
        ; ub : fstate -> R
-       ; premise : fstate -> Prop }.
+       ; premise : fstate -> Prop }. *)
+
+(* Real numbers, with +/- infinity but not NaN *)
+Inductive Rinf :=
+| RinfR : R -> Rinf
+| RinfInf : Rinf
+| RinfNInf : Rinf      
+.
+
+Inductive Rinf_lt : Rinf -> Rinf -> Prop :=
+| Rinf_ltR : forall r1 r2, Rlt r1 r2 -> Rinf_lt (RinfR r1) (RinfR r2)
+| Rinf_ltInf : forall r, Rinf_lt (RinfR r) RinfInf
+| Rinf_ltNInf : forall r, Rinf_lt RinfNInf (RinfR r)
+| Rinf_ltInfs : Rinf_lt RinfNInf RinfInf
+.
+
+Definition Rinf_gt (r1 r2 : Rinf) : Prop :=
+  Rinf_lt r2 r1.
+
+Definition Rinf_le (r1 r2 : Rinf) : Prop :=
+  Rinf_lt r1 r2 \/ r1 = r2.
+
+Definition Rinf_ge (r1 r2 : Rinf) : Prop :=
+  Rinf_lt r2 r1 \/ r1 = r2.
+
+(* TODO: make sure this really is the abstraction we want by pushing through
+   the velocity shim. *)
+Record interval : Type :=
+  mkI { lb : fstate -> Rinf;
+        ub : fstate -> Rinf }.
+
+Definition B2Rinf (f : float) : option Rinf :=
+  match f with
+  | B754_infinity _ _ true => Some RinfInf
+  | B754_infinity _ _ false => Some RinfNInf
+  | B754_nan _ _ _ _ => None
+  | _ => Some (RinfR (B2R _ _ f))
+  end.
+
+Definition intervalD (i : option interval) (f : float) (fs : fstate) : Prop :=
+  match i with
+  | None => is_nan _ _ f = true
+  | Some (mkI lb ub) =>
+    match (B2Rinf f) with
+    | None => False
+    | Some ri => Rinf_le (lb fs) ri /\ Rinf_le ri (ub fs)
+    end
+  end.
+  
+(*
+Record predInt : Type :=
+  mkPI { prem : fstate -> Prop; intv : option interval }.
+*)
+
+(*
+Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
+  p.(prem) fs ->
+  match p.(intv) with
+  | None => Fappli_IEEE.is_nan _ _ f = true
+  | Some {|lb := lb; ub := ub |} =>
+    let ri := B2Rinf f in
+    Rinf_le ri lb  /\ Rinf_le ri ub
+  end.
 
 Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
   p.(premise) fs ->
@@ -47,6 +110,7 @@ Proof.
   specialize (H0 _ H H2).
   destruct H0. split;  psatz R.
 Qed.
+*)
 
 (** * Rounding Approximation **)
 Definition the_round : R -> R :=
@@ -426,14 +490,30 @@ Qed.
 (** * Predicated Interval Abstractions **)
 
 (** * Constants **)
-Definition absFloatConst (f : float) : predInt :=
-  {| premise := fun _ => is_finite f = true
-   ; lb := fun _ => B2R _ _ f ; ub := fun _ => B2R _ _ f |}%R.
+Definition absFloatConst (f : float) : option interval :=
+  match (B2Rinf f) with
+  | None => None
+  | Some ri => Some {| lb := fun _ => ri ; ub := fun _ => ri |}
+  end.
 
 Theorem absFloatConst_ok : forall f fs,
-    predIntD (absFloatConst f) f fs.
+    intervalD (absFloatConst f) f fs.
 Proof.
-  red. intros. simpl. split.
+  red. intros.
+  unfold absFloatConst.
+  consider f; intros; subst; simpl; try congruence; try reflexivity.
+  { unfold Rinf_le.
+    split; right; reflexivity. }
+  { unfold absFloatConst. simpl.
+    unfold Rinf_le.
+    destruct b;
+      split; right; reflexivity. }
+  { unfold Rinf_le.
+    spli
+
+  
+  unfold absFloatConst, B2Rinf; simpl; destruct b.
+  simpl. split.
   apply H.
   psatz R.
 Qed.

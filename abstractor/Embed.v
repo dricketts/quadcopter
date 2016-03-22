@@ -53,6 +53,7 @@ Section lookup.
     end.
 
   (* finite map update *)
+  (*
   Fixpoint fm_update (l : list (string * T)) (s : string) (t : T) : list (string * T) :=
     match l with
     | nil => [(s,t)]
@@ -60,6 +61,17 @@ Section lookup.
       if string_dec s var
       then (var, t) :: l'
       else (var, val) :: fm_update l' s t
+    end.
+   *)
+  Definition fm_update (l : list (string * T)) (s : string) (t : T) : list (string * T) :=
+    (s, t) :: l.
+
+  (* removes last binding put into finite map; convenient for
+     strongest-postcondition semantics *)
+  Definition fm_unset (l : list (string * T)) : list (string * T) :=
+    match l with
+    | nil => nil
+    | _ :: l' => l'
     end.
 End lookup.
 

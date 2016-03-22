@@ -133,6 +133,9 @@ Definition float_max (a b : float) : float :=
       end
     end.
 
+Definition float_compare :=
+  Fappli_IEEE.Bcompare custom_prec custom_emax.
+
 
 (* This replaces a validity proof in the floating-point representation and replaces it with
    eq_refl (this is possible since boolean equality is decidable). Doing this optimization
