@@ -23,7 +23,7 @@ Require Import Flocq.Appli.Fappli_IEEE.
 Require Import Abstractor.FloatOps.
 Require Import Abstractor.FloatLang.
 Require Import Abstractor.Embed.
-Require Import Abstractor.Bound_Reimp.
+Require Import Abstractor.Bound.
 
 (* YAAY we don't need this awfulness anymore... *)
 (*
@@ -132,7 +132,6 @@ Module FloatEmbed <: EmbeddedLang.
 
   Definition asReal_out (f : float) (r : R) : Prop :=
     match f with
-    | Fappli_IEEE.B754_nan _ _ _ _ => True
     | _ => (F2OR f = Some r)%type
     end.
 
@@ -787,6 +786,8 @@ Definition astate_lookup_nan (ast : astate) (v : string) : interval :=
   | None => nan_const
   end.
 
+(* TODO - this needs to take an fstate instead *)
+(*
 Fixpoint bound_fexpr (fx : fexpr) (aState : astate) : interval :=
   match fx with
   | FVar v => astate_lookup_nan aState v
@@ -797,15 +798,55 @@ Fixpoint bound_fexpr (fx : fexpr) (aState : astate) : interval :=
     absFloatMax' (bound_fexpr fx1 aState) (bound_fexpr fx2 aState)
   | _ => top_const
   end.
+*)
+Fixpoint bound_fexpr (fx : fexpr) (fst : fstate) : interval :=
+  match fx with
+  | FVar v => absFloatConst (fstate_lookup_nan fst v)
+  | FConst f => absFloatConst f
+  | FPlus fx1 fx2 =>
+    absFloatPlus' (bound_fexpr fx1 fst) (bound_fexpr fx2 fst)
+  | FMax fx1 fx2 =>
+    absFloatMax' (bound_fexpr fx1 fst) (bound_fexpr fx2 fst)
+  | _ => top_const
+  end.
 
-(* abstract evaluation *)
 
-Definition maybe_lt0 (i : interval) : Prop :=
-  Rinf_lt i.(lb) (RinfR 0).
+(* SOME TODOS *)
+(* Used to implement bounded if statements *)
+(* put these into Bound.v *)
+(* use list of option Rints as domain *)
+Definition maybe_lt (i1 i2 : interval) : Prop :=
+  Rinf_lt i1.(lb) i2.(ub).
 
-Definition maybe_ge0_or_nan (i : interval) : Prop :=
-  Rinf_ge i.(ub) (RinfR 0) \/ i.(nan) = true.
+Definition maybe_ge_or_nan (i1 i2 : interval) : Prop :=
+  Rinf_ge i1.(ub) i2.(lb) \/ (andb i1.(nan) i2.(nan) = true).
 
+Definition interval_entails (il : interval) (ir : interval) : Prop :=
+  forall (f : float),
+    intervalD il f -> intervalD ir f.
+
+Definition interval_bientails (il ir : interval) : Prop :=
+  interval_entails il ir /\ interval_entails ir il.
+
+(* Checks if the interval given isn't bot
+   (doesn't consider nan) *)
+Definition interval_definitely_inhabited (i : interval) : Prop :=
+  Rinf_lt i.(lb) i.(ub) /\ i.(nan) = false.
+
+(*
+Definition definitely_lt (i1 i2 : interval) : Prop :=
+  (Rinf_lt i1.(ub) i2.(lb) /\ (orb i1.(nan) i2.(nan) = false)).
+
+Definition maybe_not_lt (i1 i2 : interval) : Prop :=
+  (Rinf_ge i1.(ub) i2.(lb) \/ (orb i1.(nan) i2.(nan) = true)).
+ *)
+
+(* if then else rule is problematic here as it introduces
+   nondeterminism. one cheap way around this is to have a
+   function for unioning together two intervals.
+   really the way to do this is to have the domain be
+   disjunctions of intervals *)
+(*
 Inductive afeval : astate -> fcmd -> astate -> Prop :=
 | AFESkip : forall s : astate, afeval s FSkip s
 | AFESeqS : forall (s s' os'' : astate) (a b : fcmd),
@@ -818,11 +859,14 @@ Inductive afeval : astate -> fcmd -> astate -> Prop :=
     afeval s c1 os' ->
     afeval s (FIte ex c1 c2) os'
 | AFEIteF : forall (s os' : astate) (ex : fexpr) (c1 c2 : fcmd),
-    maybe_lt0 (bound_fexpr ex s) ->
-    afeval s c1 os' ->
+    maybe_ge0_or_nan (bound_fexpr ex s) ->
+    afeval s c2 os' ->
     afeval s (FIte ex c1 c2) os'
 .
+*)
 
+(* need to use determinism *)
+(*
 Lemma afeval_correct :
   forall ast ast' prog,
     afeval ast prog ast' ->
@@ -837,22 +881,36 @@ Proof.
     intros.
     inversion H0; subst; auto. }
   { intros.
-    generalize (IHafeval1 _ H1); intros; fwd.
+    specialize (IHafeval1 _ H1); intros; fwd.
     generalize (H3 _ H2); intros; fwd.
-    generalize (IHafeval2 _ H4). intros; fwd.
+    specialize (IHafeval2 _ H4). intros; fwd.
     eexists.
     split; [econstructor; eauto|].
     intros.
     inversion H7; subst; clear H7.
     apply H6.
+Abort.
+*)
 
+(*
 Definition HoareA (P : astate -> Prop) (c : fcmd) (Q : astate -> Prop) : Prop :=
   forall (ast : astate),
     P ast ->
     forall (fst : fstate),
       fstate_astate' fst ast ->
-      (exists fst' : fstate, M.eval fst c fst' /\
+      (exists fst' : fstate, M.eval fst c fst') /\
+      (forall fst' : fstate, M.eval fst c fst' ->
                         forall ast' : astate, fstate_astate' fst' ast' -> Q ast').
+ *)
+Print Hoare.
+
+(*
+Definition HoareA (P : astate -> Prop) (c : fcmd)  (Q : astate -> Prop) : Prop :=
+  forall a : astate,
+    P a ->
+    (exists a' : astate, afeval a c a') /\
+    (forall a' : astate, afeval a c a' -> Q a').
+*)
 
 Lemma Hoare__skip :
   forall (P : fstate -> Prop),
@@ -864,17 +922,17 @@ Proof.
   { intros. inversion H0. subst. auto. }
 Qed.
 
+(*
 Lemma HoareA_skip :
   forall (P : astate -> Prop),
     HoareA P FSkip P.
 Proof.
   red. intros.
-  eexists. split; [econstructor|].
-  intros
-  { intros. inversion H0. subst. auto. }
+  split.
+  { eexists. econstructor. }
+  { intros. inversion H0; subst; auto. }
 Qed.
-
-
+*)
 
 Lemma Hoare__seq :
   forall P Q R c1 c2,
@@ -898,8 +956,7 @@ Proof.
     forward_reason; auto. }
 Qed.
 
-(* this plus consequence should be enough to get our real assignment rule
-   that talks about bounds *)
+(* this one is outdated; is the postcondition version *)
 Lemma Hoare__asn :
   forall P v e,
     Hoare
@@ -954,12 +1011,6 @@ Proof.
   destruct x; simpl; congruence.
 Qed.
 
-Definition interval_entails (il : interval) (ir : interval) : Prop :=
-  forall (f : float),
-    intervalD il f -> intervalD ir f.
-
-Definition interval_bientails (il ir : interval) : Prop :=
-  interval_entails il ir /\ interval_entails ir il.
 
 (* we need some kind of way of relating
    astates to fstates? *)
@@ -973,11 +1024,8 @@ Fixpoint fstate_astate (fs : fstate) (ast : astate) : Prop :=
                          fstate_astate fs' ast
   end.
 
-
 (* encodes that they must be over the same variables *)
 (* better make this an inductive *)
-
-
 Lemma absFloatConst_sound :
   forall fval,
     intervalD (absFloatConst fval) fval.
@@ -1082,20 +1130,16 @@ Proof.
     consider (string_dec v k); intros; subst; [congruence|].
     apply IHfstate_astate'; auto. }
 Qed.
-*)
+ *)
 
 Lemma bound_fexpr_sound
-  : forall fx fst fval,
-    fexprD fx fst = fval ->
-    forall ast,
-      fstate_astate' fst ast ->
-      intervalD (bound_fexpr fx ast) (fexprD fx fst).
+  : forall fx fst,
+      intervalD (bound_fexpr fx fst) (fexprD fx fst).
 Proof.
   induction fx.
   { simpl. intros.
-    apply fstate_astate_intervalD; auto. }
+    apply absFloatConst_sound. }
   { simpl. intros.
-    inversion H; subst.
     apply absFloatConst_sound. }
   { admit'. (* plus soundness. *) }
   { intros. unfold bound_fexpr. apply top_const_top. (* minus soundness, unimplemented *) }
@@ -1140,6 +1184,19 @@ Proof.
   split; eauto.
 Qed.
 
+(*
+Lemma HoareA_conseq : forall (P P' Q Q' : _ -> Prop) c,
+    HoareA P c Q ->
+    (forall ast, P' ast -> P ast) ->
+    (forall ast, Q ast -> Q' ast) ->
+    HoareA P' c Q'.
+Proof.
+  unfold HoareA. intros.
+  eapply H0 in H2. eapply H in H2.
+  destruct H2. split; eauto.
+Qed.
+*)
+
 (* need Hoare_, Hoare rules over abstract states *)
 Lemma Hoare__asn' :
   forall (P : fstate -> Prop) v e,
@@ -1148,8 +1205,7 @@ Lemma Hoare__asn' :
       (FAsn v e)
       (fun fst : fstate =>
          P (fm_unset fst) /\
-         forall ast, fstate_astate' fst ast ->
-                intervalD (bound_fexpr e ast) (fexprD e fst)).
+         intervalD (bound_fexpr e (fm_unset fst)) (fm_lookup fst v)).
 Proof.
   intros. red.
   intros.
@@ -1161,6 +1217,28 @@ Proof.
     intros.
     eapply bound_fexpr_sound; auto.
 Qed.
+
+(*
+Lemma HoareA_asn :
+  forall (P : astate -> Prop) v e,
+    HoareA 
+      P 
+      (FAsn v e)
+      (fun ast : astate =>
+         P (fm_unset ast) /\
+         forall fst, fstate_astate' fst ast ->
+                intervalD (bound_fexpr e ast) (fexprD e fst)).
+Proof.
+  intros. red.
+  intros. split.
+  - eexists; constructor.
+  - intros. inversion H0; subst; clear H0.
+    simpl; split; auto.
+    intros.
+    eapply bound_fexpr_sound.
+    auto.
+Qed.
+*)
 
 (*
 Lemma Hoare_bound_asn :
@@ -1311,19 +1389,19 @@ Proof.
 Qed.
 
 Lemma Hoare__ite :
-  forall P Q1 Q2 ex c1 c2,
-    Hoare (fun fs => P fs /\ float_lt (fexprD ex fs) fzero) c1 Q1 ->
-    Hoare (fun fs => P fs /\ float_ge_or_nan (fexprD ex fs) fzero) c2 Q2 ->
+  forall P Q1 Q2 ex1 ex2 c1 c2,
+    Hoare (fun fs => P fs /\ float_lt (fexprD ex1 fs) (fexprD ex2 fs)) c1 Q1 ->
+    Hoare (fun fs => P fs /\ float_ge_or_nan (fexprD ex1 fs) (fexprD ex2 fs)) c2 Q2 ->
     Hoare
       P
-      (FIte ex c1 c2)
+      (FIte ex1 ex2 c1 c2)
       (fun fs : fstate =>
          Q1 fs \/ Q2 fs).
 Proof.
   intros. red.
   intros.
   split.
-  { destruct (float_lt_ge (fexprD ex s) fzero).
+  { destruct (float_lt_ge (fexprD ex1 s) (fexprD ex2 s)).
     { specialize (H _ (conj H1 H2)). fwd.
       eexists.
       eapply FEIteT; eauto. }
@@ -1333,10 +1411,10 @@ Proof.
   { intros.
     inversion H2; subst.
     { left.
-      specialize (H _ (conj H1 H8)). fwd.
+      specialize (H _ (conj H1 H9)). fwd.
       eapply H3; eauto. }
     { right.
-      specialize (H0 _ (conj H1 H8)). fwd.
+      specialize (H0 _ (conj H1 H9)). fwd.
       eapply H3; eauto. } }
 Qed.
 
@@ -1354,32 +1432,102 @@ Proof.
       right. eexists; eauto. } }
 Qed.
 
-
-Lemma Hoare__ite' :
+(*
+prior version
+ *)
+(*
+Lemma Hoare__bound_ite :
   forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
-    Hoare (fun fs => P fs /\
-                  exists ast, fstate_astate' fs ast /\
-                         maybe_lt0 (bound_fexpr ex ast)) c1 Q1 ->
-    Hoare (fun fs => P fs /\
-                  exists ast, fstate_astate' fs ast /\
-                         maybe_ge0_or_nan (bound_fexpr ex ast)) c2 Q2 ->
+    let bs := bound_fexpr ex in
+    Hoare Q1 c1 P ->
+    Hoare Q2 c2 P ->
+    Hoare (fun fst => exists res, fexprD ex fst = Some res
+              /\ (maybe_lt0 bs fst -> Q1 fst)
+              /\ (maybe_ge0 bs fst -> Q2 fst)
+              /\ (AnyOf (List.map
+                           (fun pi =>
+                              let '(prem, _) := predInt_to_pair pi fst in prem)
+                           bs)))%type
+           (FIte ex c1 c2)
+           P.
+ *)
+
+(*
+Lemma Hoare__ite' :
+  forall P Q1 Q2 ex c1 c2,
+    Hoare (fun fs => P fs /\ maybe_lt0 (bound_fexpr ex fs)) c1 Q1 ->
+    Hoare (fun fs => P fs /\ maybe_ge0_or_nan (bound_fexpr ex fs)) c2 Q2 ->
+    Hoare
+      P
+      (FIte ex c1 c2)
+      (fun fs : fstate =>
+         Q1 fs \/ Q2 fs).
+Proof.
+  unfold Hoare.
+  intros.
+  split.
+  { specialize (H s). eexists.
+    eapply Hoare_conseq.
+ *)
+(*
+Lemma maybe_lt_ge_trichotomy :
+  forall ex ast,
+    maybe_lt0 (bound_fexpr ex ast) \/ maybe_ge0_or_nan (bound_fexpr ex ast).
+Proof.
+Admitted.
+*)
+
+
+(* need to write vc gen and state its correctness first,
+   in order to see what is going on *)
+
+(* we'll do the rest of the Hoare rules later. *)
+(*  
+Lemma Hoare__bound_ite :
+  forall ex (P Q1 Q2 : fstate -> Prop) c1 c2,
+    Hoare (fun fst => P fst /\
+                    maybe_lt0 (bound_fexpr ex fst)) c1 Q1 ->
+    Hoare (fun fst => P fst /\
+                    maybe_ge0_or_nan (bound_fexpr ex fst)) c2 Q2 ->
     Hoare P
           (FIte ex c1 c2)
           (fun fst => Q1 fst \/ Q2 fst).
 Proof.
   intros.
   eapply Hoare_conseq.
-  eapply Hoare__ite with (P := P) (Q1 := Q1) (Q2 := Q2).
-  { red. intros. fwd.
-    SearchAbout float_lt.
-    red in H. specialize (H _
-  apply H.
-  ;
+  eapply Hoare__ite.
+  { lemma about float_
+  eapply Hoare__i
     [ eapply Hoare__ite; eassumption | | exact (fun _ x => x) ].
-  intros. fwd.
-  eexists; split; eauto.
+  generalize (bound_fexpr_sound); intros.
+    
 
-             
+  
+  split. 
+  { 
+
+
+    consider 
+
+    generalize maybe_lt_ge_trichotomy; intros.
+    specialize (H2 ex s). specialize (H s). specialize (H0 s).
+    specialize (H3 ex s). destruct H3.
+    { eexists. eapply FEIteT.
+    destruct H2.
+    { fwd. eexists. eapply FEIteT. }
+    { AFEIteF. specialize (H0 a). fwd. eexists. apply AFEIteF; eauto. } }
+  { intros.
+    inversion H2; subst; clear H2; [left|right].
+    { specialize (H a); fwd.
+      eapply H2; eauto. }
+    { specialize (H0 a); fwd.
+      eapply H2; eauto. } }
+Qed.
+*)
+
+
+
+(*
 Lemma Hoare__bound_ite :
   forall ex (P Q1 Q2 : _ -> Prop) c1 c2,
     let bs := bound_fexpr ex in
@@ -1435,7 +1583,28 @@ Proof.
     simpl in H7.
     rewrite is_finite_FloatToR in H7 by eauto. psatz R. }
 Qed.
+ *)
 
+(* need to replace fm_unset with reassignment *)
+Fixpoint fpig_vcgen (c : fcmd) (P : fstate -> Prop) : fstate -> Prop :=
+  match c with
+  (*| FAsn v e => (fun fs => P (fm_unset fs) /\ intervalD (bound_fexpr e (fm_unset fs)) (fstate_lookup_nan fs v))*)
+  | FAsn v e => (fun fs => exists old, P (fm_update fs v old) /\ intervalD (bound_fexpr e (fm_update fs v old)) (fstate_lookup_nan fs v))
+  | FSeq c1 c2 => fpig_vcgen c2 (fpig_vcgen c1 P)
+  | FIte e1 e2 c1 c2 =>
+    (fun fs => fpig_vcgen c1 (fun fs => P fs /\ maybe_lt (bound_fexpr e1 fs) (bound_fexpr e2 fs)) fs \/
+             fpig_vcgen c2 (fun fs => P fs /\ maybe_ge_or_nan (bound_fexpr e1 fs) (bound_fexpr e2 fs)) fs)
+  | FSkip => P
+  | FFail => fun fst => P fst -> False
+  end.
+
+Lemma fpig_vcgen_correct :
+  forall (c : fcmd) (P : fstate -> Prop),
+    Hoare P c (fpig_vcgen c P).
+Admitted.
+
+(* hopefully unnecessary now. *)
+(*
 Fixpoint fexpr_check (e : fexpr) (vs : list Var) : bool :=
   match e with
   | FVar v => if in_dec string_dec v vs then true else false
@@ -1446,7 +1615,6 @@ Fixpoint fexpr_check (e : fexpr) (vs : list Var) : bool :=
   | FMax e1 e2 => andb (fexpr_check e1 vs) (fexpr_check e2 vs)
   end.
 
-Definition fstate_has_vars vs fst : Prop :=
   List.Forall (fun x => fstate_lookup fst x <> None)%type vs.
 
 Lemma fexpr_check_sound :
@@ -1652,7 +1820,9 @@ Proof.
     constructor; [ | eapply IHvs; eauto ].
     destruct (fstate_lookup fs a); congruence.
 Qed.
+*)
 
+(*
 Theorem fpig_vcgen_correct :
   forall (c : fcmd) (vs : list Var) (P : fstate -> Prop),
     let (vs',P') := fpig_vcgen c vs in
@@ -1675,10 +1845,11 @@ Proof.
   generalize (fstate_has_vars_b_ok fst vs).
   destruct (fstate_has_vars_b fst vs); tauto.
 Qed.
+*)
 
 (* Finally here is a rule for using the vc gen in rewrting
      (see Postprocess*.v *)
-
+(*
 Lemma Hoare__embed_rw
 : forall (c : fcmd) (vs vs' : list string),
     embed_ex vs vs' c |--
@@ -1715,6 +1886,31 @@ Proof.
     clear - H.
     unfold M.pl_data in *. congruence.
   - fwd. eexists; eauto.
+Qed.
+ *)
+
+Locate Hoare__embed.
+
+(* make P take an additional st parameter so it can access the initial state *)
+Lemma Hoare__embed_rw
+: forall (c : fcmd) (vs vs' : list string),
+    embed_ex vs vs' c |--
+    Forall P : state -> fstate -> Prop,
+      Embed (fun st st' : state =>
+               exists fst : fstate,
+                 models M.asReal_in vs fst st /\
+                 (P st fst ->
+                  exists fst' : fstate, models M.asReal_out vs' fst' st' /\
+                                   fpig_vcgen c (P st) fst')).
+Proof.
+  intros.
+  generalize (fpig_vcgen_correct c); intros.
+  eapply lforallR. intro P.
+  breakAbstraction.
+  intros.
+  specialize (H (P (Stream.hd tr))).
+  eapply Hoare__embed; eauto.
+  simpl. auto.
 Qed.
 
 Export Embedding.

@@ -504,7 +504,7 @@ Qed.
 (* Used to expose post-states, since fwp by default does not let us talk about both
    pre- and post-states *)
 Definition fstate_get_rval (v : Var) (P : R -> fstate -> Prop) (fs : fstate) : Prop :=
-  match fstate_lookup fs v with
+  match fm_lookup fs v with
   | None => False
   | Some vf =>
     match F2OR vf with
@@ -555,6 +555,7 @@ Ltac proveVarValid :=
 *)
 
 Require Import Coq.micromega.Psatz.
+(*
 Lemma fstate_lookup_fstate_lookup_force :
   forall (s : fstate) (v : Var) (f : float) (r : R),
     fstate_lookup s v = Some f ->
@@ -573,6 +574,7 @@ Proof.
   { inversion H0; subst; clear H0.
     lra. }
 Qed.
+*)
 
 (* use firstN, skipN *)
 Lemma hide_tail :
@@ -666,6 +668,8 @@ Ltac do_F2Rs :=
       compute in FRE
   end.
 
+(* TODO is an analog of this necessary *)
+(*
 Lemma models_fstate_has_vars :
   forall ar vs vs' fst st,
     models ar (vs' ++ vs) fst st ->
@@ -693,14 +697,17 @@ Proof.
     eapply IHvs; eauto.
   }
 Qed.
+*)
+
 
 Lemma F2OR_is_finite :
   forall f r,
-    F2OR f = Some r -> Fappli_IEEE.is_finite f = true.
+    F2OR f = Some r -> Fappli_IEEE.is_finite _ _ f = true.
 Proof.
   intros; consider f; intros; simpl in *; congruence.
 Qed.
 
+(*
 Lemma isVarValid_fstate_set :
   forall fst v,
     isVarValid v fst ->
@@ -713,6 +720,7 @@ Proof.
   consider (v ?[eq] v'); intros; subst;
   eexists; split; eauto.
 Qed.
+*)
 
 
 Fixpoint AllOf
@@ -727,7 +735,7 @@ Fixpoint AllOf
 Lemma models_exploit :
   forall ar vs fs ss,
     models ar vs fs ss ->
-    AllOf (map (fun v => (exists d : float, fstate_lookup fs v = Some d /\ ar d (ss v))) vs).
+    AllOf (map (fun v => (exists d : float, fm_lookup fs v = Some d /\ ar d (ss v))) vs).
 Proof.
   intros.
   unfold models in H.
@@ -736,15 +744,6 @@ Proof.
   clear H.
   revert H0; revert ss; revert fs.
   induction vs; simpl; intros; auto.
-  split.
-  { specialize (H0 a). destruct H0; [left; auto|].
-    fwd.
-    eexists; split; try eassumption.
-    rewrite FloatEmbed.fstate_lookup_fm_lookup; eassumption. }
-  { eapply IHvs. intros.
-    specialize (H0 s); destruct H0; [right; auto|].
-    fwd.
-    eexists; split; eassumption. }
 Qed.
 
 Require Import Coq.Reals.Rbasic_fun.
@@ -769,20 +768,131 @@ Lemma the_round_z3_fact :
   forall r,
     (Bound.roundDown r <= Bound.the_round r <= Bound.roundUp r)%R.
 Proof.
+Admitted.
+(*
   intros.
   generalize (Bound.roundUp_round r).
   generalize (Bound.roundDown_round r).
   lra.
 Qed.
+ *)
+Locate floatMin.
+Lemma roundDown_fact :
+  forall (r : R),
+    (r <= -Bound.floatMin /\ Bound.roundDown r = r * (1 + Bound.error))%R \/
+    (r >= Bound.floatMin /\ Bound.roundDown r = r * (1 - Bound.error))%R \/
+    (r > -Bound.floatMin /\ r < Bound.floatMin /\ Bound.roundDown r = -Bound.floatMin)%R.
+Proof.
+  intros.
+  generalize (Rle_dec r 0); intros.
+  destruct H.
+  { generalize (Rle_dec r (-Bound.floatMin)); intros.
+    destruct H.
+    { left. unfold Bound.roundDown.
+      split; try lra.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) Bound.floatMin); intros.
+      { apply Fcore_Raux.Rabs_lt_inv in r2. lra. }
+      { unfold Bound.roundDown_relative. unfold Bound.Rsign.
+        consider (Rlt_dec r 0); intros; try lra.
+        consider (Rlt_dec 0 r); intros; try lra.
+        assert (eq r 0)%R by lra. subst. lra. } }
+    { assert (r >= -Bound.floatMin)%R by lra.
+      right. right.
+      split; try lra. split; try lra.
+      unfold Bound.roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) Bound.floatMin); intros.
+      { reflexivity. }
+      { assert (Bound.floatMin <= Rbasic_fun.Rabs r)%R by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } } }
+  { assert (r > 0)%R by lra.
+    right.
+    generalize (Rlt_dec r Bound.floatMin); intros.
+    destruct H0.
+    { right. split; try lra. split; try lra.
+      unfold Bound.roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) Bound.floatMin).
+      { reflexivity. }
+      { unfold Bound.roundDown_relative.
+        assert (Bound.floatMin <= Rbasic_fun.Rabs r)%R by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } }
+    { assert (r >= Bound.floatMin)%R by lra.
+      left.
+      split; try lra.
+      unfold Bound.roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) Bound.floatMin); intros.
+      { apply Fcore_Raux.Rabs_lt_inv in r0. lra. }
+      { unfold Bound.roundDown_relative. unfold Bound.Rsign.
+        consider (Rlt_dec r 0); try lra.
+        consider (Rlt_dec 0 r); lra. } } }
+Qed.
+
+Local Ltac considif := match goal with | |- context[if ?X then _ else _] => consider X end.
+
+Lemma roundUp_fact :
+  forall (r : R),
+    (r <= -Bound.floatMin /\ Bound.roundUp r = r * (1 - Bound.error))%R \/
+    (r >= Bound.floatMin /\ Bound.roundUp r = r * (1 + Bound.error))%R \/
+    (r > -Bound.floatMin /\ r < Bound.floatMin /\ Bound.roundUp r = Bound.floatMin)%R.
+Proof.
+  intros.
+  generalize (Rle_dec r 0); intros.
+  destruct H.
+  { generalize (Rle_dec r (-Bound.floatMin)); intros.
+    destruct H.
+    { left. split; try lra.
+      unfold Bound.roundUp.
+      considif.
+      { apply Fcore_Raux.Rabs_lt_inv in r2. lra. }
+      { unfold Bound.roundUp_relative.
+        unfold Bound.Rsign.
+        consider (Rlt_dec r 0); try lra.
+        consider (Rlt_dec 0 r); try lra.
+        assert (eq r 0)%R by lra. subst. lra. } }
+    { assert (r > -Bound.floatMin)%R by lra.
+      right. right.
+      split; try lra. split; try lra.
+      unfold Bound.roundUp.
+      considif.
+      { reflexivity. }
+      { assert (Bound.floatMin <= Rbasic_fun.Rabs r)%R by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } } }
+  { assert (r > 0)%R by lra.
+    right.
+    generalize (Rlt_dec r Bound.floatMin); intros.
+    destruct H0.
+    { right.
+      split; try lra.
+      split; try lra.
+      unfold Bound.roundUp.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) Bound.floatMin).
+      { reflexivity. }
+      { assert (Bound.floatMin <= Rbasic_fun.Rabs r)%R by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } }
+    { assert (r >= Bound.floatMin)%R by lra.
+      left.
+      split; try lra.
+      unfold Bound.roundUp.
+      considif.
+      { apply Fcore_Raux.Rabs_lt_inv in r0. lra. }
+      { unfold Bound.roundUp_relative.
+        unfold Bound.Rsign.
+        considif; try lra.
+        considif; lra. } } }
+Qed.
+
 
 Ltac show_roundDown_z3_hint r :=
   let H := fresh "H" in
-  generalize (Bound.roundDown_fact r); intro H;
+  generalize (roundDown_fact r); intro H;
   generalize dependent (Bound.roundDown r); intros.
 
 Ltac show_roundUp_z3_hint r :=
   let H := fresh "H" in
-  generalize (Bound.roundUp_fact r); intro H;
+  generalize (roundUp_fact r); intro H;
   generalize dependent (Bound.roundUp r); intros.
 
 Ltac show_Rmax_z3_hint r1 r2 :=
@@ -858,19 +968,20 @@ Definition embed_ex_seal
            (vis vos : list string) (prg : fcmd) : Formula :=
   embed_ex vis vos prg //\\ Lib.Unchanged (list_minus Coq.Strings.String.string_dec vis vos).
 
+Check Hoare__embed_rw.
+
 (* rewriting rule for using "sealed" embed *)
 Lemma Hoare__embed_seal_rw :
   forall (c : fcmd) (vis vos : list string),
     embed_ex_seal vis vos c |--
-                  Forall Q : fstate -> Prop,
-  (let (_, P) := fpig_vcgen c vis in
+                  Forall P : state -> fstate -> Prop,
    Embed
      (fun st st' : state =>
         exists fst : fstate,
           models M.asReal_in vis fst st /\
-          (P Q fst ->
+          (P st fst ->
            exists fst' : fstate,
-             models M.asReal_out vos fst' st' /\ Q fst'))) //\\
+             models M.asReal_out vos fst' st' /\ fpig_vcgen c (P st) fst')) //\\
                                                           Lib.Unchanged (list_minus string_dec vis vos
                                                                         ).
 Proof.

@@ -75,7 +75,8 @@ Inductive fcmd : Type :=
 | FSeq   : fcmd -> fcmd -> fcmd
 | FSkip  : fcmd
 | FAsn   : Var -> fexpr -> fcmd
-| FIte   : fexpr -> fcmd -> fcmd -> fcmd
+(* if semantics: if e1 < e2 then c1 else c2 *)
+| FIte   : fexpr -> fexpr -> fcmd -> fcmd -> fcmd
 (*| FIFin  : fexpr -> fcmd -> fcmd -> fcmd*)
 | FFail  : fcmd
 .
@@ -98,15 +99,15 @@ Inductive feval : fstate -> fcmd -> fstate -> Prop :=
 | FEAsnS : forall s v e,
     feval s (FAsn v e) ((fm_update s v (fexprD e s)))
 | FEIteT :
-    forall s os' ex c1 c2,
-      float_lt (fexprD ex s) fzero ->
+    forall s os' ex1 ex2 c1 c2,
+      float_lt (fexprD ex1 s) (fexprD ex2 s) ->
       feval s c1 os' ->
-      feval s (FIte ex c1 c2) os'
+      feval s (FIte ex1 ex2 c1 c2) os'
 | FEIteF:
-    forall s os' ex c1 c2,
-      float_ge_or_nan (fexprD ex s) fzero ->
+    forall s os' ex1 ex2 c1 c2,
+      float_ge_or_nan (fexprD ex1 s) (fexprD ex2 s) ->
       feval s c2 os' ->
-      feval s (FIte ex c1 c2) os'
+      feval s (FIte ex1 ex2 c1 c2) os'
 (*| FEIFinT:
     forall s os' ex c1 c2 f,
       fexprD ex s = Some f ->

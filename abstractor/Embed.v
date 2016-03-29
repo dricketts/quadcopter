@@ -204,11 +204,13 @@ Module Type EMBEDDING_THEOREMS.
             (exists s', eval s c s') /\
             (forall s', eval s c s' -> Q s'))%type.
 
+  End Hoare.
     Axiom Hoare__embed :
-      forall vs vs',
-        Hoare ->
-        (|-- embed_ex vs vs' c -->>
-             Embed (fun st st' =>
+    forall vs vs' c,
+      (|-- embed_ex vs vs' c -->>
+           Embed (fun st st' =>
+                    forall (P Q : istate -> Prop),
+                      Hoare P c Q ->
                       exists fst,
                         models asReal_in vs fst st /\
                         (P fst ->
@@ -216,7 +218,6 @@ Module Type EMBEDDING_THEOREMS.
                            models asReal_out vs' fst' st' /\
                            Q fst'))).
 
-  End Hoare.
 End EMBEDDING_THEOREMS.
 
 Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
@@ -318,34 +319,34 @@ Module Embedding (M : EmbeddedLang) : EMBEDDING_THEOREMS with Module M := M.
 
     Definition Hoare : Prop :=
       (forall s, P s ->
-                 (exists s', eval s c s') /\
-                 (forall s', eval s c s' -> Q s'))%type.
+            (exists s', eval s c s') /\
+            (forall s', eval s c s' -> Q s'))%type.
+    End Hoare.
 
-
-    Theorem Hoare__embed :
-      forall vs vs',
-        Hoare ->
-        (|-- embed_ex vs vs' c -->>
-             Embed (fun st st' =>
+  Theorem Hoare__embed :
+    forall vs vs' c,
+      (|-- embed_ex vs vs' c -->>
+           Embed (fun st st' =>
+                    forall (P Q : istate -> Prop),
+                      Hoare P c Q ->
                       exists fst,
                         models asReal_in vs fst st /\
                         (P fst ->
                          exists fst',
                            models asReal_out vs' fst' st' /\
                            Q fst'))).
-    Proof.
-      simpl. intros. unfold tlaEntails. simpl.
-      intros.
-      forward_reason.
-      unfold Hoare in H.
-      exists x. unfold models. split; auto.
-      intros.
-      exists x0.
-      split; auto.
-      specialize (H _ H4). forward_reason.
-      auto.
-    Qed.
-  End Hoare.
+  Proof.
+    simpl. intros. unfold tlaEntails. simpl.
+    intros.
+    forward_reason.
+    unfold Hoare in H1.
+    exists x. unfold models. split; auto.
+    intros.
+    exists x0.
+    split; auto.
+    specialize (H1 _ H4). forward_reason.
+    auto.
+  Qed.
 
   (** NOTE(gmalecha): This should probably go into FloatEmbed.
    ** This seems generic to Hoare, not specific to fpig_vcgen_correct
