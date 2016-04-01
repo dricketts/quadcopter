@@ -17,6 +17,15 @@ Definition error    : R := bpow radix2 (- (custom_prec) + 1).
 Definition floatMax : R := bpow radix2 custom_emax.
 Definition floatMin : R := bpow radix2 custom_emin%Z.
 
+Arguments is_finite {_ _} _.
+
+(** * Predicated Intervals **)
+(* old domain, doesn't allow us to represent exceptional values *)
+(* Record predInt : Type :=
+  mkPI { lb : fstate -> R
+       ; ub : fstate -> R
+       ; premise : fstate -> Prop }. *)
+
 (* Real numbers, with +/- infinity but not NaN *)
 Inductive Rinf :=
 | RinfR : R -> Rinf
@@ -31,33 +40,20 @@ Inductive Rinf_lt : Rinf -> Rinf -> Prop :=
 | Rinf_ltInfs : Rinf_lt RinfNInf RinfInf
 .
 
-Inductive Rinf_eq : Rinf -> Rinf -> Prop :=
-| Rinf_eqR : forall r1 r2, r1 = r2 -> Rinf_eq (RinfR r1) (RinfR r2)
-| Rinf_eqInf : Rinf_eq RinfInf RinfInf
-| Rnf_eqNInf : Rinf_eq RinfNInf RinfNInf
-.
-               
 Definition Rinf_gt (r1 r2 : Rinf) : Prop :=
   Rinf_lt r2 r1.
 
-(* TODO: is native equality what we want here?
-   No; we want 
-
- *)
 Definition Rinf_le (r1 r2 : Rinf) : Prop :=
-  Rinf_lt r1 r2 \/ Rinf_eq r1 r2.
+  Rinf_lt r1 r2 \/ r1 = r2.
 
 Definition Rinf_ge (r1 r2 : Rinf) : Prop :=
-  Rinf_lt r2 r1 \/ Rinf_eq r1 r2.
+  Rinf_lt r2 r1 \/ r1 = r2.
 
 (* TODO: make sure this really is the abstraction we want by pushing through
    the velocity shim. *)
-(* TODO: should this be predicated? (i.e. should it take an fstate) *)
-(* nan is a flag saying whether it might be NaN. *)
 Record interval : Type :=
   mkI { lb : Rinf;
-        ub : Rinf;
-        nan : bool}.
+        ub : Rinf }.
 
 Definition B2Rinf (f : float) : option Rinf :=
   match f with
@@ -67,80 +63,110 @@ Definition B2Rinf (f : float) : option Rinf :=
   | _ => Some (RinfR (B2R _ _ f))
   end.
 
-(* TODO: don't check nan bit. this needs to take a real
-   instead of a float *)
-Definition intervalD (i : interval) (f : float) : Prop :=
-  let '(mkI ilb iub isnan) := i in
-  (is_nan _ _ f = true /\ isnan = true) \/
-   match B2Rinf f with
-   | Some ri => Rinf_le i.(lb) ri /\ Rinf_le ri i.(ub)
-   | None => False
-   end. 
+(* TODO:
+   - port in oInterval operations
+   - finish fixing this file
+   - make sure that the abstraction in FloatEmbed is appropriate *)
+(* abstract state types *)
+(*TODO: have actual abstract evaluation. *)
+Definition absEntry := option interval.
+
+Definition absEntryD (i : absEntry) (f : float) : Prop :=
+  (i = None /\ B2Rinf f = None) \/
+  (exists lb ub,
+      i = Some (mkI lb ub) /\
+      exists ri, B2Rinf f = Some ri /\ Rinf_le lb ri /\ Rinf_le ri ub).
+
+Definition absData := list absEntry.
+  
+(*
+Record predInt : Type :=
+  mkPI { prem : fstate -> Prop; intv : option interval }.
+*)
 
 (*
-Definition intervalD (i : option interval) (f : float) : Prop :=
-  match i with
-  | None => is_nan _ _ f = true
-  | Some (mkI lb ub) =>
-    match (B2Rinf f) with
-    | None => False
-    | Some ri => Rinf_le lb ri /\ Rinf_le ri ub
-    end
+Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
+  p.(prem) fs ->
+  match p.(intv) with
+  | None => Fappli_IEEE.is_nan _ _ f = true
+  | Some {|lb := lb; ub := ub |} =>
+    let ri := B2Rinf f in
+    Rinf_le ri lb  /\ Rinf_le ri ub
   end.
+
+Definition predIntD (p : predInt) (f : float) (fs : fstate) : Prop :=
+  p.(premise) fs ->
+  is_finite f = true /\
+  (p.(lb) fs <= B2R _ _ f <= p.(ub) fs)%R.
+
+Definition predInt_entails (a b : predInt) : Prop :=
+  forall f fs, predIntD a f fs -> predIntD b f fs.
+
+Theorem prove_predInt_entails : forall a b,
+    (forall fs, b.(premise) fs -> a.(premise) fs)%R ->
+    (forall fs, a.(premise) fs -> b.(premise) fs ->
+                b.(lb) fs <= a.(lb) fs /\ a.(ub) fs <= b.(ub) fs)%R ->
+    predInt_entails a b.
+Proof.
+  unfold predInt_entails, predIntD.
+  intros.
+  specialize (H _ H2).
+  specialize (H1 H).
+  destruct H1. split; auto.
+  specialize (H0 _ H H2).
+  destruct H0. split;  psatz R.
+Qed.
  *)
 
-(** * Intersections of Predicated Intervals **)
-(*
-Definition All_interval : Type := list (option interval).
+Definition absEntry_entails (a b : absEntry) : Prop :=
+  forall f, absEntryD a f -> absEntryD b f.
 
-Definition All_intervalD (p : All_interval) (f : float) (fs : fstate) : Prop :=
-  Forall (fun x => intervalD x f) p.
+Local Ltac fwd := forward_reason.
 
-Definition All_predInt_entails (a b : All_interval) : Prop :=
-  forall f fs, All_intervalD a f fs -> All_intervalD b f fs.
+Lemma Rinf_lt_trans :
+  forall r1 r2 r3 : Rinf,
+    Rinf_lt r1 r2 -> Rinf_lt r2 r3 ->
+    Rinf_lt r1 r3.
+Proof.
+  intros.
+  inversion H; subst; clear H;
+  inversion H0; subst; clear H0;
+  constructor.
+  eapply Rlt_trans; eauto.
+Qed.
 
-Section cross_product.
-  Context {T U V : Type}.
-  Variable f : T -> U -> V.
-  Fixpoint cross (x : list T) (y : list U) : list V :=
-    match x with
-    | List.nil => List.nil
-    | x :: xs => map (f x) y ++ cross xs y
-    end.
+Lemma Rinf_le_trans :
+  forall r1 r2 r3 : Rinf,
+    Rinf_le r1 r2 -> Rinf_le r2 r3 ->
+    Rinf_le r1 r3.
+Proof.
+  unfold Rinf_le. intros.
+  destruct H; destruct H0; subst;
+  try solve [left; eapply Rinf_lt_trans; eauto];
+  try solve [left; eauto];
+  try solve [right; reflexivity].
+Qed.
 
-  Theorem cross_In : forall xs ys z,
-      List.In z (cross xs ys) <->
-      exists x y, z = f x y /\ List.In x xs /\ List.In y ys.
-  Proof.
-    induction xs; simpl; intros.
-    { split; destruct 1. destruct H; tauto. }
-    { rewrite in_app_iff.
-      rewrite IHxs.
-      rewrite in_map_iff.
-      split.
-      { destruct 1; forward_reason;
-        do 2 eexists; eauto. }
-      { destruct 1; forward_reason.
-        destruct H0; subst; eauto.
-        right. do 2 eexists; eauto. } }
-  Qed.
-End cross_product.
+(* need to capture the idea:
+   "either they are both nan OR they are implied" *)
+Theorem prove_absEntry_entails : forall a b,
+    ((exists lba uba, a = Some {| lb := lba; ub := uba |} /\
+                 exists lbb ubb, b = Some {| lb := lbb; ub := ubb |} /\
+                            Rinf_le lbb lba /\ Rinf_le uba ubb) \/
+       (a = None /\ b = None)) ->
+    absEntry_entails a b.
+Proof.
+  unfold absEntry_entails, absEntryD.
+  intros. fwd.
+  destruct H; destruct H0; simpl; intros; subst; fwd; auto; try congruence.
+  right; eexists; eexists; split; eauto.
+  eexists; split; eauto.
+  rewrite H0 in H; subst.
+  inversion H; subst.
+  split; eapply Rinf_le_trans; eauto.
+Qed.    
 
-Definition lift (abs : option interval -> option interval -> option interval) (l r : All_interval)
-  : All_interval :=
-  cross abs l r.
-
-Fixpoint flatten {T} (ls : list (list T)) : list T :=
-  match ls with
-  | List.nil => List.nil
-  | l :: ls => l ++ flatten ls
-  end.
-
-Definition lift_flatten (abs : option interval -> option interval -> All_interval) (l r : All_interval)
-  : All_interval :=
-  flatten (cross abs l r).
-*)
-(* Rounding stuff... *)
+(** * Rounding Approximation **)
 Definition the_round : R -> R :=
   round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
         (round_mode mode_ZR).
@@ -248,24 +274,105 @@ Definition roundDown (r : R) : R :=
   else
     roundDown_relative r.
 
-Definition roundDown_Rinf (ri : Rinf) : Rinf :=
-  match ri with
-  | RinfR r =>
-    if Rlt_dec r (-floatMax)
-    then RinfNInf
-    else if Rgt_dec r floatMax
-         then RinfInf
-         else RinfR (roundDown r)
-  | _ => ri
-  end.
+Lemma relative_error_prem : forall k : Z,
+    (custom_emin < k)%Z ->
+    (custom_prec <= k - FLT_exp (3 - custom_emax - custom_prec)
+                                custom_prec k)%Z.
+Proof.
+  intros; simpl.
+  unfold FLT_exp, custom_prec, prec, custom_emin, emin in *.
+  destruct (Zmax_spec (k - 24) (-149))%Z; omega.
+Qed.
 
-(* TODO: what is rounding behavior of infinities *)
-Definition roundDown_oRinf (ori : oRinf) : oRinf :=
-  match ori with
-  | None => None
-  | Some ri =>
-    Some (roundDown_Rinf ri)
-  end.
+Lemma Rsign_mult : forall x, (Rsign x * x = Rabs x)%R.
+Proof.
+  unfold Rsign.
+  intros.
+  destruct (Rlt_dec x 0).
+  - rewrite Rabs_left; auto. psatz R.
+  - destruct (Rlt_dec 0 x).
+    + rewrite Rabs_right; psatz R.
+    + cutrewrite (x = 0)%R; [| psatz R ].
+      rewrite Rabs_R0. psatz R.
+Qed.
+
+Lemma roundDown_relative_round : forall a,
+    (floatMin <= Rabs a ->
+     roundDown_relative a <= the_round a)%R.
+Proof.
+  intros.
+  generalize (@relative_error
+                radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                (fexp_correct _ _ custom_precGt0) custom_emin custom_prec
+                relative_error_prem
+                (round_mode mode_ZR) (valid_rnd_round_mode _)
+                a H).
+  intros.
+  unfold the_round.
+  generalize dependent (round radix2 (FLT_exp (3 - custom_emax - custom_prec)
+                                              custom_prec) (round_mode mode_ZR)
+                              a).
+  clear H.
+  intros.
+  unfold roundDown_relative.
+  rewrite Rmult_minus_distr_l.
+  rewrite <- Rmult_assoc.
+  rewrite (Rmult_comm a (Rsign a)). rewrite Rsign_mult.
+  cut (- Rabs a * error <= r - a)%R; [ psatz R | ].
+  apply Rabs_lt_inv in H0. destruct H0.
+  eapply Rle_trans; [ | left; eassumption ].
+  cut (error >= bpow radix2 (-custom_prec + 1))%R.
+  { clear. intros.
+    generalize dependent (bpow radix2 (- custom_prec + 1)).
+    intros. generalize (Rabs_pos a). intros.
+    rewrite (Rmult_comm r _).
+    rewrite Ropp_mult_distr_l.
+    psatz R. }
+  { compute. tauto. }
+Qed.
+
+Lemma round_floatMin_is_floatMin
+: the_round floatMin = floatMin.
+Proof.
+  simpl. unfold the_round.
+  erewrite Fcalc_round.inbetween_float_ZR.
+  Focus 2.
+  instantiate (1:=Fcalc_bracket.loc_Exact).
+  constructor.
+  unfold canonic_exp. unfold floatMin.
+  rewrite ln_beta_bpow.
+  simpl. unfold F2R. simpl. instantiate (1:=8388608%Z).
+  simpl. psatz R.
+  simpl. unfold canonic_exp. unfold floatMin.
+  rewrite ln_beta_bpow. simpl.
+  unfold F2R. simpl.
+  psatz R.
+Qed.
+
+Lemma roundDown_subnormal_round : forall a,
+    (Rabs a < floatMin ->
+     roundDown_subnormal a <= the_round a)%R.
+Proof.
+  intros.
+  unfold roundDown_subnormal.
+  rewrite <- round_floatMin_is_floatMin.
+  { unfold the_round. rewrite <- round_ZR_opp.
+    eapply round_le.
+    - eapply fexp_correct. eapply custom_precGt0.
+    - eapply valid_rnd_round_mode.
+    - eapply Rabs_lt_inv in H.
+      psatz R. }
+Qed.
+
+Lemma roundDown_round : forall a,
+    (roundDown a <= the_round a)%R.
+Proof.
+  intros.
+  unfold roundDown.
+  destruct (Rlt_dec (Rabs a) floatMin).
+  * eapply roundDown_subnormal_round; auto.
+  * eapply roundDown_relative_round. psatz R.
+Qed.
 
 Definition roundUp_relative (r : R) : R :=
   r * (1 + (Rsign r) * error).
@@ -278,99 +385,627 @@ Definition roundUp (r : R) : R :=
   else
     roundUp_relative r.
 
-Definition roundUp_Rinf (ri : Rinf) : Rinf :=
-  match ri with
-  | RinfR r =>
-    if Rlt_dec r (-floatMax)
-    then RinfNInf
-    else if Rgt_dec r floatMax
-         then RinfInf
-         else RinfR (roundUp r)
-  | _ => ri
-  end.
+Lemma roundUp_relative_round : forall a,
+    (floatMin <= Rabs a ->
+     the_round a <= roundUp_relative a)%R.
+Proof.
+  intros.
+  generalize (@relative_error
+                radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                (fexp_correct _ _ custom_precGt0) custom_emin custom_prec
+                relative_error_prem
+                (round_mode mode_ZR) (valid_rnd_round_mode _)
+                a H).
+  intros.
+  unfold the_round.
+  generalize dependent (round radix2 (FLT_exp (3 - custom_emax - custom_prec)
+                                              custom_prec) (round_mode mode_ZR)
+                              a).
+  clear H.
+  intros.
+  unfold roundUp_relative.
+  rewrite Rmult_plus_distr_l.
+  rewrite <- Rmult_assoc.
+  rewrite (Rmult_comm a (Rsign a)). rewrite Rsign_mult.
+  cut (r - a <= Rabs a * error)%R; [ psatz R | ].
+  apply Rabs_lt_inv in H0. destruct H0.
+  eapply Rle_trans; [ left; eassumption | ].
+  cut (error >= bpow radix2 (-custom_prec + 1))%R.
+  { clear. intros.
+    generalize dependent (bpow radix2 (- custom_prec + 1)).
+    intros. generalize (Rabs_pos a). intros.
+    rewrite (Rmult_comm r _).
+    eapply Rmult_le_compat_l; auto. psatz R. }
+  { compute. tauto. }
+Qed.
 
-Definition roundUp_oRinf (ori : oRinf) : oRinf :=
-  match ori with
-  | None => None
-  | Some ri =>
-    Some (roundUp_Rinf ri)
-  end.
+Lemma roundUp_subnormal_round : forall a,
+    (Rabs a < floatMin ->
+     the_round a <= roundUp_subnormal a)%R.
+Proof.
+  intros.
+  unfold roundUp_subnormal.
+  rewrite <- round_floatMin_is_floatMin.
+  { unfold the_round.
+    eapply round_le.
+    - eapply fexp_correct. eapply custom_precGt0.
+    - eapply valid_rnd_round_mode.
+    - eapply Rabs_lt_inv in H.
+      psatz R. }
+Qed.
 
-(* Used to represent constant nan value *)
-Definition nan_const : interval :=
-  {| lb := RinfInf; ub := RinfNInf; nan := true |}.
+Lemma roundUp_round : forall a,
+    (the_round a <= roundUp a)%R.
+Proof.
+  unfold roundUp. intros.
+  destruct (Rlt_dec (Rabs a) floatMin).
+  + eapply roundUp_subnormal_round; auto.
+  + eapply roundUp_relative_round; psatz R.
+Qed.
 
-(* used to represent an inconsistent value (Bottom) *)
-Definition bot_const : interval :=
-  {| lb := RinfInf; ub := RinfNInf; nan := false |}.
-
-(* used to represent a trivial value (Top) *)
-Definition top_const : interval :=
-  {| lb := RinfNInf; ub := RinfInf; nan := true |}.
-
-(* abstraction functions *)
-Definition absFloatConst (f : float) : interval :=
-  match (B2Rinf f) with
-  | None => nan_const
-  | Some ri => {| lb := ri ; ub := ri; nan := false|}
-  end.
-
-(* lift a binary function on reals to one on Rinfs *)
-(* how do we keep track of what type of float to return? *)
-Definition absFloatPlus' (l r : interval) : interval :=
-  (* if the extremes result in NaN, then we can't really say anything
-     i think nan_const is what we should return in this case
- *)
-  match Rinf_plus l.(lb) r.(lb), Rinf_plus l.(ub) r.(ub) with
-  | Some ll, Some uu =>
-    (* these check for -inf + inf *)
-    let flag1 := match Rinf_plus l.(lb) r.(ub) with
-                 | Some _ => false
-                 | None => true end in
-    let flag2 := match Rinf_plus l.(ub) r.(lb) with
-                 | Some _ => false
-                 | None => true end in
-    {| lb := roundDown_Rinf ll; ub := roundUp_Rinf uu; nan := orb (orb l.(nan) r.(nan)) (orb flag1 flag2) |}
-  | _, _ => nan_const
-  end.
-
-(* floating point max semantics:
- *)
-Definition absFloatMax' (l r : interval) : interval :=
-  let res_lb := Rinf_max l.(lb) r.(lb) in
-  let res_ub := Rinf_max l.(ub) r.(ub) in
-  {| lb := Rinf_max l.(lb) r.(lb);
-     ub := Rinf_max l.(ub) r.(ub);
-     (* max(x, NaN) = x; max(NaN, x) = x.*)
-     nan := andb l.(nan) r.(nan) |}.
+(** * roundUp and roundDown facts **)
+(* have been moved to Automation.v *)
 (*
-    , Rinf_plus l.(lb) r.(ub), Rinf_plus l.(ub) r.(lb), Rinf_plus l.(ub) r.(ub) with
-  | 
-  | Some l =>
-    (* lower bound *)
-    match Rinf_plus (l.(ub) r.(ub)) with
-    | None =>
-    | Some u =>
-      match Rinf_plus (l.
-  let min := roundDown_Rinf (Rinf_plus l.(lb) r.(lb))%R in
-  let max := roundUp_Rinf   (Rinf_plus l.(ub) + r.(ub)) in
-  let bad := 
-    Some {| lb := min; ub := max |}
-    None
-  end.
-    let min := 
-    match l, r with
-    | {| lb := 
-    (* inf, inf
-       inf, -inf
-       -inf, inf
-       -inf, -inf *)
-    let min fst := roundDown (l.(lb) fst + r.(lb) fst) in
-    let max fst := roundUp   (l.(ub) fst + r.(ub) fst) in
-    Some {| (*premise := fun fst => l.(premise) fst /\ r.(premise) fst
-                          /\ float_bounded (min fst) /\ float_bounded (max fst)
-                          /\ min fst <= max fst; *)
-        lb := min
-        ; ub := max |}%R
-  end.
+Local Open Scope R_scope.
+Lemma roundDown_fact :
+  forall (r : R),
+    (r <= -floatMin /\ roundDown r = r * (1 + error))%R \/
+    (r >= floatMin /\ roundDown r = r * (1 - error)) \/
+    (r > -floatMin /\ r < floatMin /\ roundDown r = -floatMin).
+Proof.
+  intros.
+  generalize (Rle_dec r 0); intros.
+  destruct H.
+  { generalize (Rle_dec r (-floatMin)); intros.
+    destruct H.
+    { left. unfold roundDown.
+      split; try lra.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin); intros.
+      { apply Fcore_Raux.Rabs_lt_inv in r2. lra. }
+      { unfold roundDown_relative. unfold Rsign.
+        consider (Rlt_dec r 0); intros; try lra.
+        consider (Rlt_dec 0 r); intros; try lra.
+        assert (r = 0) by lra. subst. lra. } }
+    { assert (r >= -floatMin) by lra.
+      right. right.
+      split; try lra. split; try lra.
+      unfold roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin); intros.
+      { reflexivity. }
+      { assert (floatMin <= Rbasic_fun.Rabs r) by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } } }
+  { assert (r > 0) by lra.
+    right.
+    generalize (Rlt_dec r floatMin); intros.
+    destruct H0.
+    { right. split; try lra. split; try lra.
+      unfold roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin).
+      { reflexivity. }
+      { unfold roundDown_relative.
+        assert (floatMin <= Rbasic_fun.Rabs r)%R by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } }
+    { assert (r >= floatMin) by lra.
+      left.
+      split; try lra.
+      unfold roundDown.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin); intros.
+      { apply Fcore_Raux.Rabs_lt_inv in r0. lra. }
+      { unfold roundDown_relative. unfold Rsign.
+        consider (Rlt_dec r 0); try lra.
+        consider (Rlt_dec 0 r); lra. } } }
+Qed.
 *)
+
+Local Ltac considif := match goal with | |- context[if ?X then _ else _] => consider X end.
+(*
+Lemma roundUp_fact :
+  forall (r : R),
+    (r <= -floatMin /\ roundUp r = r * (1 - error)) \/
+    (r >= floatMin /\ roundUp r = r * (1 + error)) \/
+    (r > -floatMin /\ r < floatMin /\ roundUp r = floatMin).
+Proof.
+  intros.
+  generalize (Rle_dec r 0); intros.
+  destruct H.
+  { generalize (Rle_dec r (-floatMin)); intros.
+    destruct H.
+    { left. split; try lra.
+      unfold roundUp.
+      considif.
+      { apply Fcore_Raux.Rabs_lt_inv in r2. lra. }
+      { unfold roundUp_relative.
+        unfold Rsign.
+        consider (Rlt_dec r 0); try lra.
+        consider (Rlt_dec 0 r); try lra.
+        assert (r = 0) by lra. subst. lra. } }
+    { assert (r > -floatMin) by lra.
+      right. right.
+      split; try lra. split; try lra.
+      unfold roundUp.
+      considif.
+      { reflexivity. }
+      { assert (floatMin <= Rbasic_fun.Rabs r) by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } } }
+  { assert (r > 0) by lra.
+    right.
+    generalize (Rlt_dec r floatMin); intros.
+    destruct H0.
+    { right.
+      split; try lra.
+      split; try lra.
+      unfold roundUp.
+      consider (Rlt_dec (Rbasic_fun.Rabs r) floatMin).
+      { reflexivity. }
+      { assert (floatMin <= Rbasic_fun.Rabs r) by lra.
+        apply Fcore_Raux.Rabs_ge_inv in H0.
+        destruct H0; lra. } }
+    { assert (r >= floatMin) by lra.
+      left.
+      split; try lra.
+      unfold roundUp.
+      considif.
+      { apply Fcore_Raux.Rabs_lt_inv in r0. lra. }
+      { unfold roundUp_relative.
+        unfold Rsign.
+        considif; try lra.
+        considif; lra. } } }
+Qed.
+*)
+
+Close Scope R_scope.
+
+Definition float_bounded (r : R) : Prop :=
+  (- floatMax < r < floatMax)%R.
+
+Lemma float_bounded_Rlt_bool
+  : forall a b c,
+    float_bounded (roundDown a) ->
+    float_bounded (roundUp b) ->
+    (a <= c <= b)%R ->
+    (roundDown a <= the_round c <= roundUp b)%R /\
+    Rlt_bool (Rabs (the_round c))
+             (bpow radix2 custom_emax) = true.
+Proof.
+  intros.
+  match goal with
+  | |- ?X /\ ?Y =>
+    assert X; [ | intros; split; [ assumption | ] ]
+  end.
+  { destruct H1.
+    split.
+    { eapply Rle_trans.
+      eapply roundDown_round.
+      eapply round_le; eauto.
+      - eapply fexp_correct. eapply custom_precGt0.
+      - eapply valid_rnd_round_mode. }
+    { eapply Rle_trans; [ | eapply roundUp_round ].
+      eapply round_le; eauto.
+      - eapply fexp_correct. eapply custom_precGt0.
+      - eapply valid_rnd_round_mode. } }
+  rename H2 into Hxxx.
+  match goal with
+  | |- context [ Rlt_bool ?X ?Y ] =>
+    case (Rlt_bool_spec X Y)
+  end; auto.
+  { intros.
+    exfalso.
+    change (bpow radix2 custom_emax) with floatMax in *.
+    eapply Rabs_ge_inv in H2.
+    destruct H2.
+    { destruct H.
+      cut (roundDown a <=
+           round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                 (round_mode mode_ZR) c)%R;
+        [ psatz R | ].
+      eapply Rle_trans; [ eapply roundDown_round | ].
+      eapply Rle_trans; [ eapply round_le | eapply Rle_refl ].
+      - eapply fexp_correct. eapply custom_precGt0.
+      - eapply valid_rnd_round_mode.
+      - psatz R. }
+    { destruct H0.
+      cut (round radix2 (FLT_exp (3 - custom_emax - custom_prec) custom_prec)
+                 (round_mode mode_ZR) c
+           <= roundUp b)%R; [ psatz R | ].
+      eapply Rle_trans; [ | eapply roundUp_round ].
+      eapply Rle_trans; [ eapply Rle_refl | eapply round_le ].
+      - eapply fexp_correct. eapply custom_precGt0.
+      - eapply valid_rnd_round_mode.
+      - psatz R. } }
+Qed.
+
+Lemma apply_float_bounded_lt : forall a b c P,
+    float_bounded (roundDown a) ->
+    float_bounded (roundUp b) ->
+    (a <= c <= b)%R ->
+    (roundDown a <= the_round c <= roundUp b ->
+     P true)%R ->
+    P (Rlt_bool (Rabs (the_round c))
+                (bpow radix2 custom_emax)).
+Proof.
+  intros.
+  eapply float_bounded_Rlt_bool in H1; eauto.
+  destruct H1.
+  rewrite H2. auto.
+Qed.
+
+(** * Predicated Interval Abstractions **)
+
+(** * Constants **)
+Definition absFloatConst (f : float) : absEntry :=
+  match (B2Rinf f) with
+  | None => None
+  | Some ri => Some {| lb := ri ; ub := ri |}
+  end.
+
+Theorem absFloatConst_ok : forall f,
+    absEntryD (absFloatConst f) f.
+Proof.
+  red. intros.
+  unfold absFloatConst.
+  consider f; intros; subst; simpl; try congruence; try reflexivity.
+  { right. unfold Rinf_le.
+    eexists. eexists.
+    split; try reflexivity.
+    eexists.
+    split; try reflexivity.
+    split; right; reflexivity. }
+  { consider b; simpl; intros; right;
+    do 2 eexists; split; try reflexivity;
+    eexists; split; try reflexivity.
+    unfold Rinf_le; split; right; reflexivity.
+    unfold Rinf_le; split; right; reflexivity. }
+  { left; auto. }
+  { right.
+    do 2 eexists; split; try reflexivity.
+    eexists; split; try reflexivity.
+    unfold Rinf_le; split; right; reflexivity. }
+Qed.
+
+(** * Addition **)
+(* TODO - do I need to switch to not having nans take an fstate *)
+Definition absData_top : absData :=
+  [None; Some {|lb := RinfNInf; ub := RinfInf |}].
+
+Print absEntryD.
+
+Lemma absData_top_Top :
+  
+    
+  
+
+Definition absDat_bot : absData :=
+  [].
+
+
+
+Definition absFloatPlus' (l r : absEntry) : absData :=
+  (* if upper or lower bound is NaN, give up. *)
+  match Rinf_plus l.(lb) r.(lb), Rinf_plus l.(ub) r.(ub) with
+  | Some l, Some u =>
+    
+  | _, _ => []
+  end.
+  (* first: we need to be able to see if the bounds become NaN. If so,
+     we _must_ add a nan case.
+     then we calculate the bounds in the standard way. *)
+  
+  match l, r with
+  | Some {| lb := ll; ub := ul |}, Some {| lb := lr; ub := ur |} =>
+    match 
+    None :: List.nil
+  | _, _ =>
+    None :: List.nil
+  end.
+  |
+    match | Some lres, some ures =>
+            {|  lb := fun fst => roundDown (Rinf_plus (l.(lb) fst) (r.(lb) fst))
+                                                                                     ; ub := fun fst => roundUp   (l.(ub) fst + r.(ub) fst)|}%R
+  | _, _ => None
+  end.
+  let min fst :=  in
+  let max fst :=  in
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+                        /\ min fst <= max fst
+   ; lb := min
+   ; ub := max |}%R.
+
+Theorem absFloatPlus'_ok : forall lp lv rp rv fs,
+    predIntD lp lv fs ->
+    predIntD rp rv fs ->
+    predIntD (absFloatPlus' lp rp) (float_plus lv rv) fs.
+Proof.
+  unfold predIntD. simpl; intros.
+  forward_reason.
+  unfold float_plus.
+  generalize (@Bplus_correct _ _ custom_precGt0 custom_precLtEmax custom_nan
+                             mode_ZR _ _ H H0).
+  eapply apply_float_bounded_lt; eauto. psatz R.
+  intros.
+  split; try tauto.
+  destruct H10.
+  destruct H11. rewrite H11.
+  tauto.
+Qed.
+
+(** * Subtraction **)
+Definition absFloatMinus' (l r : predInt) : predInt :=
+  let min fst := roundDown (l.(lb) fst - r.(ub) fst) in
+  let max fst := roundUp   (l.(ub) fst - r.(lb) fst) in
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+                        /\ min fst <= max fst
+   ; lb := min
+   ; ub := max |}%R.
+
+Theorem absFloatMinus'_ok : forall lp lv rp rv fs,
+    predIntD lp lv fs ->
+    predIntD rp rv fs ->
+    predIntD (absFloatMinus' lp rp) (float_minus lv rv) fs.
+Proof.
+  unfold predIntD. simpl; intros.
+  forward_reason.
+  unfold float_minus.
+  generalize (@Bminus_correct _ _ custom_precGt0 custom_precLtEmax custom_nan mode_ZR _ _ H H0).
+  eapply apply_float_bounded_lt; eauto. psatz R.
+  intros.
+  split; try tauto.
+  destruct H10.
+  destruct H11; rewrite H11.
+  tauto.
+Qed.
+
+Definition Rmin4 (a b c d : R) : R :=
+  Rmin (Rmin a b) (Rmin c d).
+Definition Rmax4 (a b c d : R) : R :=
+  Rmax (Rmax a b) (Rmax c d).
+
+Lemma Rmin4_ok : forall a b c d e,
+    (a <= e \/ b <= e \/ c <= e \/ d <= e ->
+     Rmin4 a b c d <= e)%R.
+Proof.
+  unfold Rmin4. intros.
+  destruct H as [ ? | [ ? | [ ? | ? ] ] ];
+    do 3 first [ eapply Rle_trans; [ eapply Rmin_l + eapply Rmin_r | ]
+               | eassumption ].
+Qed.
+
+Lemma Rmax4_ok : forall a b c d e,
+    (e <= a \/ e <= b \/ e <= c \/ e <= d ->
+     e <= Rmax4 a b c d)%R.
+Proof.
+  unfold Rmax4; intros.
+  destruct H as [ ? | [ ? | [ ? | ? ] ] ];
+    do 3 first [ eapply Rle_trans; [ | eapply Rmax_l + eapply Rmax_r ]
+               | eassumption ].
+Qed.
+
+(** * Multiplication **)
+Definition absFloatMult' (l r : predInt) : predInt :=
+  let min fst := roundDown (Rmin4 (l.(lb) fst * r.(lb) fst)
+                                  (l.(lb) fst * r.(ub) fst)
+                                  (l.(ub) fst * r.(lb) fst)
+                                  (l.(ub) fst * r.(ub) fst)) in
+  let max fst := roundUp   (Rmax4 (l.(lb) fst * r.(lb) fst)
+                                  (l.(lb) fst * r.(ub) fst)
+                                  (l.(ub) fst * r.(lb) fst)
+                                  (l.(ub) fst * r.(ub) fst)) in
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ float_bounded (min fst) /\ float_bounded (max fst)
+(*                      /\ min fst <= max fst *)
+   ; lb := min
+   ; ub := max |}%R.
+
+Lemma Rsign_id : forall x, x = (Rsign x * Rabs x)%R.
+Proof.
+  intros.
+  rewrite <- Rsign_mult.
+  unfold Rsign.
+  destruct (Rlt_dec x 0); auto.
+  - psatz R.
+  - destruct (Rlt_dec 0 x); psatz R.
+Qed.
+
+Ltac try_elim :=
+  try solve [ z3 solve; psatz R | exfalso; z3 solve; psatz R ].
+
+Theorem absFloatMult'_ok : forall lp lv rp rv fs,
+    predIntD lp lv fs ->
+    predIntD rp rv fs ->
+    predIntD (absFloatMult' lp rp) (float_mult lv rv) fs.
+Proof.
+  unfold predIntD. simpl; intros.
+  forward_reason.
+  unfold float_mult.
+  generalize (@Bmult_correct _ _ custom_precGt0 custom_precLtEmax
+                             custom_nan mode_ZR lv rv).
+  eapply apply_float_bounded_lt; eauto.
+  { clear - H7 H8 H5 H6.
+    generalize dependent (lb lp fs);
+    generalize dependent (ub lp fs);
+    generalize dependent (lb rp fs);
+    generalize dependent (ub rp fs);
+    generalize dependent (B2R custom_prec custom_emax lv);
+    generalize dependent (B2R custom_prec custom_emax rv); clear; intros.
+    split.
+    { apply Rmin4_ok.
+      destruct (Rle_dec r 0); destruct (Rle_dec r0 0); try_elim;
+      destruct (Rle_dec r1 0); try_elim;
+      destruct (Rle_dec r2 0); try_elim;
+      destruct (Rle_dec r3 0); try_elim;
+      destruct (Rle_dec r4 0); try_elim. }
+    { apply Rmax4_ok.
+      destruct (Rle_dec 0 r); destruct (Rle_dec 0 r0); try_elim;
+      destruct (Rle_dec 0 r1); try_elim;
+      destruct (Rle_dec 0 r2); try_elim;
+      destruct (Rle_dec 0 r3); try_elim;
+      destruct (Rle_dec 0 r4); try_elim;
+        solve [ right; right; right; psatz R ].
+    }
+  }
+  { intros.
+    rewrite H in *. rewrite H0 in *. simpl in H10.
+    split; try tauto.
+    destruct H10. rewrite H10. tauto. }
+Qed.
+
+(** * Max **)
+
+Definition absFloatMax' (l r : predInt) : predInt :=
+  let min fst := Rmax (l.(lb) fst) (r.(lb) fst) in
+  let max fst := Rmax (l.(ub) fst) (r.(ub) fst) in
+  {| premise := fun fst => l.(premise) fst /\ r.(premise) fst
+                        /\ min fst <= max fst
+   ; lb := min
+   ; ub := max |}%R.
+
+Lemma Rcompare_eq :
+  forall x, Rcompare x x = Eq.
+Proof.
+  SearchAbout Rcompare.
+  intros.
+  generalize (Rcompare_spec x x); intros.
+  inversion H; try lra; reflexivity.
+Qed.
+
+Theorem absFloatMax'_ok : forall lp lv rp rv fs,
+    predIntD lp lv fs ->
+    predIntD rp rv fs ->
+    predIntD (absFloatMax' lp rp) (float_max lv rv) fs.
+Proof.
+  unfold predIntD. simpl; intros.
+  forward_reason.
+  unfold float_max.
+  rewrite (@Fappli_IEEE_extra.Bcompare_finite_correct _ _ _ _ H H0).
+  unfold is_finite in H.
+  consider lv; intros; try congruence;
+  consider rv; intros; try congruence; simpl;
+  split; simpl; auto;
+  try match goal with
+  | |- context[match (Rcompare ?x ?y) with | _ => _ end] =>
+    case (Rcompare_spec x y)
+      end; intros; simpl in *; try reflexivity; try lra;
+  split;
+  apply Rmax_case_strong; intros; try lra;
+  subst; congruence.
+Qed.
+
+(** * Intersections of Predicated Intervals **)
+Definition All_predInt : Type := list predInt.
+
+Definition All_predIntD (p : All_predInt) (f : float) (fs : fstate) : Prop :=
+  Forall (fun x => predIntD x f fs) p.
+
+Definition All_predInt_entails (a b : All_predInt) : Prop :=
+  forall f fs, All_predIntD a f fs -> All_predIntD b f fs.
+
+Section cross_product.
+  Context {T U V : Type}.
+  Variable f : T -> U -> V.
+  Fixpoint cross (x : list T) (y : list U) : list V :=
+    match x with
+    | List.nil => List.nil
+    | x :: xs => map (f x) y ++ cross xs y
+    end.
+
+  Theorem cross_In : forall xs ys z,
+      List.In z (cross xs ys) <->
+      exists x y, z = f x y /\ List.In x xs /\ List.In y ys.
+  Proof.
+    induction xs; simpl; intros.
+    { split; destruct 1. destruct H; tauto. }
+    { rewrite in_app_iff.
+      rewrite IHxs.
+      rewrite in_map_iff.
+      split.
+      { destruct 1; forward_reason;
+        do 2 eexists; eauto. }
+      { destruct 1; forward_reason.
+        destruct H0; subst; eauto.
+        right. do 2 eexists; eauto. } }
+  Qed.
+End cross_product.
+
+Definition lift (abs : predInt -> predInt -> predInt) (l r : All_predInt)
+: All_predInt :=
+  cross abs l r.
+
+Fixpoint flatten {T} (ls : list (list T)) : list T :=
+  match ls with
+  | List.nil => List.nil
+  | l :: ls => l ++ flatten ls
+  end.
+
+Definition lift_flatten (abs : predInt -> predInt -> All_predInt) (l r : All_predInt)
+: All_predInt :=
+  flatten (cross abs l r).
+
+
+Theorem lift_sound : forall op abs_op fs,
+    (forall a b c d,
+        predIntD a b fs ->
+        predIntD c d fs ->
+        predIntD (abs_op a c) (op b d) fs) ->
+    forall l r c d,
+      All_predIntD l c fs ->
+      All_predIntD r d fs ->
+      All_predIntD (lift abs_op l r) (op c d) fs.
+Proof.
+  unfold All_predIntD. intros.
+  unfold lift.
+  eapply Forall_forall.
+  intros.
+  eapply cross_In in H2.
+  forward_reason.
+  subst.
+  eapply Forall_forall in H0; eauto.
+  eapply Forall_forall in H1; eauto.
+Qed.
+
+Definition split_All_predInt (P : fstate -> Prop) (Ps : All_predInt)
+: All_predInt :=
+  List.map (fun x =>
+              {| premise := fun f => x.(premise) f /\ P f
+               ; lb := x.(lb)
+               ; ub := x.(ub) |}) Ps ++
+  List.map (fun x =>
+              {| premise := fun f => x.(premise) f /\ ~P f
+               ; lb := x.(lb)
+               ; ub := x.(ub) |}) Ps.
+
+
+Theorem All_predInt_split : forall Ps (P : fstate -> Prop),
+    (forall fs, P fs \/ ~P fs) ->
+    All_predInt_entails (split_All_predInt P Ps) Ps.
+Proof.
+  intros. red. intros.
+  unfold All_predIntD in *.
+  eapply Forall_forall. intros.
+  rewrite Forall_forall in H0.
+  setoid_rewrite in_app_iff in H0.
+  setoid_rewrite in_map_iff in H0.
+  specialize (H fs).
+  destruct H.
+  { specialize (H0 ({|
+          lb := lb x;
+          ub := ub x;
+          premise := fun f : fstate => premise x f /\ P f |})).
+    red in H0. simpl in H0.
+    red. intros.
+    eapply H0.
+    left. eauto.
+    tauto. }
+  { specialize (H0 ({|
+          lb := lb x;
+          ub := ub x;
+          premise := fun f : fstate => premise x f /\ ~P f |})).
+    red in H0. simpl in H0.
+    red. intros.
+    eapply H0.
+    right. eauto.
+    tauto. }
+Qed.
