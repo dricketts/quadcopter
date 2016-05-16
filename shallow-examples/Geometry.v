@@ -1,14 +1,23 @@
 Require Import Coq.Vectors.Vector.
 Require Import Coq.Reals.Rdefinitions.
+Require Import Coq.Reals.Rsqrt_def.
+Require Import Coq.Reals.RIneq.
+Require Import Coq.micromega.Psatz.
 
 (* Some vector arithmetic definitions. *)
 
 Definition Rvec : nat -> Type := Vector.t R.
+Local Open Scope R_scope.
+Local Open Scope vector_scope.
+
+Definition v_zero n : Rvec n := Vector.const 0 n.
 
 Definition v_scale {n} (r : R) (x : Rvec n) :=
   map (Rmult r) x.
 
 Notation "r [*] x" := (v_scale r x) (at level 49) : vector_scope.
+Notation "x [/] r" := (v_scale (Rinv r) x) (at level 49)
+                      : vector_scope.
 
 Definition v_add {n} (x y : Rvec n) :=
   map2 Rplus x y.
@@ -23,10 +32,24 @@ Definition v_dot_prod {n} (x y : Rvec n) :=
 Notation "x [.] y" := (v_dot_prod x y) (at level 50)
                       : vector_scope.
 
-(* Some geometry definitions. *)
+Lemma x_v_dot_x_pos :
+  forall n (x : Rvec n), 0 <= v_dot_prod x x.
+Proof.
+  intros. unfold v_dot_prod.
+  rewrite fold_left_right_assoc_eq; [ | intros; psatzl R].
+  induction x; simpl.
+  { psatzl R. }
+  { pose proof (Rle_0_sqr h). unfold Rsqr in *. psatzl R. }
+Qed.
 
-Local Open Scope vector_scope.
-Local Open Scope R_scope.
+Definition v_norm_sq {n} (x : Rvec n) : nonnegreal :=
+  {| nonneg := v_dot_prod x x;
+     cond_nonneg := x_v_dot_x_pos _ _ |}.
+Definition v_norm {n} (x : Rvec n) := Rsqrt (v_norm_sq x).
+
+Definition normalize {n} (x : Rvec n) := x [/] (v_norm x).
+
+(* Some geometry definitions. *)
 
 Record EndPoints n : Type :=
 { x : Rvec n;
@@ -43,7 +66,11 @@ Require Import Finite_sets.
 (* A set of vectors. *)
 Definition VecEnsemble n : Type := Ensemble (Rvec n).
 
-(* We give vector definitions of lines, rays, and line segments. *)
+(* We give vector definitions of points, lines, rays,
+   and line segments. *)
+
+Definition Point {n} (x : Rvec n) : VecEnsemble n :=
+  fun p => x = p.
 
 Definition Line {n} (a : EndPoints n) : VecEnsemble n :=
   fun p => exists r, p = a.(x) [+] r [*] (a.(y) [-] a.(x)).
@@ -80,14 +107,24 @@ Definition Polygon {n m}
 (* To specify whether a point is inside a polygon, we need
    a ray originating from that point. The following constructs
    such a ray. *)
-Require Import Psatz.
+Lemma v_add_nonzero_neq :
+  forall n (x y : Rvec (S n)), y <> v_zero _ -> x <> x [+] y.
+Proof.
+Admitted.
+
+Lemma v_const_nonzero :
+  forall n a, a <> 0 -> Vector.const a (S n) <> v_zero (S n).
+Proof.
+  intros. simpl. intro. inversion H0. psatzl R.
+Qed.
+
 Definition A_Ray {n} (p : Rvec (S n)) : EndPoints (S n).
 Proof.
   refine (
       {| x := p;
          y := p [+] (Vector.const 1 (S n));
          WF := _ |} ).
-  apply caseS with (v:=p). intros. intro. inversion H. psatzl R.
+  apply v_add_nonzero_neq. apply v_const_nonzero. psatzl R.
 Qed.
 
 (* A point is inside a polygon if a ray originating at the point
