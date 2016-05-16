@@ -23,10 +23,10 @@ Definition v_dot_prod {n} (x y : Rvec n) :=
 Notation "x [.] y" := (v_dot_prod x y) (at level 50)
                       : vector_scope.
 
+(* Some geometry definitions. *)
+
 Local Open Scope vector_scope.
 Local Open Scope R_scope.
-
-(* Some geometry definitions. *)
 
 Record EndPoints {n} : Type :=
 { x : Rvec n;
