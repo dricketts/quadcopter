@@ -18,6 +18,7 @@ shallow-logic/RobustnessISS.v
 shallow-logic/Arithmetic.v
 shallow-logic/Util.v
 
+shallow-examples/Geometry.v
 shallow-examples/Velocity.v
 
 logic/Stream.v
