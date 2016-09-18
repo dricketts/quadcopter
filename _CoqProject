@@ -12,6 +12,7 @@ shallow-logic/LTLNotation.v
 shallow-logic/Tactics.v
 shallow-logic/Continuous.v
 shallow-logic/ContinuousInstances.v
+shallow-logic/ContinuousNormed.v
 shallow-logic/BoundingFunctions.v
 shallow-logic/RobustnessTabuada.v
 shallow-logic/RobustnessISS.v
